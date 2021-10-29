@@ -1,0 +1,59 @@
+{
+    "accounts": [
+        {
+            "names": [
+                {
+                    "name": "Assets",
+                    "language": "en"
+                }
+            ],
+            "code": "1000",
+            "category": true,
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Liabilities",
+                    "language": "en"
+                }
+            ],
+            "code": "2000",
+            "category": true,
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Shareholder Equity",
+                    "language": "en"
+                }
+            ],
+            "code": "3000",
+            "category": true,
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Revenue",
+                    "language": "en"
+                }
+            ],
+            "code": "4000",
+            "category": true,
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Expenses",
+                    "language": "en"
+                }
+            ],
+            "code": "5000",
+            "category": true,
+            "credit": true
+        }
+    ]
+}
