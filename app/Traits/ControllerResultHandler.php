@@ -4,13 +4,16 @@ namespace App\Traits;
 
 use Exception;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 /**
  * Generate common messages when exceptions occur and write to the log.
  */
-trait ControllerExceptionHandler
+trait ControllerResultHandler
 {
+    protected array $errors = [];
+
     /**
      * @param QueryException $exception
      */
@@ -22,6 +25,15 @@ trait ControllerExceptionHandler
         );
         Log::channel(env('LEDGER_LOG_CHANNEL', 'stack'))
             ->error($exception->getMessage(), ['errors' => $this->errors]);
+    }
+
+    protected function success(Request $request)
+    {
+        Log::channel(env('LEDGER_LOG_CHANNEL', 'stack'))
+            ->info(
+                $request->getQueryString() . ' success',
+                ['input' => $request->all()]
+            );
     }
 
     protected function unexpectedException(Exception $exception): void

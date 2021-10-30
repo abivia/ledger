@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Exceptions\Breaker;
+use App\Helpers\Revision;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,5 +29,34 @@ class LedgerCurrency extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
-    public $primaryKey = 'currency';
+    public $primaryKey = 'code';
+
+    /**
+     * @param ?string $revision
+     * @throws Breaker
+     */
+    public function checkRevision(?string $revision)
+    {
+        if ($revision !== Revision::create($this->revision, $this->updated_at)) {
+            throw Breaker::fromCode(Breaker::BAD_REVISION);
+        }
+    }
+
+    /**
+     * @param array $options
+     * @return array
+     */
+    public function toResponse(array $options = []): array
+    {
+        $response = [
+            'code' => $this->code,
+            'decimals' =>$this->decimals,
+        ];
+        $response['revision'] = Revision::create($this->revision, $this->updated_at);
+        $response['createdAt'] = $this->created_at;
+        $response['updatedAt'] = $this->updated_at;
+
+        return $response;
+    }
+
 }

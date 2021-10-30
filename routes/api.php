@@ -3,6 +3,7 @@
 use App\Http\Controllers\LedgerAccount\InitializeController;
 use App\Http\Controllers\LedgerAccount\AddController;
 use App\Http\Controllers\LedgerAccountController;
+use App\Http\Controllers\LedgerCurrencyController;
 use App\Http\Middleware\LedgerLogging;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -27,4 +28,9 @@ Route::middleware(['auth:sanctum', LedgerLogging::class])->group(function () {
     Route::post('v1/ledger/account/get', [LedgerAccountController::class, 'get']);
     Route::post('v1/ledger/account/update', [LedgerAccountController::class, 'update']);
     Route::post('v1/ledger/create', [InitializeController::class, 'run']);
+
+    Route::post('v1/ledger/currency/add', [LedgerCurrencyController::class, 'add']);
+    Route::post('v1/ledger/currency/delete', [LedgerCurrencyController::class, 'delete']);
+    Route::post('v1/ledger/currency/get', [LedgerCurrencyController::class, 'get']);
+    Route::post('v1/ledger/currency/update', [LedgerCurrencyController::class, 'update']);
 });

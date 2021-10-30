@@ -9,7 +9,7 @@ use App\Exceptions\Breaker;
 use App\Models\LedgerAccount;
 use App\Models\LedgerBalance;
 use App\Models\LedgerName;
-use App\Traits\ControllerExceptionHandler;
+use App\Traits\ControllerResultHandler;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -20,9 +20,7 @@ use stdClass;
 
 class LedgerAccountController extends Controller
 {
-    use ControllerExceptionHandler;
-
-    protected array $errors = [];
+    use ControllerResultHandler;
 
     protected stdClass $rules;
 
@@ -343,17 +341,8 @@ class LedgerAccountController extends Controller
         return [$status, $status ? $result : $errors];
     }
 
-    protected function success(Request $request)
-    {
-        Log::channel(env('LEDGER_LOG_CHANNEL', 'stack'))
-            ->info(
-                $request->getQueryString() . ' success',
-                ['input' => $request->all()]
-        );
-    }
-
     /**
-     * Update the specified resource in storage.
+     * Update an account.
      *
      * @param Request $request
      * @return array
@@ -471,6 +460,7 @@ class LedgerAccountController extends Controller
         }
         if (!$ledgerAccount->credit && !$ledgerAccount->debit) {
             // Must ensure that no sub-accounts are category accounts
+            // TODO: implement this.
             $this->errors[] = __(
                 "Debit and credit both cleared not yet implemented."
             );
@@ -481,6 +471,7 @@ class LedgerAccountController extends Controller
             // Is it possible to have sub-accounts still open?
             // Does closing a parent account just mean you can't post to it?
             // For lack of answers to these questions...
+            // TODO: implement this.
             $this->errors[] = __("Account closing not yet implemented.");
             throw Breaker::fromCode(Breaker::NOT_IMPLEMENTED);
         }

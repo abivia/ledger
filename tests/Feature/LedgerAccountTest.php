@@ -15,50 +15,8 @@ use Tests\TestCase;
  */
 class LedgerAccountTest extends TestCase
 {
+    use CreateLedgerTrait;
     use RefreshDatabase;
-
-    protected array $createRequest = [
-        'name' => 'Test Ledger',
-        'language' => 'en-CA',
-        'domains' => [
-            [
-                'code' => 'GL',
-                'names' => [
-                    [
-                        'name' => 'General Ledger',
-                        'language' => 'en-CA'
-                    ],
-                    [
-                        'name' => 'Grand Livre',
-                        'language' => 'fr-CA'
-                    ]
-                ]
-            ]
-        ],
-        'currencies' => [
-            [
-                'code' => 'CAD',
-                'decimals' => 2
-            ]
-        ],
-        'names' => [
-            [
-                'name' => 'General Ledger Test',
-                'language' => 'en-CA'
-            ],
-            [
-                'name' => 'Tester le grand livre',
-                'language' => 'fr-CA'
-            ]
-        ],
-        'rules' => [
-            'account' => [
-                'codeFormat' => '/[a-z0-9\-]+/i'
-            ]
-        ],
-        'extra' => 'arbitrary JSON',
-        'template' => 'sections'
-    ];
 
     protected function addAccount(string $code, string $parentCode)
     {
@@ -80,18 +38,6 @@ class LedgerAccountTest extends TestCase
         );
 
         return $this->isSuccessful($response);
-    }
-
-    protected function createLedger()
-    {
-        $response = $this->postJson(
-            'api/v1/ledger/create', $this->createRequest
-        );
-        $response->assertStatus(200);
-        $this->assertTrue(isset($response['time']));
-        $this->assertFalse(isset($response['errors']));
-
-        return $response;
     }
 
     private function hasAttributes(array $attributes, object $object)

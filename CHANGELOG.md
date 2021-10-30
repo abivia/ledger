@@ -2,7 +2,7 @@
 
 ## Create a new Ledger
 
-`/api/ledger/create`
+`/api/v1/ledger/create`
 
 ```json
 {
@@ -80,7 +80,7 @@ If the errors attribute is present, the remaining attributes are not.
 
 ## Add a ledger account
 
-`api/ledger/account/add`
+`api/v1/ledger/account/add`
 
 ```json
 {
@@ -132,7 +132,7 @@ Either the errors or account attribute will be present, not both.
 ```
 
 
-`api/ledger/account/get`
+`api/v1/ledger/account/get`
 
 ```json
 {
@@ -169,11 +169,10 @@ Either the errors or account attribute will be present, not both.
 }
 ```
 
-`api/ledger/account/delete`
+`api/v1/ledger/account/delete`
 ```json
 {
-    "uuid": "account UUID",
-    "code": "unique account code that passes ledger.rules.account.codeFormat regex"
+    "code": "currency code"
 }
 ```
 Returns
@@ -190,7 +189,7 @@ Either the errors or accounts attribute will be present, not both.
 }
 ```
 
-`api/ledger/account/update`
+`api/v1/ledger/account/update`
 
 ```json
 {
@@ -221,29 +220,132 @@ Either the errors or account attribute will be present, not both.
 multiple account queries...
 
 ## Currencies
-/ledger/currency/add
-/ledger/currency/delete
-/ledger/currency/get
-/ledger/currency/update
+`api/v1//ledger/currency/add`
+
+```json
+{
+    "code": "currency_code",
+    "decimals": "{number}"
+}
+```
+Returns
+Either the errors or account attribute will be present, not both.
+```json
+{
+    "time": "ISO time format",
+    "errors": [
+        {
+            "message": "some informative error message"
+        }
+    ],
+    "currency": {
+        "code": "currency code",
+        "decimals": "{number}",
+        "revision": "hash",
+        "createdAt": "ISO Time",
+        "updatedAt": "ISO Time"
+    }
+}
+```
+
+`api/v1//ledger/currency/delete`
+
+```json
+{
+    "code": "currency_code"
+}
+```
+Returns
+Either the errors or account attribute will be present, not both.
+```json
+{
+    "time": "ISO time format",
+    "errors": [
+        {
+            "message": "some informative error message"
+        }
+    ],
+    "currency": {
+        "code": "currency code"
+    }
+}
+```
+
+`api/v1//ledger/currency/get`
+
+```json
+{
+    "code": "currency_code"
+}
+```
+Returns
+Either the errors or account attribute will be present, not both.
+```json
+{
+    "time": "ISO time format",
+    "errors": [
+        {
+            "message": "some informative error message"
+        }
+    ],
+    "currency": {
+        "code": "currency code",
+        "decimals": "{number}",
+        "revision": "hash",
+        "createdAt": "ISO Time",
+        "updatedAt": "ISO Time"
+    }
+}
+```
+
+api/v1//ledger/currency/update
+
+```json
+{
+    "revision": "hash code",
+    "code": "account code",
+    "toCode": "new currency code",
+    "decimals": "{number}"
+}
+```
+Returns
+Either the errors or account attribute will be present, not both.
+```json
+{
+    "time": "ISO time format",
+    "errors": [
+        {
+            "message": "some informative error message"
+        }
+    ],
+    "currency": {
+        "code": "currency code",
+        "decimals": "{number}",
+        "revision": "hash",
+        "createdAt": "ISO Time",
+        "updatedAt": "ISO Time"
+    }
+}
+```
 
 ## Domains
-/ledger/domain/add
-/ledger/domain/delete
-/ledger/domain/get
-/ledger/domain/update
+api/v1//ledger/domain/add
+api/v1//ledger/domain/delete
+api/v1//ledger/domain/get
+api/v1//ledger/domain/update
 
 ## Journal references
 
-/journal/reference/add
-/journal/reference/delete
-/journal/reference/get
-/journal/reference/update
+api/v1//journal/reference/add
+api/v1//journal/reference/delete
+api/v1//journal/reference/get
+api/v1//journal/reference/update
 
 ## Journal entries
 
-/journal/entry/add
-/journal/entry/reverse
-/journal/entry/get
-/journal/entry/update
+api/v1//journal/entry/add
+api/v1//journal/entry/reverse
+api/v1//journal/entry/get
+api/v1//journal/entry/update
 
 ## Journal entry queries (report section?)
