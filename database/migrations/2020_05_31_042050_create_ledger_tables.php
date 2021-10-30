@@ -76,7 +76,7 @@ class CreateLedgerTables extends Migration
             // The update timestamp (server-side)
             $table->timestamp('revision', 6)
                 ->useCurrentOnUpdate()->nullable();
-            $table->timestamps();
+            $table->timestamps(6);
         });
 
         // Connection to entities outside the GL
@@ -104,7 +104,7 @@ class CreateLedgerTables extends Migration
             // The update timestamp (server-side)
             $table->timestamp('revision', 6)
                 ->useCurrentOnUpdate()->nullable();
-            $table->timestamps();
+            $table->timestamps(6);
         });
 
         // Actual account balances by domain and currency.
@@ -115,7 +115,7 @@ class CreateLedgerTables extends Migration
             $table->string('domain', self::ACCOUNT_CODE_SIZE);
             $table->string('currency', self::CURRENCY_CODE_SIZE);
             $table->string('balance', self::AMOUNT_SIZE);
-            $table->timestamps();
+            $table->timestamps(6);
 
             $table->unique(['ledgerUuid', 'domain', 'currency']);
         });
@@ -126,7 +126,7 @@ class CreateLedgerTables extends Migration
             $table->integer('decimals');
             $table->timestamp('revision', 6)
                 ->useCurrentOnUpdate()->nullable();
-            $table->timestamps();
+            $table->timestamps(6);
         });
 
         // Ledger domains
@@ -139,7 +139,7 @@ class CreateLedgerTables extends Migration
             $table->boolean('subJournals')->default(false);
             $table->timestamp('revision', 6)
                 ->useCurrentOnUpdate()->nullable();
-            $table->timestamps();
+            $table->timestamps(6);
         });
 
         // Names in ledger related tables, internationalized.
@@ -150,7 +150,7 @@ class CreateLedgerTables extends Migration
             $table->uuid('ownerUuid');
             $table->string('language', self::LANGUAGE_CODE_SIZE);
             $table->string('name');
-            $table->timestamps();
+            $table->timestamps(6);
 
             $table->unique(['ownerUuid', 'language']);
         });
@@ -161,7 +161,7 @@ class CreateLedgerTables extends Migration
             $table->longText('extra');
             $table->timestamp('revision', 6)
                 ->useCurrentOnUpdate()->nullable();
-            $table->timestamps();
+            $table->timestamps(6);
         });
 
     }

@@ -23,6 +23,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 Route::middleware(['auth:sanctum', LedgerLogging::class])->group(function () {
     Route::post('v1/ledger/account/add', [AddController::class, 'run']);
+    Route::post('v1/ledger/account/delete', [LedgerAccountController::class, 'delete']);
     Route::post('v1/ledger/account/get', [LedgerAccountController::class, 'get']);
+    Route::post('v1/ledger/account/update', [LedgerAccountController::class, 'update']);
     Route::post('v1/ledger/create', [InitializeController::class, 'run']);
 });

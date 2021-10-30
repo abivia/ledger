@@ -46,27 +46,27 @@ class LedgerAccountController extends Controller
      */
     public function delete(Request $request): array
     {
-        $response = ['time' => new Carbon()];
+        $response = [];
         $this->errors = [];
         $inTransaction = false;
         try {
             $ledgerAccount = $this->fetchAccount($request->all());
             // Ensure there are no sub-accounts with associated transactions
             $relatedAccounts = $this->getSubAccountList($ledgerAccount->ledgerUuid);
-            $accountTable = LedgerAccount::getTable();
-            $balanceTable = LedgerBalance::getTable();
+            $accountTable = (new LedgerAccount())->getTable();
+            $balanceTable = (new LedgerBalance())->getTable();
             $subCats = DB::table($accountTable)
                 ->join($balanceTable,
-                    $accountTable . '.' . LedgerAccount::getKeyName(), '=',
-                    $balanceTable . '.' . LedgerBalance::getKeyName()
+                    $accountTable . '.ledgerUuid', '=',
+                    $balanceTable . '.ledgerUuid'
                 )
-                ->whereIn('ledgerUuid', $relatedAccounts)
+                ->whereIn($accountTable . '.ledgerUuid', $relatedAccounts)
                 ->count();
             if ($subCats !== 0) {
                 $this->errors[] = __("Can't delete: account or sub-accounts have transactions.");
                 throw Breaker::fromCode(Breaker::INVALID_OPERATION);
             }
-            $nameTable = LedgerName::getTable();
+            $nameTable = (new LedgerName())->getTable();
             DB::beginTransaction();
             $inTransaction = true;
             Db::table($balanceTable)->whereIn('ledgerUuid', $relatedAccounts)
@@ -94,6 +94,7 @@ class LedgerAccountController extends Controller
         if (count($this->errors)) {
             $response['errors'] = $this->errors;
         }
+        $response['time'] = new Carbon();
 
         return $response;
     }
@@ -156,7 +157,7 @@ class LedgerAccountController extends Controller
      */
     public function get(Request $request): array
     {
-        $response = ['time' => new Carbon()];
+        $response = [];
         $this->errors = [];
         try {
             $ledgerAccount = $this->fetchAccount($request->all());
@@ -172,6 +173,7 @@ class LedgerAccountController extends Controller
         if (count($this->errors)) {
             $response['errors'] = $this->errors;
         }
+        $response['time'] = new Carbon();
 
         return $response;
     }
@@ -179,11 +181,10 @@ class LedgerAccountController extends Controller
     protected function getSubAccountList(string $ledgerUuid): array
     {
         $idList = [$ledgerUuid];
-        $subAccounts = LedgerAccount::where('parentUuid', $ledgerUuid)
-            ->where('category', true)->get();
+        $subAccounts = LedgerAccount::where('parentUuid', $ledgerUuid)->get();
         /** @var LedgerAccount $account */
         foreach ($subAccounts as $account) {
-            $idList = array_merge($this->getSubAccountList($account->ledgerUuid));
+            $idList = array_merge($idList, $this->getSubAccountList($account->ledgerUuid));
         }
 
         return $idList;
@@ -355,25 +356,16 @@ class LedgerAccountController extends Controller
      * Update the specified resource in storage.
      *
      * @param Request $request
-     * @param string $uuid
      * @return array
      */
-    public function update(Request $request, string $uuid): array
+    public function update(Request $request): array
     {
-        $response = ['time' => new Carbon()];
+        $response = [];
         $this->errors = [];
         $inTransaction = false;
         try {
-            /** @var LedgerAccount $ledgerAccount */
-            $ledgerAccount = LedgerAccount::where('ledgerUuid', $uuid)->first();
-            if ($ledgerAccount === null) {
-                $this->errors[] = __(
-                    "Account with uuid :uuid not found.",
-                    ['uuid' => $uuid]
-                );
-                throw Breaker::fromCode(Breaker::BAD_ACCOUNT);
-            }
             $input = $request->all();
+            $ledgerAccount = $this->fetchAccount($input);
             $ledgerAccount->checkRevision($input['revision'] ?? null);
 
             $rules = LedgerAccount::root()->flex->rules;
@@ -417,15 +409,21 @@ class LedgerAccountController extends Controller
             }
 
             $this->updateFlags($ledgerAccount, $parsed);
+            $this->updateNames($ledgerAccount, $parsed);
 
             if (isset($parsed['extra'])) {
                 $ledgerAccount->extra = $parsed['extra'];
             }
+            $ledgerAccount->save();
             DB::commit();
             $inTransaction = false;
+            $ledgerAccount->refresh();
             $this->success($request);
             $response['account'] = $ledgerAccount->toResponse();
         } catch (Breaker $exception) {
+            if ($exception->getCode() === Breaker::BAD_REVISION) {
+                $this->errors[] = $exception->getMessage();
+            }
             $this->warning($exception);
         } catch (QueryException $exception) {
             $this->dbException($exception);
@@ -440,6 +438,7 @@ class LedgerAccountController extends Controller
         if (count($this->errors)) {
             $response['errors'] = $this->errors;
         }
+        $response['time'] = new Carbon();
 
         return $response;
     }
@@ -454,9 +453,15 @@ class LedgerAccountController extends Controller
         // Set debit/credit, then check
         if (isset($parsed['credit'])) {
             $ledgerAccount->credit = $parsed['credit'];
+            if (!isset($parsed['debit'])) {
+                $ledgerAccount->debit = !$ledgerAccount->credit;
+            }
         }
         if (isset($parsed['debit'])) {
             $ledgerAccount->debit = $parsed['debit'];
+            if (!isset($parsed['credit'])) {
+                $ledgerAccount->credit = !$ledgerAccount->debit;
+            }
         }
         if ($ledgerAccount->credit && $ledgerAccount->debit) {
             $this->errors[] = __(
@@ -478,6 +483,22 @@ class LedgerAccountController extends Controller
             // For lack of answers to these questions...
             $this->errors[] = __("Account closing not yet implemented.");
             throw Breaker::fromCode(Breaker::NOT_IMPLEMENTED);
+        }
+    }
+
+    protected function updateNames(LedgerAccount $ledgerAccount, array $parsed)
+    {
+        foreach ($parsed['names'] as $name) {
+            /** @var LedgerName $ledgerName */
+            /** @noinspection PhpUndefinedMethodInspection */
+            $ledgerName = $ledgerAccount->names->firstWhere('language', $name['language']);
+            if ($ledgerName === null) {
+                $ledgerName = new LedgerName();
+                $ledgerName->ownerUuid = $ledgerAccount->ledgerUuid;
+                $ledgerName->language = $name['language'];
+            }
+            $ledgerName->name = $name['name'];
+            $ledgerName->save();
         }
     }
 

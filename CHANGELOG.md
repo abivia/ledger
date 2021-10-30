@@ -190,12 +190,13 @@ Either the errors or accounts attribute will be present, not both.
 }
 ```
 
-`api/ledger/account/update{uuid}`
+`api/ledger/account/update`
 
 ```json
 {
     "revision": "hash code",
-    "code": "unique account code that passes ledger.rules.account.codeFormat regex",
+    "uuid": "account UUID",
+    "code": "account code",
     "names": [
         {
             "name": "New Account Name translation",

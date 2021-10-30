@@ -26,7 +26,7 @@ class AddController extends LedgerAccountController
     public function run(Request $request): array
     {
         $inTransaction = false;
-        $response = ['time' => new Carbon()];
+        $response = [];
         $this->errors = [];
         try {
             $parsed = $this->validateRequest($request);
@@ -58,6 +58,8 @@ class AddController extends LedgerAccountController
         if ($inTransaction) {
             DB::rollBack();
         }
+        $response['time'] = new Carbon();
+
         return $response;
     }
 

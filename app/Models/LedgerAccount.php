@@ -15,8 +15,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * Ledger Account Definition
  *
- * @method static int count() Provided by model.
- * @method static LedgerAccount create(array $attributes) Provided by model.
  * @property bool $category Set if this is a category account (no transactions/balances).
  * @property bool $closed Set if this account is closed to further transactions.
  * @property string $code The application code (chart of accounts code) for this account.
@@ -26,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property object $extra Additional application level information.
  * @property object $flex JSON-formatted internal information (via accessor).
  * @property string $ledgerUuid UUID primary key.
+ * @property LedgerName[] $names Associated names
  * @property string $parentUuid The parent account (or null if this is the root).
  * @property Carbon $revision Revision timestamp to detect race condition on update.
  * @property Carbon $updated_at When the record was updated.
@@ -47,6 +46,14 @@ class LedgerAccount extends Model
         'extra' => null,
         'parentUuid' => null,
     ];
+    protected $casts = [
+        'category' => 'boolean',
+        'closed' => 'boolean',
+        'credit' => 'boolean',
+        'debit' => 'boolean',
+        'revision' => 'timestamp',
+    ];
+    protected $dateFormat = 'Y-m-d H:i:s.u';
     protected $fillable = [
         'category', 'code', 'credit', 'debit', 'extra', 'parentUuid'
     ];
@@ -131,19 +138,25 @@ class LedgerAccount extends Model
     /**
      * @param array $options
      * @return array
-     * @noinspection PhpUndefinedFieldInspection
      */
     public function toResponse(array $options = []): array
     {
         $response = [
             'uuid' => $this->ledgerUuid,
             'code' => $this->code,
-            'names' => []
         ];
+        if ($this->parentUuid !== null) {
+            $response['parentUuid'] = $this->parentUuid;
+        }
+        $response['names'] = [];
         /** @var LedgerName $name */
         foreach ($this->names as $name) {
             $response['names'][] = $name->toResponse();
         }
+        $response['category'] = $this->category;
+        $response['debit'] = $this->debit;
+        $response['credit'] = $this->credit;
+        $response['closed'] = $this->closed;
         if ($this->extra !== null) {
             $response['extra'] = $this->extra;
         }

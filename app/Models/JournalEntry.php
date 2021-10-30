@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Traits\UuidPrimaryKey;
 use Carbon\Carbon;
 use DateTime;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -19,7 +20,7 @@ use function bccomp;
  * Records a transaction between accounts.
  *
  * @property array $arguments Translation arguments for the description.
- * @property DateTime $created_at Record creation timestamp.
+ * @property Carbon $created_at Record creation timestamp.
  * @property string $createdBy Record creation entity.
  * @property string $currency The currency for this transaction.
  * @property string $description Description of the transaction (untranslated).
@@ -28,12 +29,13 @@ use function bccomp;
  * @property string $journalEntryId UUID primary key.
  * @property string $language The language this description is written in.
  * @property bool $posted Set when the transaction has been posted to the ledgers.
- * @property DateTime $revision Revision timestamp to detect race condition on update.
+ * @property Carbon $revision Revision timestamp to detect race condition on update.
  * @property string $subJournalUuid UUID of the sub-journal (if any)
- * @property DateTime $transDate The date/time of the transaction.
+ * @property Carbon $transDate The date/time of the transaction.
  * @property int $txn_record_id The primary key in the txn_record table.
- * @property DateTime $updated_at Last record update timestamp.
+ * @property Carbon $updated_at Last record update timestamp.
  * @property string $updatedBy Record update entity.
+ * @mixin Builder
  */
 class JournalEntry extends Model
 {
@@ -42,10 +44,9 @@ class JournalEntry extends Model
     protected $casts = [
         'arguments' => 'array',
         'posted' => 'boolean',
+        'transDate' => 'datetime',
     ];
-    protected $dates = [
-        'trans_date',
-    ];
+    protected $dateFormat = 'Y-m-d H:i:s.u';
     public int $exponent = -1;
     private bool $posting = false;
     protected $primaryKey = 'journalEntryId';

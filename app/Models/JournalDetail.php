@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use RuntimeException;
@@ -13,6 +14,7 @@ use RuntimeException;
  * @property string $journalEntityUuid Optional reference to an associated entity.
  * @property int $journalEntryId The JournalEntry ID that this detail belongs to.
  * @property string $ledgerUuid The ledger account this applies to.
+ * @mixin Builder
  */
 class JournalDetail extends Model
 {
