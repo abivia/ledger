@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Exceptions\Breaker;
 use App\Helpers\Revision;
+use App\Models\Messages\Ledger\Currency;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Database\Eloquent\Builder;
@@ -38,8 +39,22 @@ class LedgerCurrency extends Model
     public function checkRevision(?string $revision)
     {
         if ($revision !== Revision::create($this->revision, $this->updated_at)) {
-            throw Breaker::fromCode(Breaker::BAD_REVISION);
+            throw Breaker::withCode(Breaker::BAD_REVISION);
         }
+    }
+
+    public static function createFromMessage(Currency $message): self
+    {
+        $instance = new static();
+        foreach ($instance->fillable as $property) {
+            if (isset($message->{$property})) {
+                $instance->{$property} = $message->{$property};
+            }
+        }
+        $instance->save();
+        $instance->refresh();
+
+        return $instance;
     }
 
     /**

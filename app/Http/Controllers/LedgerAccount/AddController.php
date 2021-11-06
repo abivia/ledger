@@ -7,6 +7,7 @@ use App\Exceptions\Breaker;
 use App\Http\Controllers\LedgerAccountController;
 use App\Models\LedgerAccount;
 use App\Models\LedgerName;
+use App\Models\Messages\Ledger\Account;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -19,118 +20,98 @@ class AddController extends LedgerAccountController
     /**
      * Adding an account to the ledger.
      *
-     * @param Request $request
-     * @return array
+     * @param Account $message
+     * @return LedgerAccount
+     * @throws Breaker
      */
-    //#[ArrayShape(['time' => "\Illuminate\Support\Carbon", 'account' => "array", 'errors' => "string[]"])]
-    public function run(Request $request): array
+    public function run(Account $message): LedgerAccount
     {
         $inTransaction = false;
-        $response = [];
         $this->errors = [];
         try {
-            $parsed = $this->validateRequest($request);
+            $this->validateRequest($message);
             // check for duplicate
-            if (LedgerAccount::where('code', $parsed['code'])->first() !== null) {
-                $this->errors[] = __(
-                    "Account :code already exists.",
-                    ['code' => $parsed['code']]
+            if (LedgerAccount::where('code', $message->code)->first() !== null) {
+                throw Breaker::withCode(
+                    Breaker::INVALID_OPERATION,
+                    [
+                        __(
+                            "Account :code already exists.",
+                            ['code' => $message->code]
+                        )
+                    ]
                 );
-                throw Breaker::fromCode(Breaker::INVALID_OPERATION);
             }
 
             DB::beginTransaction();
             $inTransaction = true;
-            $ledgerAccount = $this->createAccount($parsed);
+            $ledgerAccount = LedgerAccount::createFromMessage($message);
+            // Create the name records
+            foreach ($message->names as $name) {
+                $name->ownerUuid = $ledgerAccount->ledgerUuid;
+                LedgerName::createFromMessage($name);
+            }
             DB::commit();
             $inTransaction = false;
-            $this->success($request);
-            $response['account'] = $ledgerAccount->toResponse();
-        } catch (Breaker $exception) {
-            $this->warning($exception);
-            $response['errors'] = $this->errors;
-        } catch (QueryException $exception) {
-            $this->dbException($exception);
-            $response['errors'] = $this->errors;
+            $this->auditLog($message);
         } catch (Exception $exception) {
-            $this->unexpectedException($exception);
-        }
-        if ($inTransaction) {
-            DB::rollBack();
-        }
-        $response['time'] = new Carbon();
-
-        return $response;
-    }
-
-    private function createAccount(array $input): LedgerAccount
-    {
-        $ledgerAccount = new LedgerAccount();
-        $ledgerAccount->code = $input['code'];
-        $ledgerAccount->parentUuid = $input['parent']['uuid'];
-        $ledgerAccount->debit = $input['debit'];
-        $ledgerAccount->credit = $input['credit'];
-        $ledgerAccount->category = $input['category'];
-        $ledgerAccount->extra = $input['extra'] ?? null;
-        $ledgerAccount->save();
-        $ledgerAccount->refresh();
-        // Create the name records
-        foreach ($input['names'] as $name) {
-            $name['ownerUuid'] = $ledgerAccount->ledgerUuid;
-            LedgerName::create($name);
+            if ($inTransaction) {
+                DB::rollBack();
+            }
+            throw $exception;
         }
 
         return $ledgerAccount;
     }
 
     /**
-     * @param Request $request
-     * @return array
+     * @param Account $message
+     * @return void
      * @throws Breaker
-     * @throws Exception
      */
-    private function validateRequest(Request $request): array
+    private function validateRequest(Account $message): void
     {
-        $rules = LedgerAccount::root()->flex->rules;
-        [$status, $parsed] = self::parseCreateRequest($request->all(), $rules);
-        if (!$status) {
-            $this->errors = array_merge($this->errors, $parsed);
-            throw Breaker::fromCode(Breaker::BAD_REQUEST);
-        }
-
         // No parent implies the ledger root
-        if (!isset($parsed['parent'])) {
+        if (!isset($message->parent)) {
             $ledgerParent = LedgerAccount::root();
         } else {
             // Fetch the parent
             /** @var LedgerAccount $ledgerParent */
-            $ledgerParent = LedgerAccount::findWith($parsed['parent'])->first();
+            $ledgerParent = LedgerAccount::findWith((array)$message->parent)->first();
             if ($ledgerParent === null) {
-                $this->errors[] = __("Specified parent not found.");
-                throw Breaker::fromCode(Breaker::BAD_ACCOUNT);
+                throw Breaker::withCode(
+                    Breaker::BAD_ACCOUNT, [__("Specified parent not found.")]
+                );
+            }
+            if ($ledgerParent->code === $message->code) {
+                throw Breaker::withCode(
+                    Breaker::BAD_ACCOUNT,
+                    [__(
+                        "Circular parent reference on account :code.",
+                        ['code' => $message->code]
+                    )]
+                );
             }
         }
-        $parsed['parent']['uuid'] = $ledgerParent->ledgerUuid;
+        $message->parent->uuid = $ledgerParent->ledgerUuid;
 
         // Validate and inherit flags
-        if ($parsed['category'] && !$ledgerParent->category) {
-            $this->errors[] = __(
-                "Can't create a category under a parent that is not a category."
+        if ($message->category && !$ledgerParent->category) {
+            throw Breaker::withCode(
+                Breaker::INVALID_OPERATION,
+                [__("Can't create a category under a parent that is not a category.")]
             );
-            throw Breaker::fromCode(Breaker::INVALID_OPERATION);
         }
-        if (!($parsed['credit'] || $parsed['debit'])) {
+        if (!($message->credit || $message->debit)) {
             if (!($ledgerParent->credit || $ledgerParent->debit)) {
-                $this->errors[] = __(
-                    "Unable to inherit debit/credit status from parent."
+                throw Breaker::withCode(
+                    Breaker::INVALID_OPERATION,
+                    [__("Unable to inherit debit/credit status from parent.")]
                 );
-                throw Breaker::fromCode(Breaker::INVALID_OPERATION);
             }
-            $parsed['credit'] = $ledgerParent->credit;
-            $parsed['debit'] = $ledgerParent->debit;
+            $message->credit = $ledgerParent->credit;
+            $message->debit = $ledgerParent->debit;
         }
-
-        return $parsed;
     }
 
 }

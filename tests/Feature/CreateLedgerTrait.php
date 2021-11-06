@@ -5,7 +5,6 @@ namespace Tests\Feature;
 
 trait CreateLedgerTrait {
     protected array $createRequest = [
-        'name' => 'Test Ledger',
         'language' => 'en-CA',
         'domains' => [
             [

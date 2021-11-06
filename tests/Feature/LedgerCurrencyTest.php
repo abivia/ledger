@@ -151,7 +151,7 @@ class LedgerCurrencyTest extends TestCase
         $response = $this->json(
             'post', 'api/v1/ledger/currency/delete', $requestData
         );
-        $actual = $this->isSuccessful($response);
+        $actual = $this->isSuccessful($response, 'success');
 
         // Confirm that a fetch fails
         $requestData = [

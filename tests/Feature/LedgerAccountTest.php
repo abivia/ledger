@@ -216,7 +216,7 @@ class LedgerAccountTest extends TestCase
             'post', 'api/v1/ledger/account/add', $requestData
         );
         $actual = $this->isFailure($response);
-        print_r($actual);
+        //print_r($actual);
     }
 
     public function testDelete()

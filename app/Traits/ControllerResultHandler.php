@@ -2,6 +2,8 @@
 
 namespace App\Traits;
 
+use App\Exceptions\Breaker;
+use App\Helpers\Merge;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -46,6 +48,9 @@ trait ControllerResultHandler
 
     protected function warning(Exception $exception)
     {
+        if ($exception instanceof Breaker) {
+            Merge::arrays($this->errors, $exception->getErrors());
+        }
         Log::channel(env('LEDGER_LOG_CHANNEL', 'stack'))
             ->warning($exception->getMessage(), ['errors' => $this->errors]);
     }

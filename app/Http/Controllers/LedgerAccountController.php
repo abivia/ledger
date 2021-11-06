@@ -9,17 +9,16 @@ use App\Exceptions\Breaker;
 use App\Models\LedgerAccount;
 use App\Models\LedgerBalance;
 use App\Models\LedgerName;
+use App\Models\Messages\Ledger\Account;
+use App\Traits\Audited;
 use App\Traits\ControllerResultHandler;
 use Exception;
-use Illuminate\Database\QueryException;
-use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use stdClass;
 
 class LedgerAccountController extends Controller
 {
+    use Audited;
     use ControllerResultHandler;
 
     protected stdClass $rules;
@@ -33,22 +32,22 @@ class LedgerAccountController extends Controller
         $this->errors[] = __(
             "Errors in request: " . implode(', ', $messages) . "."
         );
-        throw Breaker::fromCode(Breaker::BAD_REQUEST);
+        throw Breaker::withCode(Breaker::BAD_REQUEST);
     }
 
     /**
      * Delete a ledger account (and all sub-accounts). The accounts must be unused.
      *
-     * @param Request $request
+     * @param Account $message
      * @return array
+     * @throws Breaker
      */
-    public function delete(Request $request): array
+    public function delete(Account $message): array
     {
-        $response = [];
         $this->errors = [];
         $inTransaction = false;
         try {
-            $ledgerAccount = $this->fetchAccount($request->all());
+            $ledgerAccount = $this->fetchAccount($message);
             // Ensure there are no sub-accounts with associated transactions
             $relatedAccounts = $this->getSubAccountList($ledgerAccount->ledgerUuid);
             $accountTable = (new LedgerAccount())->getTable();
@@ -61,8 +60,10 @@ class LedgerAccountController extends Controller
                 ->whereIn($accountTable . '.ledgerUuid', $relatedAccounts)
                 ->count();
             if ($subCats !== 0) {
-                $this->errors[] = __("Can't delete: account or sub-accounts have transactions.");
-                throw Breaker::fromCode(Breaker::INVALID_OPERATION);
+                throw Breaker::withCode(
+                    Breaker::INVALID_OPERATION,
+                    [__("Can't delete: account or sub-accounts have transactions.")]
+                );
             }
             $nameTable = (new LedgerName())->getTable();
             DB::beginTransaction();
@@ -75,72 +76,51 @@ class LedgerAccountController extends Controller
                 ->delete();
             DB::commit();
             $inTransaction = false;
-            $this->success($request);
-            $response['accounts'] = $relatedAccounts;
-        } catch (Breaker $exception) {
-            $this->warning($exception);
-        } catch (QueryException $exception) {
-            $this->dbException($exception);
+            $this->auditLog($message);
         } catch (Exception $exception) {
-            $this->unexpectedException($exception);
+            if ($inTransaction) {
+                DB::rollBack();
+            }
+            throw $exception;
         }
 
-        if ($inTransaction) {
-            DB::rollBack();
-        }
-
-        if (count($this->errors)) {
-            $response['errors'] = $this->errors;
-        }
-        $response['time'] = new Carbon();
-
-        return $response;
+        return $relatedAccounts;
     }
 
     /**
-     * @param array $input
+     * @param Account $message
      * @return LedgerAccount
      * @throws Breaker
      */
-    protected function fetchAccount(array $input): LedgerAccount
+    protected function fetchAccount(Account $message): LedgerAccount
     {
-        if (!isset($input['uuid']) && !isset($input['code'])) {
-            $this->errors[] = __(
-                "Request requires either code or uuid.",
-            );
-            throw Breaker::fromCode(Breaker::BAD_REQUEST);
-        }
-
-        // Preference to UUID over code
-        if (isset($input['uuid'])) {
-            $uuid = $input['uuid'];
-            $ledgerAccount = LedgerAccount::find($uuid);
+        // Preference given to UUID over code
+        if (isset($message->uuid)) {
+            $ledgerAccount = LedgerAccount::find($message->uuid);
             if ($ledgerAccount === null) {
-                $this->errors[] = __(
-                    "Account with uuid :uuid not found.",
-                    ['uuid' => $uuid]
+                throw Breaker::withCode(
+                    Breaker::BAD_ACCOUNT,
+                    [__("Account with uuid :uuid not found.", ['uuid' => $message->uuid])]
                 );
-                throw Breaker::fromCode(Breaker::BAD_ACCOUNT);
             }
-            if (isset($input['code'])) {
-                $code = $input['code'];
-                if ($ledgerAccount->code !== $code) {
-                    $this->errors[] = __(
-                        "Account with :uuid does not match requested code :code.",
-                        ['code' => $code, 'uuid' => $uuid]
+            if (isset($message->code)) {
+                if ($ledgerAccount->code !== $message->code) {
+                    throw Breaker::withCode(
+                        Breaker::BAD_ACCOUNT,
+                        [__(
+                            "Account with :uuid does not match requested code :code.",
+                            ['code' => $message->code]
+                        )]
                     );
-                    throw Breaker::fromCode(Breaker::BAD_ACCOUNT);
                 }
             }
         } else {
-            $code = $input['code'];
-            $ledgerAccount = LedgerAccount::where('code', $code)->first();
+            $ledgerAccount = LedgerAccount::where('code', $message->code)->first();
             if ($ledgerAccount === null) {
-                $this->errors[] = __(
-                    "Account with code :code not found.",
-                    ['code' => $code]
+                throw Breaker::withCode(
+                    Breaker::BAD_ACCOUNT,
+                    [__("Account with code :code not found.", ['code' => $message->code])]
                 );
-                throw Breaker::fromCode(Breaker::BAD_ACCOUNT);
             }
         }
 
@@ -150,30 +130,13 @@ class LedgerAccountController extends Controller
     /**
      * Fetch a single account
      *
-     * @param Request $request
-     * @return array
+     * @param Account $message
+     * @return LedgerAccount
+     * @throws Breaker
      */
-    public function get(Request $request): array
+    public function get(Account $message): LedgerAccount
     {
-        $response = [];
-        $this->errors = [];
-        try {
-            $ledgerAccount = $this->fetchAccount($request->all());
-            $response['account'] = $ledgerAccount->toResponse();
-        } catch (Breaker $exception) {
-            $this->warning($exception);
-        } catch (QueryException $exception) {
-            $this->dbException($exception);
-        } catch (Exception $exception) {
-            $this->unexpectedException($exception);
-        }
-
-        if (count($this->errors)) {
-            $response['errors'] = $this->errors;
-        }
-        $response['time'] = new Carbon();
-
-        return $response;
+        return $this->fetchAccount($message);
     }
 
     protected function getSubAccountList(string $ledgerUuid): array
@@ -189,327 +152,159 @@ class LedgerAccountController extends Controller
     }
 
     /**
-     * Validate request data to define an account other than the root.
-     *
-     * @param array $data Request data
-     * @param stdClass|null $rules Ledger rules.
-     * @return array [bool, array] On success the boolean is true and the array contains
-     * valid account data. On failure, the boolean is false and the array is a list of
-     * error messages.
-     */
-    public static function parseCreateRequest(array $data, stdClass $rules = null): array
-    {
-        $errors = [];
-        $result = [];
-        $status = true;
-
-        $format = $rules->account->codeFormat ?? '';
-        if (!($data['code'] ?? false)) {
-            $errors[] = 'the code property is required';
-            $status = false;
-        } else {
-            if ($format !== '') {
-                if (preg_match($format, $data['code'])) {
-                    $result['code'] = $data['code'];
-                } else {
-                    $status = false;
-                    $errors[] = "account code must match the form $format";
-                }
-            }
-        }
-        [$subStatus, $names] = LedgerNameController::parseRequestList(
-            $data['names'] ?? [], true, 1
-        );
-        if ($subStatus) {
-            $result['names'] = $names;
-        } else {
-            $status = false;
-            $errors = array_merge($errors, $names);
-        }
-        if (isset($data['parent'])) {
-            [$subStatus, $parent] = self::parseParent($data['parent'], $format);
-            if ($subStatus) {
-                $result['parent'] = $parent;
-            } else {
-                $status = false;
-                $errors = array_merge($errors, $parent);
-            }
-        }
-        $result['category'] = $data['category'] ?? false;
-        $result['closed'] = $data['closed'] ?? false;
-        $result['credit'] = $data['credit'] ?? false;
-        $result['debit'] = $data['debit'] ?? false;
-        if ($result['credit'] && $result['debit']) {
-            $status = false;
-            $errors[] = "account cannot be both debit and credit";
-        }
-
-        return [$status, $status ? $result : $errors];
-    }
-
-    protected static function parseParent(array $data, string $format): array
-    {
-        $errors = [];
-        $result = [];
-        $status = true;
-        if (isset($data['code'])) {
-            $result['code'] = $data['code'];
-        }
-        if (isset($data['uuid'])) {
-            $result['uuid'] = $data['uuid'];
-        }
-        if (count($result) === 0) {
-            $status = false;
-            $errors[] = 'parent must include at least one of code or uuid';
-        }
-        if (isset($result['code']) && $format !== '') {
-            if (!preg_match($format, $result['code'])) {
-                $status = false;
-                $errors[] = "account code must match the form $format";
-            }
-        }
-
-        return [$status, $status ? $result : $errors];
-    }
-
-    /**
-     * Validate request data to update an account.
-     *
-     * @param array $data Request data
-     * @param stdClass|null $rules Ledger rules.
-     * @return array [bool, array] On success the boolean is true and the array contains
-     * valid account data. On failure, the boolean is false and the array is a list of
-     * error messages.
-     */
-    public static function parseUpdateRequest(array $data, stdClass $rules = null): array
-    {
-        $errors = [];
-        $result = [];
-        $status = true;
-
-        if ($data['code'] ?? false) {
-            $format = $rules->account->codeFormat ?? '';
-            if ($format !== '') {
-                if (preg_match($format, $data['code'])) {
-                    $result['code'] = $data['code'];
-                } else {
-                    $status = false;
-                    $errors[] = "account code must match the form $format";
-                }
-            }
-        }
-        [$subStatus, $names] = LedgerNameController::parseRequestList(
-            $data['names'] ?? [], true
-        );
-        if ($subStatus) {
-            $result['names'] = $names;
-        } else {
-            $status = false;
-            $errors = array_merge($errors, $names);
-        }
-        if (isset($data['parent'])) {
-            $format = $rules->account->codeFormat ?? '';
-            if (isset($data['parent'])) {
-                [$subStatus, $parent] = self::parseParent($data['parent'], $format);
-                if ($subStatus) {
-                    $result['parent'] = $parent;
-                } else {
-                    $status = false;
-                    $errors = array_merge($errors, $parent);
-                }
-            }
-        }
-        if (isset($data['category'])) {
-            $result['category'] = $data['category'];
-        }
-        if (isset($data['closed'])) {
-            $result['closed'] = $data['closed'];
-        }
-
-        if (($data['credit'] ?? false) && ($data['debit'] ?? false)) {
-            $status = false;
-            $errors[] = "account cannot be both debit and credit";
-        } else {
-            if (isset($data['credit'])) {
-                $result['credit'] = $data['credit'];
-            }
-            if (isset($data['debit'])) {
-                $result['debit'] = $data['debit'];
-            }
-        }
-
-        return [$status, $status ? $result : $errors];
-    }
-
-    /**
      * Update an account.
      *
-     * @param Request $request
-     * @return array
+     * @param Account $message
+     * @return LedgerAccount
+     * @throws Breaker
      */
-    public function update(Request $request): array
+    public function update(Account $message): LedgerAccount
     {
-        $response = [];
         $this->errors = [];
         $inTransaction = false;
         try {
-            $input = $request->all();
-            $ledgerAccount = $this->fetchAccount($input);
-            $ledgerAccount->checkRevision($input['revision'] ?? null);
+            $ledgerAccount = $this->fetchAccount($message);
+            $ledgerAccount->checkRevision($message->revision);
 
-            $rules = LedgerAccount::root()->flex->rules;
-            /** @var array $parsed */
-            [$status, $parsed] = self::parseUpdateRequest($input, $rules);
-            if (!$status) {
-                $this->badRequest($parsed);
-            }
             DB::beginTransaction();
             $inTransaction = true;
-            if (isset($parsed['code'])) {
-                $ledgerAccount->code = $parsed['code'];
+            if ($message->code !== null) {
+                $ledgerAccount->code = $message->code;
             }
 
             // Update the parent
-            $ledgerParent = $this->updateParent($ledgerAccount, $parsed);
+            $ledgerParent = $this->updateParent($ledgerAccount, $message);
 
             // Apply a category flag
-            if (isset($parsed['category'])) {
-                if ($parsed['category']) {
+            if ($ledgerAccount->category !== $message->category) {
+                if ($message->category) {
                     // Verify that the parent is a category or root
                     if (!$ledgerParent->category) {
                         $this->errors[] = __(
                             "Account can't be a category because parent is not a category."
                         );
-                        throw Breaker::fromCode(Breaker::INVALID_OPERATION);
+                        throw Breaker::withCode(Breaker::INVALID_OPERATION);
                     }
-                } elseif ($ledgerAccount->category) {
+                } else {
                     // Verify that no children are categories
                     $subCats = LedgerAccount::where('parentUuid', $ledgerAccount->ledgerUuid)
                         ->where('category', true)
                         ->count();
                     if ($subCats !== 0) {
-                        $this->errors[] = __(
-                            "Can't make account a non-category because at least"
-                            . " one sub-account is a category."
+                        throw Breaker::withCode(
+                            Breaker::INVALID_OPERATION,
+                            [__(
+                                "Can't make account a non-category because at least"
+                                . " one sub-account is a category."
+                            )]
                         );
-                        throw Breaker::fromCode(Breaker::INVALID_OPERATION);
                     }
                 }
             }
 
-            $this->updateFlags($ledgerAccount, $parsed);
-            $this->updateNames($ledgerAccount, $parsed);
+            $this->updateFlags($ledgerAccount, $message);
+            $this->updateNames($ledgerAccount, $message);
 
-            if (isset($parsed['extra'])) {
-                $ledgerAccount->extra = $parsed['extra'];
+            if (isset($message->extra)) {
+                $ledgerAccount->extra = $message->extra;
             }
             $ledgerAccount->save();
             DB::commit();
             $inTransaction = false;
             $ledgerAccount->refresh();
-            $this->success($request);
-            $response['account'] = $ledgerAccount->toResponse();
-        } catch (Breaker $exception) {
-            if ($exception->getCode() === Breaker::BAD_REVISION) {
-                $this->errors[] = $exception->getMessage();
-            }
-            $this->warning($exception);
-        } catch (QueryException $exception) {
-            $this->dbException($exception);
+            $this->auditLog($message);
         } catch (Exception $exception) {
-            $this->unexpectedException($exception);
+            if ($inTransaction) {
+                DB::rollBack();
+            }
+            throw $exception;
         }
 
-        if ($inTransaction) {
-            DB::rollBack();
-        }
-
-        if (count($this->errors)) {
-            $response['errors'] = $this->errors;
-        }
-        $response['time'] = new Carbon();
-
-        return $response;
+        return $ledgerAccount;
     }
 
     /**
      * @param LedgerAccount $ledgerAccount
-     * @param array $parsed
+     * @param Account $message
      * @throws Breaker
      */
-    protected function updateFlags(LedgerAccount $ledgerAccount, array $parsed)
+    protected function updateFlags(LedgerAccount $ledgerAccount, Account $message)
     {
         // Set debit/credit, then check
-        if (isset($parsed['credit'])) {
-            $ledgerAccount->credit = $parsed['credit'];
-            if (!isset($parsed['debit'])) {
-                $ledgerAccount->debit = !$ledgerAccount->credit;
-            }
+        if ($message->credit !== null && $ledgerAccount->credit != $message->credit) {
+            $ledgerAccount->credit = $message->credit;
+            $ledgerAccount->debit = !$ledgerAccount->credit;
         }
-        if (isset($parsed['debit'])) {
-            $ledgerAccount->debit = $parsed['debit'];
-            if (!isset($parsed['credit'])) {
-                $ledgerAccount->credit = !$ledgerAccount->debit;
-            }
+        if ($message->debit !== null && $ledgerAccount->debit != $message->debit) {
+            $ledgerAccount->debit = $message->debit;
+            $ledgerAccount->credit = !$ledgerAccount->debit;
         }
         if ($ledgerAccount->credit && $ledgerAccount->debit) {
-            $this->errors[] = __(
-                "Account can not have both debit and credit flags set."
+            throw Breaker::withCode(
+                Breaker::INVALID_OPERATION,
+                [__(
+                    "Account can not have both debit and credit flags set."
+                )]
             );
-            throw Breaker::fromCode(Breaker::INVALID_OPERATION);
         }
-        if (!$ledgerAccount->credit && !$ledgerAccount->debit) {
+        if ($ledgerAccount->credit === false && $ledgerAccount->debit === false) {
             // Must ensure that no sub-accounts are category accounts
             // TODO: implement this.
-            $this->errors[] = __(
-                "Debit and credit both cleared not yet implemented."
+            throw Breaker::withCode(
+                Breaker::NOT_IMPLEMENTED,
+                [__(
+                    "Debit and credit both cleared not yet implemented."
+                )]
             );
-            throw Breaker::fromCode(Breaker::NOT_IMPLEMENTED);
         }
-        if (isset($parsed['closed'])) {
+        if ($message->closed) {
             // We need to check balances before closing the account
             // Is it possible to have sub-accounts still open?
             // Does closing a parent account just mean you can't post to it?
             // For lack of answers to these questions...
             // TODO: implement this.
-            $this->errors[] = __("Account closing not yet implemented.");
-            throw Breaker::fromCode(Breaker::NOT_IMPLEMENTED);
+            throw Breaker::withCode(
+                Breaker::NOT_IMPLEMENTED,
+                [__("Account closing not yet implemented.")]
+            );
         }
     }
 
-    protected function updateNames(LedgerAccount $ledgerAccount, array $parsed)
+    protected function updateNames(LedgerAccount $ledgerAccount, Account $message)
     {
-        foreach ($parsed['names'] as $name) {
+        foreach ($message->names as $name) {
             /** @var LedgerName $ledgerName */
             /** @noinspection PhpUndefinedMethodInspection */
-            $ledgerName = $ledgerAccount->names->firstWhere('language', $name['language']);
+            $ledgerName = $ledgerAccount->names->firstWhere('language', $name->language);
             if ($ledgerName === null) {
                 $ledgerName = new LedgerName();
                 $ledgerName->ownerUuid = $ledgerAccount->ledgerUuid;
-                $ledgerName->language = $name['language'];
+                $ledgerName->language = $name->language;
             }
-            $ledgerName->name = $name['name'];
+            $ledgerName->name = $name->name;
             $ledgerName->save();
         }
     }
 
     /**
      * @param LedgerAccount $ledgerAccount
-     * @param array $parsed
+     * @param Account $message
      * @return LedgerAccount
      * @throws Breaker
      * @throws Exception
      */
-    protected function updateParent(LedgerAccount $ledgerAccount, array $parsed): LedgerAccount
+    protected function updateParent(LedgerAccount $ledgerAccount, Account $message): LedgerAccount
     {
-        if ($parsed['parent'] ?? false) {
+        if ($message->parent !== null) {
             // Get the new parent record
             /** @var LedgerAccount $ledgerParent */
-            $ledgerParent = LedgerAccount::findWith($parsed['parent'])->first();
+            $ledgerParent = LedgerAccount::findWith((array)$message->parent)->first();
             if ($ledgerParent === null) {
-                $this->errors[] = __("Specified parent not found.");
-                throw Breaker::fromCode(Breaker::BAD_ACCOUNT);
+                throw Breaker::withCode(
+                    Breaker::BAD_ACCOUNT, [__("Specified parent not found.")]
+                );
             }
+            // TODO: need to ensure the account graph is acyclic and parents reach the root.
             $ledgerAccount->parentUuid = $ledgerParent->ledgerUuid;
         } else {
             // Get the existing parent

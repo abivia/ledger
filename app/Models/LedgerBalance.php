@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
-use DateTime;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id Primary key
  * @property string $ledgerUuid ID of the ledger this balance applies to.
  * @property Carbon $updated_at When the record was updated.
+ * @mixin Builder
  */
 class LedgerBalance extends Model
 {

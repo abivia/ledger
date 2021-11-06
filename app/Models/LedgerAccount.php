@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Exceptions\Breaker;
+use App\Helpers\Merge;
 use App\Helpers\Revision;
+use App\Models\Messages\Ledger\Account;
 use App\Traits\UuidPrimaryKey;
 use Carbon\Carbon;
 use Exception;
@@ -11,6 +13,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\App;
+use stdClass;
 
 /**
  * Ledger Account Definition
@@ -46,6 +50,15 @@ class LedgerAccount extends Model
         'extra' => null,
         'parentUuid' => null,
     ];
+
+    /**
+     * @var stdClass Temporary rules instance while creating a ledger
+     */
+    private static stdClass $bootRules;
+
+    /**
+     * @var string[] Casts for table columns
+     */
     protected $casts = [
         'category' => 'boolean',
         'closed' => 'boolean',
@@ -53,15 +66,28 @@ class LedgerAccount extends Model
         'debit' => 'boolean',
         'revision' => 'timestamp',
     ];
+
+    /**
+     * @var string Override timestamps to get microseconds.
+     */
     protected $dateFormat = 'Y-m-d H:i:s.u';
     protected $fillable = [
         'category', 'code', 'credit', 'debit', 'extra', 'parentUuid'
     ];
+
     public $incrementing = false;
     protected $keyType = 'string';
     protected $primaryKey = 'ledgerUuid';
 
     private static ?LedgerAccount $root = null;
+
+    public static function bootRules(array $data)
+    {
+        if (!isset(self::$bootRules)) {
+            self::$bootRules = new stdClass();
+        }
+        Merge::objects(self::$bootRules, json_decode(json_encode($data)));
+    }
 
     /**
      * @param ?string $revision
@@ -70,8 +96,25 @@ class LedgerAccount extends Model
     public function checkRevision(?string $revision)
     {
         if ($revision !== Revision::create($this->revision, $this->updated_at)) {
-            throw Breaker::fromCode(Breaker::BAD_REVISION);
+            throw Breaker::withCode(Breaker::BAD_REVISION);
         }
+    }
+
+    public static function createFromMessage(Account $message): self
+    {
+        $instance = new static();
+        foreach ($instance->fillable as $property) {
+            if (isset($message->{$property})) {
+                $instance->{$property} = $message->{$property};
+            }
+        }
+        if ($message->parent !== null) {
+            $instance->parentUuid = $message->parent->uuid;
+        }
+        $instance->save();
+        $instance->refresh();
+
+        return $instance;
     }
 
     /**
@@ -129,6 +172,24 @@ class LedgerAccount extends Model
         return self::$root;
     }
 
+    public static function rules()
+    {
+        if (self::$root === null) {
+            self::loadRoot();
+            if (self::$root === null) {
+                if (!isset(self::$bootRules)) {
+                    self::$bootRules = new stdClass();
+                    self::$bootRules->domain ??= new stdClass();
+                    self::$bootRules->domain->default ??= 'GJ';
+                    self::$bootRules->language ??= new stdClass();
+                    self::$bootRules->language->default ??= App::getLocale();
+                }
+                return self::$bootRules;
+            }
+        }
+        return self::$root->flex->rules;
+    }
+
     /** @noinspection PhpUnused */
     public function setFlexAttribute($value)
     {
@@ -141,10 +202,10 @@ class LedgerAccount extends Model
      */
     public function toResponse(array $options = []): array
     {
-        $response = [
-            'uuid' => $this->ledgerUuid,
-            'code' => $this->code,
-        ];
+        $response = ['uuid' => $this->ledgerUuid];
+        if ($this->code !== '') {
+            $response['code'] = $this->code;
+        }
         if ($this->parentUuid !== null) {
             $response['parentUuid'] = $this->parentUuid;
         }

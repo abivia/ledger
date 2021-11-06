@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Messages\Ledger\Domain;
 use App\Traits\UuidPrimaryKey;
 use Carbon\Carbon;
 use DateTime;
@@ -28,7 +29,25 @@ class LedgerDomain extends Model
     use HasFactory, UuidPrimaryKey;
 
     protected $dateFormat = 'Y-m-d H:i:s.u';
+    protected $fillable = [
+        'code', 'currencyDefault', 'extra', 'ownerUuid', 'subJournals',
+    ];
     public $incrementing = false;
     protected $keyType = 'string';
     public $primaryKey = 'domainUuid';
+
+    public static function createFromMessage(Domain $message): self
+    {
+        $instance = new static();
+        foreach ($instance->fillable as $property) {
+            if (isset($message->{$property})) {
+                $instance->{$property} = $message->{$property};
+            }
+        }
+        $instance->save();
+        $instance->refresh();
+
+        return $instance;
+    }
+
 }
