@@ -18,7 +18,7 @@ class Currency extends Message
      * Validate request data to define a currency.
      *
      * @param array $data
-     * @param string $method The request method.
+     * @param int $opFlag
      * @return Currency
      * @throws Breaker
      */
@@ -26,45 +26,54 @@ class Currency extends Message
     : Currency {
         $errors = [];
         $result = new static();
-        $status = true;
 
-        if (!($data['code'] ?? false)) {
-            $errors[] = __('the code property is required');
-            $status = false;
-        } else {
+        if (($data['code'] ?? false)) {
             $result->code = strtoupper($data['code']);
         }
 
-        if (!($opFlag & self::OP_DELETE)) {
-            $hasDecimals = isset($data['decimals']);
-            $decimalsIsNumeric = $hasDecimals && is_numeric($data['decimals']);
-            if ($decimalsIsNumeric) {
-                $result->decimals = (int)$data['decimals'];
-            } else {
-                if ($opFlag & self::OP_ADD) {
-                    $errors[] = __('a numeric decimals property is required');
-                    $status = false;
-                } elseif ($hasDecimals) {
-                    $errors[] = __('decimals property must be numeric');
-                    $status = false;
-                }
-            }
+        if (
+            !($opFlag & self::OP_DELETE)
+            && isset($data['decimals'])
+            && is_numeric($data['decimals'])
+        ) {
+            $result->decimals = (int)$data['decimals'];
         }
         if ($opFlag & self::OP_UPDATE) {
-            if (!($data['revision'] ?? false)) {
-                $errors[] = __('the revision property is required');
-                $status = false;
-            } else {
+            if (isset($data['revision'])) {
                 $result->revision = $data['revision'];
             }
-            if ($data['toCode'] ?? false) {
+            if (isset($data['toCode'])) {
                 $result->toCode = strtoupper($data['toCode']);
             }
         }
-        if (!$status) {
-            throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);
+        if ($opFlag & self::OP_VALIDATE) {
+            $result->validate($opFlag);
         }
 
         return $result;
+    }
+
+    public function validate(int $opFlag): self
+    {
+        $errors = [];
+        if (!isset($this->code)) {
+            $errors[] = __('the code property is required');
+        }
+
+        if (!($opFlag & (self::OP_DELETE | self::OP_GET))) {
+            if (!isset($this->decimals)) {
+                $errors[] = __('a numeric decimals property is required');
+            }
+        }
+        if ($opFlag & self::OP_UPDATE) {
+            if (!isset($this->revision)) {
+                $errors[] = __('the revision property is required');
+            }
+        }
+        if (count($errors) !== 0) {
+            throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);
+        }
+
+        return $this;
     }
 }

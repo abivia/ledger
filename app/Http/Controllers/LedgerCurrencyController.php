@@ -9,6 +9,7 @@ use App\Models\LedgerBalance;
 use App\Models\LedgerCurrency;
 use App\Models\LedgerDomain;
 use App\Models\Messages\Ledger\Currency;
+use App\Models\Messages\Message;
 use App\Traits\Audited;
 use Exception;
 use Illuminate\Database\QueryException;
@@ -29,6 +30,7 @@ class LedgerCurrencyController extends Controller
      */
     public function add(Currency $message): LedgerCurrency
     {
+        $message->validate(Message::OP_ADD);
         // check for duplicates
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
         if (LedgerCurrency::where('code', $message->code)->first() !== null) {
@@ -61,7 +63,8 @@ class LedgerCurrencyController extends Controller
      */
     public function delete(Currency $message)
     {
-        $this->errors = [];
+        $message->validate(Message::OP_DELETE);
+        $errors = [];
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
         $ledgerCurrency = LedgerCurrency::find($message->code);
         if ($ledgerCurrency === null) {
@@ -77,7 +80,7 @@ class LedgerCurrencyController extends Controller
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
         $used = JournalEntry::where('currency', $message->code)->count();
         if ($used !== 0) {
-            $this->errors[] = __(
+            $errors[] = __(
                 "Can't delete: transactions use the :code currency.",
                 ['code' => $message->code]
             );
@@ -86,7 +89,7 @@ class LedgerCurrencyController extends Controller
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
         $used = LedgerBalance::where('currency', $message->code)->count();
         if ($used !== 0) {
-            $this->errors[] = __(
+            $errors[] = __(
                 "Can't delete: ledger accounts use the :code currency.",
                 ['code' => $message->code]
             );
@@ -95,13 +98,13 @@ class LedgerCurrencyController extends Controller
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
         $used = LedgerDomain::where('currencyDefault', $message->code)->count();
         if ($used !== 0) {
-            $this->errors[] = __(
+            $errors[] = __(
                 "Can't delete: ledger domains use the :code currency.",
                 ['code' => $message->code]
             );
         }
-        if (count($this->errors)) {
-            throw Breaker::withCode(Breaker::INVALID_OPERATION, $this->errors);
+        if (count($errors)) {
+            throw Breaker::withCode(Breaker::INVALID_OPERATION, $errors);
         }
         $ledgerCurrency->delete();
         $this->auditLog($message);
@@ -136,10 +139,8 @@ class LedgerCurrencyController extends Controller
      */
     public function get(Currency $message): LedgerCurrency
     {
-        $ledgerCurrency = $this->fetch($message->code);
-        $this->auditLog($message);
-
-        return $ledgerCurrency;
+        $message->validate(Message::OP_GET);
+        return $this->fetch($message->code);
     }
 
     /**
@@ -151,7 +152,7 @@ class LedgerCurrencyController extends Controller
      */
     public function update(Currency $message): LedgerCurrency
     {
-        $this->errors = [];
+        $message->validate(Message::OP_UPDATE);
         $inTransaction = false;
         try {
             $ledgerCurrency = $this->fetch($message->code);

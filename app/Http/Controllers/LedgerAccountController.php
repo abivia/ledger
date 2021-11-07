@@ -10,6 +10,7 @@ use App\Models\LedgerAccount;
 use App\Models\LedgerBalance;
 use App\Models\LedgerName;
 use App\Models\Messages\Ledger\Account;
+use App\Models\Messages\Message;
 use App\Traits\Audited;
 use App\Traits\ControllerResultHandler;
 use Exception;
@@ -44,6 +45,7 @@ class LedgerAccountController extends Controller
      */
     public function delete(Account $message): array
     {
+        $message->validate(Message::OP_DELETE);
         $this->errors = [];
         $inTransaction = false;
         try {
@@ -136,6 +138,7 @@ class LedgerAccountController extends Controller
      */
     public function get(Account $message): LedgerAccount
     {
+        $message->validate(Message::OP_GET);
         return $this->fetchAccount($message);
     }
 
@@ -160,6 +163,7 @@ class LedgerAccountController extends Controller
      */
     public function update(Account $message): LedgerAccount
     {
+        $message->validate(Message::OP_UPDATE);
         $this->errors = [];
         $inTransaction = false;
         try {

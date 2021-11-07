@@ -22,23 +22,32 @@ class ParentRef extends Message
      */
     public static function fromRequest(array $data, int $opFlag): self
     {
-        $errors = [];
         $parentRef = new static();
-        $empty = true;
         if (isset($data['code'])) {
             $parentRef->code = $data['code'];
-            $empty = false;
         }
         if (isset($data['uuid'])) {
             $parentRef->uuid = $data['uuid'];
-            $empty = false;
         }
-        if ($empty) {
+        if ($opFlag & self::OP_VALIDATE) {
+            $parentRef->validate($opFlag);
+        }
+
+        return $parentRef;
+    }
+
+    /**
+     * @throws Breaker
+     */
+    public function validate(int $opFlag): self
+    {
+        $errors = [];
+        if (!isset($this->code) && !isset($this->uuid)) {
             $errors[] = 'parent must include at least one of code or uuid';
         }
         $codeFormat = LedgerAccount::rules()->account->codeFormat ?? '';
-        if (isset($result['code']) && $codeFormat !== '') {
-            if (!preg_match($codeFormat, $result['code'])) {
+        if (isset($this->code) && $codeFormat !== '') {
+            if (!preg_match($codeFormat, $this->code)) {
                 $errors[] = "account code must match the form $codeFormat";
             }
         }
@@ -46,7 +55,6 @@ class ParentRef extends Message
             throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);
         }
 
-        return $parentRef;
+        return $this;
     }
-
 }

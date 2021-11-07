@@ -21,7 +21,9 @@ class DomainTest extends TestCase
 
     public function testFromRequestAdd()
     {
-        $domain = Domain::fromRequest($this->base, Message::OP_ADD);
+        $domain = Domain::fromRequest(
+            $this->base, Message::OP_ADD | Message::OP_VALIDATE
+        );
         $this->assertEquals('GL', $domain->code);
         $this->assertCount(2, $domain->names);
         $this->assertEquals('CAD', $domain->currencyDefault);

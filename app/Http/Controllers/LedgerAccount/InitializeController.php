@@ -224,6 +224,7 @@ class InitializeController extends LedgerAccountController
      */
     public function run(Create $message): LedgerAccount
     {
+        $message->validate(Message::OP_CREATE);
         $this->errors = [];
         $inTransaction = false;
         try {

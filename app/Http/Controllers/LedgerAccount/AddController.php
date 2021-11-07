@@ -8,6 +8,7 @@ use App\Http\Controllers\LedgerAccountController;
 use App\Models\LedgerAccount;
 use App\Models\LedgerName;
 use App\Models\Messages\Ledger\Account;
+use App\Models\Messages\Message;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -26,6 +27,7 @@ class AddController extends LedgerAccountController
      */
     public function run(Account $message): LedgerAccount
     {
+        $message->validate(Message::OP_ADD);
         $inTransaction = false;
         $this->errors = [];
         try {

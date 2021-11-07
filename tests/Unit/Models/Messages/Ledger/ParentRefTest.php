@@ -17,7 +17,9 @@ class ParentRefTest extends TestCase
 
     public function testFromRequest()
     {
-        $parentRef = ParentRef::fromRequest($this->base, Message::OP_ADD);
+        $parentRef = ParentRef::fromRequest(
+            $this->base, Message::OP_ADD | Message::OP_VALIDATE
+        );
         $this->assertEquals('1010', $parentRef->code);
         $this->assertEquals('some-fake-uuid', $parentRef->uuid);
     }

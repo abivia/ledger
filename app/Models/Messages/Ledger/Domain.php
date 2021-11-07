@@ -3,7 +3,6 @@
 namespace App\Models\Messages\Ledger;
 
 use App\Exceptions\Breaker;
-use App\Helpers\Merge;
 use App\Models\Messages\Message;
 
 class Domain extends Message
@@ -14,37 +13,49 @@ class Domain extends Message
     public string $ownerUuid;
     public bool $subJournals;
 
+    /**
+     * @param array $data
+     * @param int $opFlag
+     * @return Domain
+     * @throws Breaker
+     */
     public static function fromRequest(array $data, int $opFlag): self
     {
-        $errors = [];
-        $status = true;
         $domain = new static();
         if ($data['code'] ?? false) {
             $domain->code = $data['code'];
-        } else {
-            $errors[] = 'the code property is required';
-            $status = false;
         }
-        if (!($data['names'] ?? false)) {
-            $errors[] = 'the names property is required';
-            $status = false;
-        }
-        if ($status) {
-            try {
-                $domain->names = Name::fromRequestList($data['names'], $opFlag, 1);
-            } catch (Breaker $exception) {
-                Merge::arrays($errors, $exception->getErrors());
-            }
+        if (isset($data['names'])) {
+            $domain->names = Name::fromRequestList($data['names'], $opFlag, 1);
         }
         $domain->subJournals = $data['subJournals'] ?? false;
         if (isset($data['currency'])) {
             $domain->currencyDefault = strtoupper($data['currency']);
         }
-        if (count($errors) !== 0) {
-            throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);
+        if ($opFlag & self::OP_VALIDATE) {
+            $domain->validate($opFlag);
         }
 
         return $domain;
     }
 
+    /**
+     * @param int $opFlag
+     * @return Domain
+     * @throws Breaker
+     */
+    public function validate(int $opFlag): self
+    {
+        $errors = [];
+        if (!isset($this->code)) {
+            $errors[] = 'the code property is required';
+        }
+        if (count($this->names) === 0) {
+            $errors[] = 'A non-empty names property is required';
+        }
+        if (count($errors)) {
+            throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);
+        }
+        return $this;
+    }
 }

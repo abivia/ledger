@@ -13,6 +13,9 @@ class Create extends Message
      * @var Account[]
      */
     public array $accounts = [];
+    /**
+     * @var Currency[]
+     */
     public array $currencies = [];
     /**
      * @var Domain[]
@@ -35,7 +38,9 @@ class Create extends Message
         $this->accounts = [];
         foreach ($data['accounts'] ?? [] as $index => $accountData) {
             try {
-                $message = Account::fromRequest($accountData, self::OP_ADD);
+                $message = Account::fromRequest(
+                    $accountData, self::OP_ADD | Message::OP_VALIDATE
+                );
                 $accounts[$message->code] = $message;
             } catch (Breaker $exception) {
                 $errors[] = __(
@@ -55,7 +60,7 @@ class Create extends Message
         $this->currencies = [];
         foreach ($data['currencies'] ?? [] as $index => $currency) {
             try {
-                $message = Currency::fromRequest($currency, self::OP_ADD);
+                $message = Currency::fromRequest($currency, self::OP_ADD | Message::OP_VALIDATE);
                 $this->currencies[$message->code] = $message;
             } catch (Breaker $exception) {
                 $errors[] = __(
@@ -75,7 +80,7 @@ class Create extends Message
         $firstDomain = false;
         foreach ($data['domains'] ?? [] as $index => $domain) {
             try {
-                $domain = Domain::fromRequest($domain, self::OP_ADD);
+                $domain = Domain::fromRequest($domain, self::OP_ADD | Message::OP_VALIDATE);
                 $this->domains[$domain->code] = $domain;
                 if ($firstDomain === false) {
                     $firstDomain = $domain->code;
@@ -109,7 +114,9 @@ class Create extends Message
         $this->journals = [];
         foreach ($data['journals'] ?? [] as $index => $journal) {
             try {
-                $journal = SubJournal::fromRequest($journal, self::OP_ADD);
+                $journal = SubJournal::fromRequest(
+                    $journal, self::OP_ADD | Message::OP_VALIDATE
+                );
                 $this->journals[$journal->code] = $journal;
             } catch (Breaker $exception) {
                 $errors[] = __(
@@ -128,7 +135,7 @@ class Create extends Message
         $this->names = [];
         foreach ($data['names'] ?? [] as $index => $name) {
             try {
-                $message = Name::fromRequest($name, self::OP_ADD);
+                $message = Name::fromRequest($name, self::OP_ADD | Message::OP_VALIDATE);
                 $this->names[$message->language] = $message;
             } catch (Breaker $exception) {
                 $errors[] = __(
@@ -165,18 +172,9 @@ class Create extends Message
         Merge::arrays($errors, $create->extractJournals($data));
         if ($data['template'] ?? false) {
             $create->template = $data['template'];
-            $create->templatePath = resource_path(
-                "ledger/charts/{$create->template}.json"
-            );
         } else {
             $create->template = null;
             $create->templatePath = null;
-        }
-        if (
-            $create->template
-            && !file_exists($create->templatePath)
-        ) {
-            $errors[] = __('Specified template not found in ledger/charts.');
         }
         if (count($errors)) {
             // The request itself is not valid.
@@ -186,4 +184,31 @@ class Create extends Message
         return $create;
     }
 
+    public function validate(int $opFlag): self
+    {
+        if ($this->template !== null) {
+            $this->templatePath = resource_path(
+                "ledger/charts/{$this->template}.json"
+            );
+            if (!file_exists($this->templatePath)) {
+                throw Breaker::withCode(
+                    Breaker::BAD_REQUEST, [__('Specified template not found in ledger/charts.')]
+                );
+            }
+        }
+        foreach ($this->accounts as $account) {
+            $account->validate(self::OP_ADD);
+        }
+        foreach ($this->currencies as $currency) {
+            $currency->validate(self::OP_ADD);
+        }
+        foreach ($this->journals as $journal) {
+            $journal->validate(self::OP_ADD);
+        }
+        foreach ($this->names as $name) {
+            $name->validate(self::OP_ADD);
+        }
+
+        return $this;
+    }
 }

@@ -36,20 +36,12 @@ class Account extends Message
     {
         $errors = [];
         $account = new static();
-        $codeFormat = LedgerAccount::rules()->account->codeFormat ?? '';
         if ($opFlag & self::OP_ADD) {
+            if (isset($data['code'])) {
+                $account->code = $data['code'];
+            }
             if (!isset($data['code'])) {
                 $errors[] = __("Request requires an account code.");
-            } else {
-                if ($codeFormat !== '') {
-                    if (preg_match($codeFormat, $data['code'])) {
-                        $account->code = $data['code'];
-                    } else {
-                        $errors[] = "account code must match the form $codeFormat";
-                    }
-                } else {
-                    $account->code = $data['code'];
-                }
             }
             if (isset($data['uuid'])) {
                 $errors[] = __("UUID not valid on account create.");
@@ -62,12 +54,8 @@ class Account extends Message
                 $errors[] = __("Request requires either code or uuid.");
             }
         }
-        if ($opFlag & self::OP_UPDATE) {
-            if (isset($data['revision'])) {
-                $account->revision = $data['revision'];
-            } else {
-                $errors[] = __("Update request must supply a revision.");
-            }
+        if (isset($data['revision'])) {
+            $account->revision = $data['revision'];
         }
         if ($opFlag & (self::OP_ADD | self::OP_UPDATE)) {
             try {
@@ -90,15 +78,72 @@ class Account extends Message
             $account->closed = $data['closed'] ?? null;
             $account->credit = $data['credit'] ?? null;
             $account->debit = $data['debit'] ?? null;
-            if ($account->credit && $account->debit) {
+        }
+        if (count($errors) !== 0) {
+            throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);
+        }
+        if ($opFlag & self::OP_VALIDATE) {
+            $account->validate($opFlag);
+        }
+
+        return $account;
+    }
+
+    public function validate(int $opFlag): self
+    {
+        $errors = [];
+        $codeFormat = LedgerAccount::rules()->account->codeFormat ?? '';
+        if ($opFlag & self::OP_ADD) {
+            if ($this->code === null) {
+                $errors[] = __("Request requires an account code.");
+            } else {
+                if ($codeFormat !== '') {
+                    if (!preg_match($codeFormat, $this->code)) {
+                        $errors[] = "account code must match the form $codeFormat";
+                    }
+                }
+            }
+            if ($this->uuid !== null) {
+                $errors[] = __("UUID not valid on account create.");
+            }
+        } else {
+            if ($this->uuid === null && $this->code === null) {
+                $errors[] = __("Request requires either code or uuid.");
+            }
+        }
+        if ($opFlag & self::OP_UPDATE && $this->revision === null) {
+            $errors[] = __("Update request must supply a revision.");
+        }
+        if ($opFlag & (self::OP_ADD | self::OP_UPDATE)) {
+            try {
+                foreach ($this->names as $name) {
+                    $name->validate($opFlag);
+                }
+            } catch (Breaker $exception) {
+                Merge::arrays($errors, $exception->getErrors());
+            }
+            if ($this->parent !== null) {
+                try {
+                    $this->parent->validate($opFlag);
+                } catch (Breaker $exception) {
+                    Merge::arrays($errors, $exception->getErrors());
+                }
+            }
+            if ($this->credit && $this->debit) {
                 $errors[] = "account cannot be both debit and credit";
             }
+        }
+        if (
+            $opFlag & self::OP_ADD
+            && count($this->names ?? []) === 0
+        ) {
+            $errors[] = __("Account create must have at least one name element.");
         }
         if (count($errors) !== 0) {
             throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);
         }
 
-        return $account;
+        return $this;
     }
 
 }

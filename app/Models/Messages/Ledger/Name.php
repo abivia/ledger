@@ -18,20 +18,20 @@ class Name extends Message
         $name = new static();
         if (isset($data['name'])) {
             $name->name = $data['name'];
-        } else {
-            throw Breaker::withCode(
-                Breaker::BAD_REQUEST, ["must include name property"]
-            );
         }
-        $name->language = $data['language']
-            ?? LedgerAccount::rules()->language->default;
+        if (isset($data['language'])) {
+            $name->language = $data['language'];
+        }
+        if ($opFlag & self::OP_VALIDATE) {
+            $name->validate($opFlag);
+        }
 
         return $name;
     }
 
     /**
      * @param array $data
-     * @param string $method
+     * @param int $opFlag
      * @param int $minimum
      * @return Name[]
      * @throws Breaker
@@ -53,4 +53,20 @@ class Name extends Message
         return $names;
     }
 
+    /**
+     * @param int $opFlag
+     * @return Name
+     * @throws Breaker
+     */
+    public function validate(int $opFlag): self
+    {
+        if (!isset($this->name)) {
+            throw Breaker::withCode(
+                Breaker::BAD_REQUEST, [__("must include name property")]
+            );
+        }
+        $this->language ??= LedgerAccount::rules()->language->default;
+
+        return $this;
+    }
 }
