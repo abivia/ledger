@@ -1,12 +1,11 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
 use App\Exceptions\Breaker;
-
-use App\Http\Controllers\LedgerAccount\AddController;
-use App\Http\Controllers\LedgerAccountController;
-use App\Models\Messages\Ledger\Account;
+use App\Http\Controllers\SubJournalController;
+use App\Models\Messages\Ledger\SubJournal;
 use App\Models\Messages\Message;
 use App\Traits\ControllerResultHandler;
 use Exception;
@@ -14,12 +13,12 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
-class LedgerAccountApiController
+class SubJournalApiController
 {
     use ControllerResultHandler;
 
     /**
-     * Adding an account to the ledger.
+     * Adding a domain to the ledger.
      *
      * @param Request $request
      * @return array
@@ -29,10 +28,10 @@ class LedgerAccountApiController
         $this->errors = [];
         $response = [];
         try {
-            $message = Account::fromRequest($request->all(), Message::OP_ADD);
-            $controller = new AddController();
-            $ledgerAccount = $controller->run($message);
-            $response['account'] = $ledgerAccount->toResponse();
+            $message = SubJournal::fromRequest($request->all(), Message::OP_ADD);
+            $controller = new SubJournalController();
+            $ledgerSubJournal = $controller->add($message);
+            $response['journal'] = $ledgerSubJournal->toResponse();
         } catch (Breaker $exception) {
             $this->errors[] = $exception->getErrors();
             $this->warning($exception);
@@ -42,8 +41,6 @@ class LedgerAccountApiController
             $response['errors'] = $this->errors;
         } catch (Exception $exception) {
             $this->unexpectedException($exception);
-            $this->errors[] = $exception->getMessage();
-            $response['errors'] = $this->errors;
         }
         $response['time'] = new Carbon();
 
@@ -51,7 +48,7 @@ class LedgerAccountApiController
     }
 
     /**
-     * Remove an account from the ledger.
+     * Delete a domain from the ledger.
      *
      * @param Request $request
      * @return array
@@ -61,10 +58,9 @@ class LedgerAccountApiController
         $this->errors = [];
         $response = [];
         try {
-            $message = Account::fromRequest($request->all(), Message::OP_DELETE);
-            $controller = new LedgerAccountController();
-            $relatedAccounts = $controller->delete($message);
-            $response['accounts'] = $relatedAccounts;
+            $message = SubJournal::fromRequest($request->all(), Message::OP_DELETE);
+            $controller = new SubJournalController();
+            $controller->delete($message);
             $response['success'] = true;
         } catch (Breaker $exception) {
             $this->errors[] = $exception->getErrors();
@@ -82,7 +78,7 @@ class LedgerAccountApiController
     }
 
     /**
-     * Fetch an account from the ledger.
+     * Fetch a domain from the ledger.
      *
      * @param Request $request
      * @return array
@@ -92,11 +88,12 @@ class LedgerAccountApiController
         $this->errors = [];
         $response = [];
         try {
-            $message = Account::fromRequest($request->all(), Message::OP_GET);
-            $controller = new LedgerAccountController();
-            $ledgerAccount = $controller->get($message);
-            $response['account'] = $ledgerAccount->toResponse();
+            $message = SubJournal::fromRequest($request->all(), Message::OP_GET);
+            $controller = new SubJournalController();
+            $ledgerSubJournal = $controller->get($message);
+            $response['journal'] = $ledgerSubJournal->toResponse();
         } catch (Breaker $exception) {
+            $this->errors[] = $exception->getErrors();
             $this->warning($exception);
             $response['errors'] = $this->errors;
         } catch (QueryException $exception) {
@@ -111,7 +108,7 @@ class LedgerAccountApiController
     }
 
     /**
-     * Update a currency.
+     * Update a domain.
      *
      * @param Request $request
      * @return array
@@ -121,10 +118,10 @@ class LedgerAccountApiController
         $this->errors = [];
         $response = [];
         try {
-            $message = Account::fromRequest($request->all(), Message::OP_UPDATE);
-            $controller = new LedgerAccountController();
-            $ledgerAccount = $controller->update($message);
-            $response['account'] = $ledgerAccount->toResponse();
+            $message = SubJournal::fromRequest($request->all(), Message::OP_UPDATE);
+            $controller = new SubJournalController();
+            $ledgerSubJournal = $controller->update($message);
+            $response['journal'] = $ledgerSubJournal->toResponse();
         } catch (Breaker $exception) {
             $this->warning($exception);
             $response['errors'] = $this->errors;

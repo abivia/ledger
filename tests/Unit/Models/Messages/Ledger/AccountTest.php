@@ -71,10 +71,12 @@ class AccountTest extends TestCase
         $base = $this->base;
         unset($base['parent']);
         $base['revision'] = 'this-is-a-rev-code';
+        $base['toCode'] = '1020';
         $account = Account::fromRequest(
             $base, Message::OP_UPDATE | Message::OP_VALIDATE
         );
         $this->assertEquals('1010', $account->code);
+        $this->assertEquals('1020', $account->toCode);
         $this->assertCount(2, $account->names);
     }
 

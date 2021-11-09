@@ -9,7 +9,12 @@ use App\Models\Messages\Message;
 class SubJournal extends Message
 {
     public string $code;
+    /**
+     * @var mixed
+     */
+    public $extra;
     public array $names = [];
+    public string $toCode;
 
     public static function fromRequest(array $data, int $opFlag): self
     {
@@ -23,6 +28,17 @@ class SubJournal extends Message
                 $opFlag,
                 ($opFlag & self::OP_ADD) ? 1 : 0
             );
+        }
+        if (isset($data['extra'])) {
+            $subJournal->extra = $data['extra'];
+        }
+        if ($opFlag & self::OP_UPDATE) {
+            if (isset($data['revision'])) {
+                $subJournal->revision = $data['revision'];
+            }
+            if (isset($data['toCode'])) {
+                $subJournal->toCode = strtoupper($data['toCode']);
+            }
         }
         if ($opFlag & self::OP_VALIDATE) {
             $subJournal->validate($opFlag);
@@ -38,10 +54,11 @@ class SubJournal extends Message
         if (!isset($this->code)) {
             $errors[] = __('the code property is required');
         }
-        if ($opFlag & (self::OP_ADD | self::OP_UPDATE)
-            && count($this->names) === 0
-        ) {
+        if ($opFlag & self::OP_ADD && count($this->names) === 0) {
             $errors[] = __('at least one name property is required');
+        }
+        if ($opFlag & self::OP_UPDATE && !isset($this->revision)) {
+            $errors[] = 'A revision code is required';
         }
         if (count($errors) !== 0) {
             throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);

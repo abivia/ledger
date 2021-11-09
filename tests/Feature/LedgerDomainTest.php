@@ -1,8 +1,10 @@
-<?php /** @noinspection PhpParamsInspection */
+<?php
+/** @noinspection PhpParamsInspection */
 
 namespace Tests\Feature;
 
-use App\Models\LedgerCurrency;
+use App\Models\LedgerAccount;
+use App\Models\LedgerDomain;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -11,18 +13,30 @@ use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
- * Test Ledger Currency API calls.
+ * Test Ledger Domain API calls.
  */
-class LedgerCurrencyTest extends TestCase
+class LedgerDomainTest extends TestCase
 {
     use CommonChecks;
     use CreateLedgerTrait;
     use RefreshDatabase;
 
+    public array $baseRequest = [
+        'code' => 'ENG',
+        'names' => [
+            [
+                'name' => 'Engineering',
+                'language' => 'en'
+            ]
+        ],
+        'currency' => 'CAD'
+    ];
+
+
     public function setUp(): void
     {
         parent::setUp();
-        self::$expectContent = 'currency';
+        self::$expectContent = 'domain';
     }
 
     public function testBadRequest()
@@ -33,7 +47,7 @@ class LedgerCurrencyTest extends TestCase
         );
 
         $response = $this->postJson(
-            'api/v1/ledger/currency/add', ['nonsense' => true]
+            'api/v1/ledger/domain/add', ['nonsense' => true]
         );
         $this->isFailure($response);
     }
@@ -48,19 +62,15 @@ class LedgerCurrencyTest extends TestCase
         //Create a ledger
         $this->createLedger();
 
-        // Add a currency
-        $requestData = [
-            'code' => 'fud',
-            'decimals' => 4
-        ];
+        // Add a domain
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/add', $requestData
+            'post', 'api/v1/ledger/domain/add', $this->baseRequest
         );
         $actual = $this->isSuccessful($response);
-        $this->hasRevisionElements($actual->currency);
-        $this->hasAttributes(['code', 'decimals'], $actual->currency);
-        $this->assertEquals('FUD', $actual->currency->code);
-        $this->assertEquals(4, $actual->currency->decimals);
+        $this->hasRevisionElements($actual->domain);
+        $this->hasAttributes(['code', 'currency', 'names'], $actual->domain);
+        $this->assertEquals('ENG', $actual->domain->code);
+        $this->assertEquals('CAD', $actual->domain->currency);
     }
 
     public function testAddDuplicate()
@@ -73,15 +83,15 @@ class LedgerCurrencyTest extends TestCase
         // First we need a ledger
         $this->createLedger();
 
-        // Add CAD again
-        $requestData = [
-            'code' => 'CAD',
-            'decimals' => 4
-        ];
-        $response = $this->json(
-            'post', 'api/v1/ledger/currency/add', $requestData
+        // Add SJ
+        $this->json(
+            'post', 'api/v1/ledger/domain/add', $this->baseRequest
         );
-        $actual = $this->isFailure($response);
+        // Add SJ again
+        $response = $this->json(
+            'post', 'api/v1/ledger/domain/add', $this->baseRequest
+        );
+        $this->isFailure($response);
     }
 
     public function testDelete()
@@ -91,36 +101,29 @@ class LedgerCurrencyTest extends TestCase
             ['*']
         );
 
-        // First we need a ledger and an account
+        // First we need a ledger and domain
         $this->createLedger();
 
-        // Add a currency
-        $requestData = [
-            'code' => 'fud',
-            'decimals' => 4
-        ];
+        // Add a domain
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/add', $requestData
+            'post', 'api/v1/ledger/domain/add', $this->baseRequest
         );
-        $actual = $this->isSuccessful($response);
+        $this->isSuccessful($response);
 
         // Now delete it
         $requestData = [
-            'code' => 'FUD',
+            'code' => 'ENG',
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/delete', $requestData
+            'post', 'api/v1/ledger/domain/delete', $requestData
         );
-        $actual = $this->isSuccessful($response, 'success');
+        $this->isSuccessful($response, 'success');
 
         // Confirm that a fetch fails
-        $requestData = [
-            'code' => 'FUD',
-        ];
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/get', $requestData
+            'post', 'api/v1/ledger/domain/get', $requestData
         );
-        $actual = $this->isFailure($response);
+        $this->isFailure($response);
     }
 
     public function testGet()
@@ -133,23 +136,26 @@ class LedgerCurrencyTest extends TestCase
         // First we need a ledger
         $this->createLedger();
 
-        // Now fetch the currency
+        // Now fetch the default domain
         $requestData = [
-            'code' => 'CAD',
+            'code' => 'GJ',
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/get', $requestData
+            'post', 'api/v1/ledger/domain/get', $requestData
         );
         $actual = $this->isSuccessful($response);
-        $this->hasAttributes(['code', 'decimals'], $actual->currency);
-        $this->hasRevisionElements($actual->currency);
-        $this->assertEquals('CAD', $actual->currency->code);
-        $this->assertEquals(2, $actual->currency->decimals);
+        $this->hasAttributes(
+            ['code', 'currency', 'names'],
+            $actual->domain
+        );
+        $this->hasRevisionElements($actual->domain);
+        $this->assertEquals('GJ', $actual->domain->code);
+        $this->assertEquals('CAD', $actual->domain->currency);
 
         // Expect error with invalid code
         $requestData = ['code' => 'bob'];
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/get', $requestData
+            'post', 'api/v1/ledger/domain/get', $requestData
         );
         $this->isFailure($response);
     }
@@ -167,41 +173,48 @@ class LedgerCurrencyTest extends TestCase
         // First we need a ledger
         $this->createLedger();
 
+        // Verify the default domain is as expected
+        $rules = LedgerAccount::rules();
+        $this->assertEquals('GJ', $rules->domain->default);
+
         // Try an update with bogus data
         $requestData = [
             'revision' => 'bogus',
-            'code' => 'CAD',
+            'code' => 'GJ',
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/update', $requestData
+            'post', 'api/v1/ledger/domain/update', $requestData
         );
         $this->isFailure($response);
 
         // Do a get so we have a valid revision
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/get', $requestData
+            'post', 'api/v1/ledger/domain/get', $requestData
         );
         $actual = $this->isSuccessful($response);
 
         // Now try with a valid revision
         $requestData = [
-            'revision' => $actual->currency->revision,
-            'code' => 'CAD',
-            'decimals' => 4,
-            'toCode' => 'bob'
+            'revision' => $actual->domain->revision,
+            'code' => 'GJ',
+            'toCode' => 'Main'
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/update', $requestData
+            'post', 'api/v1/ledger/domain/update', $requestData
         );
         $result = $this->isSuccessful($response);
-        $this->assertEquals('BOB', $result->currency->code);
-        $this->assertEquals(4, $result->currency->decimals);
+        $this->assertEquals('MAIN', $result->domain->code);
+        $this->assertEquals('CAD', $result->domain->currency);
 
         // Attempt a retry with the same (now invalid) revision.
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/update', $requestData
+            'post', 'api/v1/ledger/domain/update', $requestData
         );
         $this->isFailure($response);
+
+        // Make sure the default domain has been updated
+        $rules = LedgerAccount::rules();
+        $this->assertEquals('MAIN', $rules->domain->default);
     }
 
 }

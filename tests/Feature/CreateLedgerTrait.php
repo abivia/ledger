@@ -1,6 +1,8 @@
 <?php
 /** @noinspection PhpParamsInspection */
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 trait CreateLedgerTrait {
@@ -8,14 +10,14 @@ trait CreateLedgerTrait {
         'language' => 'en-CA',
         'domains' => [
             [
-                'code' => 'GL',
+                'code' => 'GJ',
                 'names' => [
                     [
-                        'name' => 'General Ledger',
+                        'name' => 'General Journal',
                         'language' => 'en-CA'
                     ],
                     [
-                        'name' => 'Grand Livre',
+                        'name' => 'Journal général',
                         'language' => 'fr-CA'
                     ]
                 ]
@@ -53,7 +55,7 @@ trait CreateLedgerTrait {
             unset($create[$item]);
         }
         $response = $this->postJson(
-            'api/v1/ledger/create', $create
+            'api/v1/ledger/root/create', $create
         );
         $response->assertStatus(200);
         $this->assertTrue(isset($response['time']));

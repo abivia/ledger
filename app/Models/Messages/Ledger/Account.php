@@ -24,6 +24,7 @@ class Account extends Message
     public ?array $names = null;
     public ?ParentRef $parent = null;
     public ?string $revision = null;
+    public ?string $toCode = null;
     public ?string $uuid = null;
 
     /**
@@ -54,8 +55,16 @@ class Account extends Message
                 $errors[] = __("Request requires either code or uuid.");
             }
         }
-        if (isset($data['revision'])) {
-            $account->revision = $data['revision'];
+        if (isset($data['extra'])) {
+            $account->extra = $data['extra'];
+        }
+        if ($opFlag & self::OP_UPDATE) {
+            if (isset($data['revision'])) {
+                $account->revision = $data['revision'];
+            }
+            if (isset($data['toCode'])) {
+                $account->toCode = strtoupper($data['toCode']);
+            }
         }
         if ($opFlag & (self::OP_ADD | self::OP_UPDATE)) {
             try {
@@ -111,8 +120,17 @@ class Account extends Message
                 $errors[] = __("Request requires either code or uuid.");
             }
         }
-        if ($opFlag & self::OP_UPDATE && $this->revision === null) {
-            $errors[] = __("Update request must supply a revision.");
+        if ($opFlag & self::OP_UPDATE) {
+            if ($this->revision === null) {
+                $errors[] = __("Update request must supply a revision.");
+            }
+            if (isset($this->toCode)) {
+                if ($codeFormat !== '') {
+                    if (!preg_match($codeFormat, $this->toCode)) {
+                        $errors[] = "toCode must match the form $codeFormat";
+                    }
+                }
+            }
         }
         if ($opFlag & (self::OP_ADD | self::OP_UPDATE)) {
             try {

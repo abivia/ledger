@@ -24,6 +24,7 @@ class LedgerCurrencyApiController
      */
     public function add(Request $request): array
     {
+        $this->errors = [];
         $response = [];
         try {
             $message = Currency::fromRequest($request->all(), Message::OP_ADD);
@@ -53,6 +54,7 @@ class LedgerCurrencyApiController
      */
     public function delete(Request $request): array
     {
+        $this->errors = [];
         $response = [];
         try {
             $message = Currency::fromRequest($request->all(), Message::OP_DELETE);
@@ -82,6 +84,7 @@ class LedgerCurrencyApiController
      */
     public function get(Request $request): array
     {
+        $this->errors = [];
         $response = [];
         try {
             $message = Currency::fromRequest($request->all(), Message::OP_GET);
@@ -111,6 +114,7 @@ class LedgerCurrencyApiController
      */
     public function update(Request $request): array
     {
+        $this->errors = [];
         $response = [];
         try {
             $message = Currency::fromRequest($request->all(), Message::OP_UPDATE);

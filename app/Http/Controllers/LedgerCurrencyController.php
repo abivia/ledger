@@ -38,7 +38,7 @@ class LedgerCurrencyController extends Controller
                 Breaker::INVALID_OPERATION,
                 [
                     __(
-                        "Account :code already exists.",
+                        "Currency :code already exists.",
                         ['code' => $message->code]
                     )
                 ]

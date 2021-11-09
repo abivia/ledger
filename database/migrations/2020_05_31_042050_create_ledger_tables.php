@@ -60,7 +60,7 @@ class CreateLedgerTables extends Migration
             $table->bigIncrements('journalEntryId');
 
             $table->timestamp('transDate');
-            $table->foreignId('domainId');
+            $table->foreignUuid('domainUuid');
             $table->uuid('subJournalUuid')->nullable();
             $table->string('currency', self::CURRENCY_CODE_SIZE);
             $table->tinyInteger('posted');
@@ -112,7 +112,7 @@ class CreateLedgerTables extends Migration
             // Primary key, just use default since access is composite
             $table->bigIncrements('id');
             $table->foreignUuid('ledgerUuid');
-            $table->string('domain', self::ACCOUNT_CODE_SIZE);
+            $table->foreignUuid('domainUuid');
             $table->string('currency', self::CURRENCY_CODE_SIZE);
             $table->string('balance', self::AMOUNT_SIZE);
             $table->timestamps(6);
@@ -158,7 +158,7 @@ class CreateLedgerTables extends Migration
         Schema::create('sub_journals', function (Blueprint $table) {
             $table->uuid('subJournalUuid')->primary();
             $table->string('code', self::ACCOUNT_CODE_SIZE);
-            $table->longText('extra');
+            $table->longText('extra')->nullable();
             $table->timestamp('revision', 6)
                 ->useCurrentOnUpdate()->nullable();
             $table->timestamps(6);

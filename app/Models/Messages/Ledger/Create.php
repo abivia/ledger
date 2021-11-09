@@ -9,6 +9,7 @@ use App\Models\Messages\Message;
 
 class Create extends Message
 {
+    // TODO: add opening balance capability (account code, currency, balance)
     /**
      * @var Account[]
      */
@@ -73,21 +74,19 @@ class Create extends Message
         return $errors;
     }
 
-    private function extractDomains(array$data, bool $makeDefault = false): array
+    private function extractDomains(array $data, bool $makeDefault = false): array
     {
         $errors = [];
         $this->domains = [];
-        $firstDomain = false;
+        $firstDomain = null;
         foreach ($data['domains'] ?? [] as $index => $domain) {
             try {
                 $domain = Domain::fromRequest($domain, self::OP_ADD | Message::OP_VALIDATE);
                 $this->domains[$domain->code] = $domain;
-                if ($firstDomain === false) {
+                if ($firstDomain === null) {
                     $firstDomain = $domain->code;
                 }
             } catch (Breaker $exception) {
-                $wtf = $exception->getErrors();
-                $wtf2 = implode(', ', $wtf);
                 $errors[] = __(
                     ":Property in position :index "
                     . implode(', ', $exception->getErrors()) . ".",
@@ -97,13 +96,24 @@ class Create extends Message
         }
         if (count($this->domains) < 1 && $makeDefault) {
             // Create a default domain
-            $domains[] = [
-                'code' => LedgerAccount::rules()->domain->default,
+            $firstDomain = 'GJ';
+            $this->domains['GJ'] = [
+                'code' => 'GJ',
                 'names' => [
                     'name' => 'General Journal',
                     'language' => 'en'
                 ]
             ];
+        }
+        if ($firstDomain !== null) {
+            $defaultDomain = LedgerAccount::rules()->domain->default ?? null;
+            $ruleUpdate = ['domain' => ['default' => $firstDomain]];
+            if (
+                $defaultDomain === null
+                || !isset($this->domains[$defaultDomain])
+            ) {
+                LedgerAccount::bootRules($ruleUpdate);
+            }
         }
         return $errors;
     }

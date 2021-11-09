@@ -49,7 +49,7 @@ trait ControllerResultHandler
     protected function warning(Exception $exception)
     {
         if ($exception instanceof Breaker) {
-            Merge::arrays($this->errors, $exception->getErrors());
+            Merge::arrays($this->errors, $exception->getErrors(true));
         }
         Log::channel(env('LEDGER_LOG_CHANNEL', 'stack'))
             ->warning($exception->getMessage(), ['errors' => $this->errors]);

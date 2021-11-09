@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use App\Exceptions\Breaker;
 use App\Helpers\Merge;
 use App\Helpers\Revision;
 use App\Models\Messages\Ledger\Account;
+use App\Traits\HasRevisions;
 use App\Traits\UuidPrimaryKey;
 use Carbon\Carbon;
 use Exception;
@@ -28,7 +28,7 @@ use stdClass;
  * @property object $extra Additional application level information.
  * @property object $flex JSON-formatted internal information (via accessor).
  * @property string $ledgerUuid UUID primary key.
- * @property LedgerName[] $names Associated names
+ * @property LedgerName[] $names Associated names.
  * @property string $parentUuid The parent account (or null if this is the root).
  * @property Carbon $revision Revision timestamp to detect race condition on update.
  * @property Carbon $updated_at When the record was updated.
@@ -36,7 +36,7 @@ use stdClass;
  */
 class LedgerAccount extends Model
 {
-    use HasFactory, UuidPrimaryKey;
+    use HasFactory, HasRevisions, UuidPrimaryKey;
 
     /**
      * @var array Model default attributes.
@@ -81,23 +81,20 @@ class LedgerAccount extends Model
 
     private static ?LedgerAccount $root = null;
 
+    private static function baseRuleSet()
+    {
+        self::$bootRules = new stdClass();
+        self::$bootRules->domain = new stdClass();
+        self::$bootRules->language = new stdClass();
+        self::$bootRules->language->default = App::getLocale();
+    }
+
     public static function bootRules(array $data)
     {
         if (!isset(self::$bootRules)) {
-            self::$bootRules = new stdClass();
+            self::baseRuleSet();
         }
         Merge::objects(self::$bootRules, json_decode(json_encode($data)));
-    }
-
-    /**
-     * @param ?string $revision
-     * @throws Breaker
-     */
-    public function checkRevision(?string $revision)
-    {
-        if ($revision !== Revision::create($this->revision, $this->updated_at)) {
-            throw Breaker::withCode(Breaker::BAD_REVISION);
-        }
     }
 
     public static function createFromMessage(Account $message): self
@@ -178,16 +175,21 @@ class LedgerAccount extends Model
             self::loadRoot();
             if (self::$root === null) {
                 if (!isset(self::$bootRules)) {
-                    self::$bootRules = new stdClass();
-                    self::$bootRules->domain ??= new stdClass();
-                    self::$bootRules->domain->default ??= 'GJ';
-                    self::$bootRules->language ??= new stdClass();
-                    self::$bootRules->language->default ??= App::getLocale();
+                    self::baseRuleSet();
                 }
                 return self::$bootRules;
             }
         }
         return self::$root->flex->rules;
+    }
+
+    public static function saveRoot()
+    {
+        if (self::$root !== null) {
+            self::$root->save();
+        }
+
+        return self::$root;
     }
 
     /** @noinspection PhpUnused */
@@ -210,7 +212,6 @@ class LedgerAccount extends Model
             $response['parentUuid'] = $this->parentUuid;
         }
         $response['names'] = [];
-        /** @var LedgerName $name */
         foreach ($this->names as $name) {
             $response['names'][] = $name->toResponse();
         }

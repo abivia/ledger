@@ -40,9 +40,13 @@ class Breaker extends Exception
         $this->errors = array_merge($this->errors, $errors);
     }
 
-    public function getErrors(): array
+    public function getErrors(bool $withMessage = false): array
     {
-        return $this->errors;
+        $result = $this->errors;
+        if ($withMessage) {
+            array_unshift($result, $this->message);
+        }
+        return $result;
     }
 
     public function setErrors(array $errors)

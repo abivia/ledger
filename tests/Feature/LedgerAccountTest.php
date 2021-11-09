@@ -15,8 +15,15 @@ use Tests\TestCase;
  */
 class LedgerAccountTest extends TestCase
 {
+    use CommonChecks;
     use CreateLedgerTrait;
     use RefreshDatabase;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+        self::$expectContent = 'account';
+    }
 
     protected function addAccount(string $code, string $parentCode)
     {
@@ -40,53 +47,6 @@ class LedgerAccountTest extends TestCase
         return $this->isSuccessful($response);
     }
 
-    private function hasAttributes(array $attributes, object $object)
-    {
-        foreach ($attributes as $attribute) {
-            $this->assertObjectHasAttribute($attribute, $object);
-        }
-    }
-
-    private function hasRevisionElements(object $account)
-    {
-        $this->assertTrue(isset($account->revision));
-        $this->assertTrue(isset($account->createdAt));
-        $this->assertTrue(isset($account->updatedAt));
-    }
-
-    private function isFailure(TestResponse $response)
-    {
-        $response->assertStatus(200);
-        $this->assertTrue(isset($response['time']));
-        $this->assertTrue(isset($response['errors']));
-        $actual = json_decode($response->content());
-        $this->assertTrue($actual !== false);
-        $this->assertCount(2, (array)$actual);
-
-        return $actual;
-    }
-
-    /**
-     * Make sure the response was not an error and is well-structured.
-     * @param TestResponse $response
-     * @param string $expect
-     * @return mixed Decoded JSON response
-     */
-    private function isSuccessful(
-        TestResponse $response,
-        string $expect = 'account'
-    )
-    {
-        $response->assertStatus(200);
-        $this->assertTrue(isset($response['time']));
-        $this->assertFalse(isset($response['errors']));
-        $this->assertTrue(isset($response[$expect]));
-        $actual = json_decode($response->content());
-        $this->assertTrue($actual !== false);
-
-        return $actual;
-    }
-
     public function testBadRequest()
     {
         Sanctum::actingAs(
@@ -95,7 +55,7 @@ class LedgerAccountTest extends TestCase
         );
 
         $response = $this->postJson(
-            'api/v1/ledger/create', ['nonsense' => true]
+            'api/v1/ledger/root/create', ['nonsense' => true]
         );
         $this->isFailure($response);
     }
@@ -135,7 +95,7 @@ class LedgerAccountTest extends TestCase
         $badRequest = $this->createRequest;
         unset($badRequest['currencies']);
         $response = $this->postJson(
-            'api/v1/ledger/create', $badRequest
+            'api/v1/ledger/root/create', $badRequest
         );
 
         $this->isFailure($response);
@@ -194,7 +154,7 @@ class LedgerAccountTest extends TestCase
 
         // First we need a ledger
         $response = $this->postJson(
-            'api/v1/ledger/create', $this->createRequest
+            'api/v1/ledger/root/create', $this->createRequest
         );
         $this->isSuccessful($response, 'ledger');
 

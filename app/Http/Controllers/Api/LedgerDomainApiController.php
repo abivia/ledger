@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
@@ -17,19 +18,20 @@ class LedgerDomainApiController
     use ControllerResultHandler;
 
     /**
-     * Adding a currency to the ledger.
+     * Adding a domain to the ledger.
      *
      * @param Request $request
      * @return array
      */
     public function add(Request $request): array
     {
+        $this->errors = [];
         $response = [];
         try {
             $message = Domain::fromRequest($request->all(), Message::OP_ADD);
             $controller = new LedgerDomainController();
-            $ledgerCurrency = $controller->add($message);
-            $response['domain'] = $ledgerCurrency->toResponse();
+            $ledgerDomain = $controller->add($message);
+            $response['domain'] = $ledgerDomain->toResponse();
         } catch (Breaker $exception) {
             $this->errors[] = $exception->getErrors();
             $this->warning($exception);
@@ -46,19 +48,80 @@ class LedgerDomainApiController
     }
 
     /**
-     * Update a currency.
+     * Delete a domain from the ledger.
+     *
+     * @param Request $request
+     * @return array
+     */
+    public function delete(Request $request): array
+    {
+        $this->errors = [];
+        $response = [];
+        try {
+            $message = Domain::fromRequest($request->all(), Message::OP_DELETE);
+            $controller = new LedgerDomainController();
+            $controller->delete($message);
+            $response['success'] = true;
+        } catch (Breaker $exception) {
+            $this->errors[] = $exception->getErrors();
+            $this->warning($exception);
+            $response['errors'] = $this->errors;
+        } catch (QueryException $exception) {
+            $this->dbException($exception);
+            $response['errors'] = $this->errors;
+        } catch (Exception $exception) {
+            $this->unexpectedException($exception);
+        }
+        $response['time'] = new Carbon();
+
+        return $response;
+    }
+
+    /**
+     * Fetch a domain from the ledger.
+     *
+     * @param Request $request
+     * @return array
+     */
+    public function get(Request $request): array
+    {
+        $this->errors = [];
+        $response = [];
+        try {
+            $message = Domain::fromRequest($request->all(), Message::OP_GET);
+            $controller = new LedgerDomainController();
+            $ledgerDomain = $controller->get($message);
+            $response['domain'] = $ledgerDomain->toResponse();
+        } catch (Breaker $exception) {
+            $this->errors[] = $exception->getErrors();
+            $this->warning($exception);
+            $response['errors'] = $this->errors;
+        } catch (QueryException $exception) {
+            $this->dbException($exception);
+            $response['errors'] = $this->errors;
+        } catch (Exception $exception) {
+            $this->unexpectedException($exception);
+        }
+        $response['time'] = new Carbon();
+
+        return $response;
+    }
+
+    /**
+     * Update a domain.
      *
      * @param Request $request
      * @return array
      */
     public function update(Request $request): array
     {
+        $this->errors = [];
         $response = [];
         try {
             $message = Domain::fromRequest($request->all(), Message::OP_UPDATE);
             $controller = new LedgerDomainController();
-            $ledgerCurrency = $controller->update($message);
-            $response['domain'] = $ledgerCurrency->toResponse();
+            $ledgerDomain = $controller->update($message);
+            $response['domain'] = $ledgerDomain->toResponse();
         } catch (Breaker $exception) {
             $this->errors[] = $exception->getErrors();
             $this->warning($exception);
