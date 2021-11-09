@@ -64,8 +64,8 @@ class SubJournalController extends Controller
      * Delete a sub-journal. The sub-journal must be unused.
      *
      * @param SubJournal $message
+     * @return null
      * @throws Breaker
-     * @throws Exception
      */
     public function delete(SubJournal $message)
     {
@@ -101,6 +101,8 @@ class SubJournalController extends Controller
             }
             throw $exception;
         }
+
+        return null;
     }
 
     /**
@@ -133,6 +135,30 @@ class SubJournalController extends Controller
     {
         $message->validate(Message::OP_GET);
         return $this->fetch($message->code);
+    }
+
+    /**
+     * Perform a domain operation.
+     *
+     * @param SubJournal $message
+     * @param int $opFlag
+     * @return LedgerSubJournal|null
+     * @throws Breaker
+     */
+    public function run(SubJournal $message, int $opFlag): ?LedgerSubJournal
+    {
+        switch ($opFlag) {
+            case Message::OP_ADD:
+                return $this->add($message);
+            case Message::OP_DELETE:
+                return $this->delete($message);
+            case Message::OP_GET:
+                return $this->get($message);
+            case Message::OP_UPDATE:
+                return $this->update($message);
+            default:
+                throw Breaker::withCode(Breaker::INVALID_OPERATION);
+        }
     }
 
     /**

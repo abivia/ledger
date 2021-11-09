@@ -101,7 +101,7 @@ class LedgerAccountTest extends TestCase
         $this->isFailure($response);
         $this->assertEquals(
             'At least one currency is required.',
-            $response['errors'][0]
+            $response['errors'][1]
         );
     }
 
@@ -197,7 +197,7 @@ class LedgerAccountTest extends TestCase
         $response = $this->json(
             'post', 'api/v1/ledger/account/delete', $requestData
         );
-        $actual = $this->isSuccessful($response, 'accounts');
+        $this->isSuccessful($response, 'success');
 
         // Confirm that a fetch fails
         $requestData = [
@@ -231,8 +231,7 @@ class LedgerAccountTest extends TestCase
         $response = $this->json(
             'post', 'api/v1/ledger/account/delete', $requestData
         );
-        $actual = $this->isSuccessful($response, 'accounts');
-        $this->assertCount(3, $actual->accounts);
+        $this->isSuccessful($response, 'success');
     }
 
     public function testGet()

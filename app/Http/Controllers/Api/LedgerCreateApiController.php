@@ -35,7 +35,7 @@ class LedgerCreateApiController
             }
 
             $controller = new InitializeController();
-            $ledgerAccount = $controller->run($message);
+            $ledgerAccount = $controller->create($message);
             //$response['whatever'] = $ledgerAccount->toResponse();
 
             // Add the ledger information to the response

@@ -6,6 +6,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Exceptions\Breaker;
+use App\Http\Controllers\LedgerAccount\AddController;
 use App\Models\LedgerAccount;
 use App\Models\LedgerBalance;
 use App\Models\LedgerName;
@@ -25,6 +26,19 @@ class LedgerAccountController extends Controller
     protected stdClass $rules;
 
     /**
+     * Adding an account to the ledger.
+     *
+     * @param Account $message
+     * @return LedgerAccount
+     * @throws Breaker
+     */
+    public function add(Account $message): LedgerAccount
+    {
+        $controller = new AddController();
+        return $controller->add($message);
+    }
+
+    /**
      * @param array $messages
      * @throws Breaker
      */
@@ -40,10 +54,10 @@ class LedgerAccountController extends Controller
      * Delete a ledger account (and all sub-accounts). The accounts must be unused.
      *
      * @param Account $message
-     * @return array
+     * @return null
      * @throws Breaker
      */
-    public function delete(Account $message): array
+    public function delete(Account $message)
     {
         $message->validate(Message::OP_DELETE);
         $this->errors = [];
@@ -86,7 +100,7 @@ class LedgerAccountController extends Controller
             throw $exception;
         }
 
-        return $relatedAccounts;
+        return null;
     }
 
     /**
@@ -152,6 +166,30 @@ class LedgerAccountController extends Controller
         }
 
         return $idList;
+    }
+
+    /**
+     * Perform a currency operation.
+     *
+     * @param Account $message
+     * @param int $opFlag
+     * @return LedgerAccount|null
+     * @throws Breaker
+     */
+    public function run(Account $message, int $opFlag): ?LedgerAccount
+    {
+        switch ($opFlag) {
+            case Message::OP_ADD:
+                return $this->add($message);
+            case Message::OP_DELETE:
+                return $this->delete($message);
+            case Message::OP_GET:
+                return $this->get($message);
+            case Message::OP_UPDATE:
+                return $this->update($message);
+            default:
+                throw Breaker::withCode(Breaker::INVALID_OPERATION);
+        }
     }
 
     /**

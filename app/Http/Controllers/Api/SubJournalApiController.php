@@ -18,20 +18,32 @@ class SubJournalApiController
     use ControllerResultHandler;
 
     /**
-     * Adding a domain to the ledger.
+     * Perform a sub-journal operation.
      *
      * @param Request $request
+     * @param string $operation
      * @return array
      */
-    public function add(Request $request): array
+    public function run(Request $request, string $operation): array
     {
         $this->errors = [];
         $response = [];
         try {
-            $message = SubJournal::fromRequest($request->all(), Message::OP_ADD);
+            $opFlag = Message::toOpFlag($operation, Message::OP_CREATE);
+            if ($opFlag === 0) {
+                throw Breaker::withCode(
+                    Breaker::INVALID_OPERATION,
+                    [':operation is not a valid function.', ['operation' => $operation]]
+                );
+            }
+            $message = SubJournal::fromRequest($request->all(), $opFlag);
             $controller = new SubJournalController();
-            $ledgerSubJournal = $controller->add($message);
-            $response['journal'] = $ledgerSubJournal->toResponse();
+            $subJournal = $controller->run($message, $opFlag);
+            if ($opFlag & Message::OP_DELETE) {
+                $response['success'] = true;
+            } else {
+                $response['journal'] = $subJournal->toResponse();
+            }
         } catch (Breaker $exception) {
             $this->errors[] = $exception->getErrors();
             $this->warning($exception);
@@ -46,94 +58,5 @@ class SubJournalApiController
 
         return $response;
     }
-
-    /**
-     * Delete a domain from the ledger.
-     *
-     * @param Request $request
-     * @return array
-     */
-    public function delete(Request $request): array
-    {
-        $this->errors = [];
-        $response = [];
-        try {
-            $message = SubJournal::fromRequest($request->all(), Message::OP_DELETE);
-            $controller = new SubJournalController();
-            $controller->delete($message);
-            $response['success'] = true;
-        } catch (Breaker $exception) {
-            $this->errors[] = $exception->getErrors();
-            $this->warning($exception);
-            $response['errors'] = $this->errors;
-        } catch (QueryException $exception) {
-            $this->dbException($exception);
-            $response['errors'] = $this->errors;
-        } catch (Exception $exception) {
-            $this->unexpectedException($exception);
-        }
-        $response['time'] = new Carbon();
-
-        return $response;
-    }
-
-    /**
-     * Fetch a domain from the ledger.
-     *
-     * @param Request $request
-     * @return array
-     */
-    public function get(Request $request): array
-    {
-        $this->errors = [];
-        $response = [];
-        try {
-            $message = SubJournal::fromRequest($request->all(), Message::OP_GET);
-            $controller = new SubJournalController();
-            $ledgerSubJournal = $controller->get($message);
-            $response['journal'] = $ledgerSubJournal->toResponse();
-        } catch (Breaker $exception) {
-            $this->errors[] = $exception->getErrors();
-            $this->warning($exception);
-            $response['errors'] = $this->errors;
-        } catch (QueryException $exception) {
-            $this->dbException($exception);
-            $response['errors'] = $this->errors;
-        } catch (Exception $exception) {
-            $this->unexpectedException($exception);
-        }
-        $response['time'] = new Carbon();
-
-        return $response;
-    }
-
-    /**
-     * Update a domain.
-     *
-     * @param Request $request
-     * @return array
-     */
-    public function update(Request $request): array
-    {
-        $this->errors = [];
-        $response = [];
-        try {
-            $message = SubJournal::fromRequest($request->all(), Message::OP_UPDATE);
-            $controller = new SubJournalController();
-            $ledgerSubJournal = $controller->update($message);
-            $response['journal'] = $ledgerSubJournal->toResponse();
-        } catch (Breaker $exception) {
-            $this->warning($exception);
-            $response['errors'] = $this->errors;
-        } catch (QueryException $exception) {
-            $this->dbException($exception);
-        } catch (Exception $exception) {
-            $this->unexpectedException($exception);
-        }
-        $response['time'] = new Carbon();
-
-        return $response;
-    }
-
 
 }

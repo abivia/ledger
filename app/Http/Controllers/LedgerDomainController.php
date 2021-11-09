@@ -124,6 +124,8 @@ class LedgerDomainController extends Controller
             }
             throw $exception;
         }
+
+        return null;
     }
 
     /**
@@ -156,6 +158,30 @@ class LedgerDomainController extends Controller
     {
         $message->validate(Message::OP_GET);
         return $this->fetch($message->code);
+    }
+
+    /**
+     * Perform a domain operation.
+     *
+     * @param Domain $message
+     * @param int $opFlag
+     * @return LedgerDomain|null
+     * @throws Breaker
+     */
+    public function run(Domain $message, int $opFlag): ?LedgerDomain
+    {
+        switch ($opFlag) {
+            case Message::OP_ADD:
+                return $this->add($message);
+            case Message::OP_DELETE:
+                return $this->delete($message);
+            case Message::OP_GET:
+                return $this->get($message);
+            case Message::OP_UPDATE:
+                return $this->update($message);
+            default:
+                throw Breaker::withCode(Breaker::INVALID_OPERATION);
+        }
     }
 
     /**

@@ -17,20 +17,32 @@ class LedgerCurrencyApiController
     use ControllerResultHandler;
 
     /**
-     * Adding a currency to the ledger.
+     * Perform a currency operation.
      *
      * @param Request $request
+     * @param string $operation
      * @return array
      */
-    public function add(Request $request): array
+    public function run(Request $request, string $operation): array
     {
         $this->errors = [];
         $response = [];
         try {
-            $message = Currency::fromRequest($request->all(), Message::OP_ADD);
+            $opFlag = Message::toOpFlag($operation, Message::OP_CREATE);
+            if ($opFlag === 0) {
+                throw Breaker::withCode(
+                    Breaker::INVALID_OPERATION,
+                    [':operation is not a valid function.', ['operation' => $operation]]
+                );
+            }
+            $message = Currency::fromRequest($request->all(), $opFlag);
             $controller = new LedgerCurrencyController();
-            $ledgerCurrency = $controller->add($message);
-            $response['currency'] = $ledgerCurrency->toResponse();
+            $ledgerCurrency = $controller->run($message, $opFlag);
+            if ($opFlag & Message::OP_DELETE) {
+                $response['success'] = true;
+            } else {
+                $response['currency'] = $ledgerCurrency->toResponse();
+            }
         } catch (Breaker $exception) {
             $this->errors[] = $exception->getErrors();
             $this->warning($exception);
@@ -45,95 +57,5 @@ class LedgerCurrencyApiController
 
         return $response;
     }
-
-    /**
-     * Delete a currency from the ledger.
-     *
-     * @param Request $request
-     * @return array
-     */
-    public function delete(Request $request): array
-    {
-        $this->errors = [];
-        $response = [];
-        try {
-            $message = Currency::fromRequest($request->all(), Message::OP_DELETE);
-            $controller = new LedgerCurrencyController();
-            $controller->delete($message);
-            $response['success'] = true;
-        } catch (Breaker $exception) {
-            $this->errors[] = $exception->getErrors();
-            $this->warning($exception);
-            $response['errors'] = $this->errors;
-        } catch (QueryException $exception) {
-            $this->dbException($exception);
-            $response['errors'] = $this->errors;
-        } catch (Exception $exception) {
-            $this->unexpectedException($exception);
-        }
-        $response['time'] = new Carbon();
-
-        return $response;
-    }
-
-    /**
-     * Fetch a currency from the ledger.
-     *
-     * @param Request $request
-     * @return array
-     */
-    public function get(Request $request): array
-    {
-        $this->errors = [];
-        $response = [];
-        try {
-            $message = Currency::fromRequest($request->all(), Message::OP_GET);
-            $controller = new LedgerCurrencyController();
-            $ledgerCurrency = $controller->get($message);
-            $response['currency'] = $ledgerCurrency->toResponse();
-        } catch (Breaker $exception) {
-            $this->errors[] = $exception->getErrors();
-            $this->warning($exception);
-            $response['errors'] = $this->errors;
-        } catch (QueryException $exception) {
-            $this->dbException($exception);
-            $response['errors'] = $this->errors;
-        } catch (Exception $exception) {
-            $this->unexpectedException($exception);
-        }
-        $response['time'] = new Carbon();
-
-        return $response;
-    }
-
-    /**
-     * Update a currency.
-     *
-     * @param Request $request
-     * @return array
-     */
-    public function update(Request $request): array
-    {
-        $this->errors = [];
-        $response = [];
-        try {
-            $message = Currency::fromRequest($request->all(), Message::OP_UPDATE);
-            $controller = new LedgerCurrencyController();
-            $ledgerCurrency = $controller->update($message);
-            $response['currency'] = $ledgerCurrency->toResponse();
-        } catch (Breaker $exception) {
-            $this->errors[] = $exception->getErrors();
-            $this->warning($exception);
-            $response['errors'] = $this->errors;
-        } catch (QueryException $exception) {
-            $this->dbException($exception);
-        } catch (Exception $exception) {
-            $this->unexpectedException($exception);
-        }
-        $response['time'] = new Carbon();
-
-        return $response;
-    }
-
 
 }

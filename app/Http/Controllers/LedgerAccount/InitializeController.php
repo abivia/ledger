@@ -43,6 +43,50 @@ class InitializeController extends LedgerAccountController
         }
     }
 
+    /**
+     * Initialize a new Ledger
+     *
+     * @param Create $message
+     * @return LedgerAccount
+     * @throws Breaker
+     */
+    public function create(Create $message): LedgerAccount
+    {
+        $message->validate(Message::OP_CREATE);
+        $this->errors = [];
+        $inTransaction = false;
+        try {
+            // The Ledger must be empty
+            self::checkNoLedgerExists();
+
+            $this->initData = $message;
+
+            // We have a valid request, build the root and support structures
+            DB::beginTransaction();
+            $inTransaction = true;
+            // Create currencies
+            $this->initializeCurrencies();
+            // Create domains
+            $this->initializeDomains();
+            // Create journals
+            $this->initializeJournals();
+            // Create accounts
+            $this->initializeAccounts();
+
+            // Commit everything
+            DB::commit();
+            $inTransaction = false;
+            $this->auditLog($message);
+        } catch (Exception $exception) {
+            if ($inTransaction) {
+                DB::rollBack();
+            }
+            throw $exception;
+        }
+
+        return LedgerAccount::root();
+    }
+
     private function createRoot(): string
     {
         $root = new LedgerAccount();
@@ -213,50 +257,6 @@ class InitializeController extends LedgerAccountController
         }
 
         return $accounts;
-    }
-
-    /**
-     * Initialize a new Ledger
-     *
-     * @param Create $message
-     * @return LedgerAccount
-     * @throws Breaker
-     */
-    public function run(Create $message): LedgerAccount
-    {
-        $message->validate(Message::OP_CREATE);
-        $this->errors = [];
-        $inTransaction = false;
-        try {
-            // The Ledger must be empty
-            self::checkNoLedgerExists();
-
-            $this->initData = $message;
-
-            // We have a valid request, build the root and support structures
-            DB::beginTransaction();
-            $inTransaction = true;
-            // Create currencies
-            $this->initializeCurrencies();
-            // Create domains
-            $this->initializeDomains();
-            // Create journals
-            $this->initializeJournals();
-            // Create accounts
-            $this->initializeAccounts();
-
-            // Commit everything
-            DB::commit();
-            $inTransaction = false;
-            $this->auditLog($message);
-        } catch (Exception $exception) {
-            if ($inTransaction) {
-                DB::rollBack();
-            }
-            throw $exception;
-        }
-
-        return LedgerAccount::root();
     }
 
 }

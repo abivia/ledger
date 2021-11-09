@@ -10,9 +10,6 @@ use App\Models\LedgerName;
 use App\Models\Messages\Ledger\Account;
 use App\Models\Messages\Message;
 use Exception;
-use Illuminate\Database\QueryException;
-use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class AddController extends LedgerAccountController
@@ -25,14 +22,15 @@ class AddController extends LedgerAccountController
      * @return LedgerAccount
      * @throws Breaker
      */
-    public function run(Account $message): LedgerAccount
+    public function add(Account $message): LedgerAccount
     {
         $message->validate(Message::OP_ADD);
         $inTransaction = false;
         $this->errors = [];
         try {
-            $this->validateRequest($message);
+            $this->validateContext($message);
             // check for duplicate
+            /** @noinspection PhpDynamicAsStaticMethodCallInspection */
             if (LedgerAccount::where('code', $message->code)->first() !== null) {
                 throw Breaker::withCode(
                     Breaker::INVALID_OPERATION,
@@ -70,8 +68,9 @@ class AddController extends LedgerAccountController
      * @param Account $message
      * @return void
      * @throws Breaker
+     * @throws Exception
      */
-    private function validateRequest(Account $message): void
+    private function validateContext(Account $message): void
     {
         // No parent implies the ledger root
         if (!isset($message->parent)) {

@@ -12,9 +12,6 @@ use App\Models\Messages\Ledger\Currency;
 use App\Models\Messages\Message;
 use App\Traits\Audited;
 use Exception;
-use Illuminate\Database\QueryException;
-use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class LedgerCurrencyController extends Controller
@@ -108,6 +105,8 @@ class LedgerCurrencyController extends Controller
         }
         $ledgerCurrency->delete();
         $this->auditLog($message);
+
+        return null;
     }
 
     /**
@@ -120,11 +119,10 @@ class LedgerCurrencyController extends Controller
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
         $ledgerCurrency = LedgerCurrency::find($currencyCode);
         if ($ledgerCurrency === null) {
-            $this->errors[] = __(
-                'currency :code does not exist',
-                ['code' => $currencyCode]
+            throw Breaker::withCode(
+                Breaker::INVALID_OPERATION,
+                [__('currency :code does not exist', ['code' => $currencyCode])]
             );
-            throw Breaker::withCode(Breaker::INVALID_OPERATION);
         }
 
         return $ledgerCurrency;
@@ -141,6 +139,30 @@ class LedgerCurrencyController extends Controller
     {
         $message->validate(Message::OP_GET);
         return $this->fetch($message->code);
+    }
+
+    /**
+     * Perform a currency operation.
+     *
+     * @param Currency $message
+     * @param int $opFlag
+     * @return LedgerCurrency
+     * @throws Breaker
+     */
+    public function run(Currency $message, int $opFlag): ?LedgerCurrency
+    {
+        switch ($opFlag) {
+            case Message::OP_ADD:
+                return $this->add($message);
+            case Message::OP_DELETE:
+                return $this->delete($message);
+            case Message::OP_GET:
+                return $this->get($message);
+            case Message::OP_UPDATE:
+                return $this->update($message);
+            default:
+                throw Breaker::withCode(Breaker::INVALID_OPERATION);
+        }
     }
 
     /**
@@ -163,10 +185,10 @@ class LedgerCurrencyController extends Controller
                     /** @noinspection PhpDynamicAsStaticMethodCallInspection */
                     $used = JournalEntry::where('currency', $ledgerCurrency->code)->count();
                     if ($used !== 0) {
-                        $this->errors[] = __(
-                            "Can't decrease the decimal size of a currency in use."
+                        throw Breaker::withCode(
+                            Breaker::INVALID_OPERATION,
+                            [__("Can't decrease the decimal size of a currency in use.")]
                         );
-                        throw Breaker::withCode(Breaker::INVALID_OPERATION);
                     }
                 }
                 $ledgerCurrency->decimals = $message->decimals;

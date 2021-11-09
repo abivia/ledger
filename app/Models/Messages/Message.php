@@ -23,13 +23,19 @@ abstract class Message
     ];
 
     public abstract static function fromRequest(array $data, int $opFlag): self;
+
     /**
      * @param string $method
+     * @param int|null $disallow
      * @return int
      */
-    protected static function toOpFlag(string $method): int
+    public static function toOpFlag(string $method, int $disallow = null): int
     {
-        return self::$opMap[$method] ?? 0;
+        $opFlag = self::$opMap[$method] ?? 0;
+        if ($opFlag !== 0 && $disallow !== null) {
+            $opFlag &= ~$disallow;
+        }
+        return $opFlag;
     }
 
     public abstract function validate(int $opFlag): self;
