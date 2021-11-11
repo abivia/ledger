@@ -15,12 +15,7 @@ class Currency extends Message
     public ?string $toCode = null;
 
     /**
-     * Validate request data to define a currency.
-     *
-     * @param array $data
-     * @param int $opFlag
-     * @return Currency
-     * @throws Breaker
+     * @inheritdoc
      */
     public static function fromRequest(array $data, int $opFlag)
     : Currency {
@@ -46,13 +41,16 @@ class Currency extends Message
                 $result->toCode = strtoupper($data['toCode']);
             }
         }
-        if ($opFlag & self::OP_VALIDATE) {
+        if ($opFlag & self::FN_VALIDATE) {
             $result->validate($opFlag);
         }
 
         return $result;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function validate(int $opFlag): self
     {
         $errors = [];

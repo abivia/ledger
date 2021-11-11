@@ -31,7 +31,7 @@ class AccountTest extends TestCase
         unset($base['parent']);
         $base['debit'] = true;
         $account = Account::fromRequest(
-            $base, Message::OP_ADD | Message::OP_VALIDATE
+            $base, Message::OP_ADD | Message::FN_VALIDATE
         );
         $this->assertEquals('1010', $account->code);
         $this->assertCount(2, $account->names);
@@ -44,7 +44,7 @@ class AccountTest extends TestCase
         unset($base['uuid']);
         unset($base['parent']);
         $this->expectException(Breaker::class);
-        Account::fromRequest($base, Message::OP_ADD | Message::OP_VALIDATE);
+        Account::fromRequest($base, Message::OP_ADD | Message::FN_VALIDATE);
     }
 
     public function testFromRequestAdd_by_uuid()
@@ -53,7 +53,7 @@ class AccountTest extends TestCase
         unset($base['code']);
         unset($base['parent']);
         $this->expectException(Breaker::class);
-        Account::fromRequest($base, Message::OP_ADD | Message::OP_VALIDATE);
+        Account::fromRequest($base, Message::OP_ADD | Message::FN_VALIDATE);
     }
 
     public function testFromRequestAdd_no_names()
@@ -63,7 +63,7 @@ class AccountTest extends TestCase
         unset($base['parent']);
         unset($base['names']);
         $this->expectException(Breaker::class);
-        Account::fromRequest($base, Message::OP_ADD | Message::OP_VALIDATE);
+        Account::fromRequest($base, Message::OP_ADD | Message::FN_VALIDATE);
     }
 
     public function testFromRequestUpdate()
@@ -73,7 +73,7 @@ class AccountTest extends TestCase
         $base['revision'] = 'this-is-a-rev-code';
         $base['toCode'] = '1020';
         $account = Account::fromRequest(
-            $base, Message::OP_UPDATE | Message::OP_VALIDATE
+            $base, Message::OP_UPDATE | Message::FN_VALIDATE
         );
         $this->assertEquals('1010', $account->code);
         $this->assertEquals('1020', $account->toCode);

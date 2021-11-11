@@ -3,12 +3,12 @@
 
 namespace Tests\Unit\Models\Messages\Ledger;
 
-use App\Models\Messages\Ledger\ParentRef;
+use App\Models\Messages\Ledger\EntityRef;
 use App\Models\Messages\Message;
 use Tests\TestCase;
 
 
-class ParentRefTest extends TestCase
+class AccountRefTest extends TestCase
 {
     protected array $base = [
         'code' => '1010',
@@ -17,8 +17,8 @@ class ParentRefTest extends TestCase
 
     public function testFromRequest()
     {
-        $parentRef = ParentRef::fromRequest(
-            $this->base, Message::OP_ADD | Message::OP_VALIDATE
+        $parentRef = EntityRef::fromRequest(
+            $this->base, Message::OP_ADD | Message::FN_VALIDATE
         );
         $this->assertEquals('1010', $parentRef->code);
         $this->assertEquals('some-fake-uuid', $parentRef->uuid);

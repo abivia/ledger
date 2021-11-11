@@ -20,10 +20,7 @@ class Domain extends Message
     public string $toCode;
 
     /**
-     * @param array $data
-     * @param int $opFlag
-     * @return Domain
-     * @throws Breaker
+     * @inheritdoc
      */
     public static function fromRequest(array $data, int $opFlag): self
     {
@@ -49,7 +46,7 @@ class Domain extends Message
                 $domain->toCode = strtoupper($data['toCode']);
             }
         }
-        if ($opFlag & self::OP_VALIDATE) {
+        if ($opFlag & self::FN_VALIDATE) {
             $domain->validate($opFlag);
         }
 
@@ -57,9 +54,7 @@ class Domain extends Message
     }
 
     /**
-     * @param int $opFlag
-     * @return Domain
-     * @throws Breaker
+     * @inheritdoc
      */
     public function validate(int $opFlag): self
     {

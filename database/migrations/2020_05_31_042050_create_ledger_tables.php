@@ -45,7 +45,7 @@ class CreateLedgerTables extends Migration
             // The journal entry
             $table->bigInteger('journalEntryId')->index();
 
-            // Ledger identifier
+            // Ledger account identifier
             $table->uuid('ledgerUuid')->index();
 
             // The [split] transaction amount
@@ -64,6 +64,7 @@ class CreateLedgerTables extends Migration
             $table->uuid('subJournalUuid')->nullable();
             $table->string('currency', self::CURRENCY_CODE_SIZE);
             $table->tinyInteger('posted');
+            $table->tinyInteger('reviewed');
             // Description
             $table->string('description');
             // Description arguments for translation
@@ -71,8 +72,8 @@ class CreateLedgerTables extends Migration
             // Language this description is in.
             $table->string('language', 8);
             $table->longText('extra')->nullable();
-            $table->string('createdBy');
-            $table->string('updatedBy');
+            $table->string('createdBy')->nullable();
+            $table->string('updatedBy')->nullable();
             // The update timestamp (server-side)
             $table->timestamp('revision', 6)
                 ->useCurrentOnUpdate()->nullable();
@@ -82,8 +83,9 @@ class CreateLedgerTables extends Migration
         // Connection to entities outside the GL
         Schema::create('journal_references', function (Blueprint $table) {
             $table->uuid('journalReferenceUuid')->primary();
-            $table->string('reference')->index();
+            $table->string('code')->unique();
             $table->longText('extra')->nullable();
+            $table->timestamps(6);
         });
 
         // Account definitions (chart of accounts)
@@ -117,7 +119,7 @@ class CreateLedgerTables extends Migration
             $table->string('balance', self::AMOUNT_SIZE);
             $table->timestamps(6);
 
-            $table->unique(['ledgerUuid', 'domain', 'currency']);
+            $table->unique(['ledgerUuid', 'domainUuid', 'currency']);
         });
 
         // Ledger currencies

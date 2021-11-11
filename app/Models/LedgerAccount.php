@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Helpers\Merge;
 use App\Helpers\Revision;
 use App\Models\Messages\Ledger\Account;
+use App\Models\Messages\Ledger\EntityRef;
 use App\Traits\HasRevisions;
 use App\Traits\UuidPrimaryKey;
 use Carbon\Carbon;
@@ -84,7 +85,11 @@ class LedgerAccount extends Model
     private static function baseRuleSet()
     {
         self::$bootRules = new stdClass();
+
         self::$bootRules->domain = new stdClass();
+        // Default is to leave transactions as not reviewed
+        self::$bootRules->entry = new stdClass();
+        self::$bootRules->entry->reviewed = false;
         self::$bootRules->language = new stdClass();
         self::$bootRules->language->default = App::getLocale();
     }
@@ -115,20 +120,20 @@ class LedgerAccount extends Model
     }
 
     /**
-     * @param array $idComposite
+     * @param EntityRef $entityRef
      * @return Builder
      * @throws Exception
      * @noinspection PhpIncompatibleReturnTypeInspection
      * @noinspection PhpDynamicAsStaticMethodCallInspection
      */
-    public static function findWith(array $idComposite): Builder
+    public static function findWith(EntityRef $entityRef): Builder
     {
-        if (isset($idComposite['uuid'])) {
-            $finder = self::where('ledgerUuid', $idComposite['uuid']);
-        } elseif (isset($idComposite['code'])) {
-            $finder = self::where('code', $idComposite['code']);
+        if (isset($entityRef->uuid) && $entityRef->uuid !== null) {
+            $finder = self::where('ledgerUuid', $entityRef->uuid);
+        } elseif (isset($entityRef->code)) {
+            $finder = self::where('code', $entityRef->code);
         } else {
-            throw new Exception('Composite must have either code or uuid entries');
+            throw new Exception('Account reference must have either code or uuid entries');
         }
 
         return $finder;

@@ -40,7 +40,7 @@ class Create extends Message
         foreach ($data['accounts'] ?? [] as $index => $accountData) {
             try {
                 $message = Account::fromRequest(
-                    $accountData, self::OP_ADD | Message::OP_VALIDATE
+                    $accountData, self::OP_ADD | Message::FN_VALIDATE
                 );
                 $accounts[$message->code] = $message;
             } catch (Breaker $exception) {
@@ -61,7 +61,7 @@ class Create extends Message
         $this->currencies = [];
         foreach ($data['currencies'] ?? [] as $index => $currency) {
             try {
-                $message = Currency::fromRequest($currency, self::OP_ADD | Message::OP_VALIDATE);
+                $message = Currency::fromRequest($currency, self::OP_ADD | Message::FN_VALIDATE);
                 $this->currencies[$message->code] = $message;
             } catch (Breaker $exception) {
                 $errors[] = __(
@@ -81,7 +81,7 @@ class Create extends Message
         $firstDomain = null;
         foreach ($data['domains'] ?? [] as $index => $domain) {
             try {
-                $domain = Domain::fromRequest($domain, self::OP_ADD | Message::OP_VALIDATE);
+                $domain = Domain::fromRequest($domain, self::OP_ADD | Message::FN_VALIDATE);
                 $this->domains[$domain->code] = $domain;
                 if ($firstDomain === null) {
                     $firstDomain = $domain->code;
@@ -125,7 +125,7 @@ class Create extends Message
         foreach ($data['journals'] ?? [] as $index => $journal) {
             try {
                 $journal = SubJournal::fromRequest(
-                    $journal, self::OP_ADD | Message::OP_VALIDATE
+                    $journal, self::OP_ADD | Message::FN_VALIDATE
                 );
                 $this->journals[$journal->code] = $journal;
             } catch (Breaker $exception) {
@@ -145,7 +145,7 @@ class Create extends Message
         $this->names = [];
         foreach ($data['names'] ?? [] as $index => $name) {
             try {
-                $message = Name::fromRequest($name, self::OP_ADD | Message::OP_VALIDATE);
+                $message = Name::fromRequest($name, self::OP_ADD | Message::FN_VALIDATE);
                 $this->names[$message->language] = $message;
             } catch (Breaker $exception) {
                 $errors[] = __(
@@ -161,6 +161,9 @@ class Create extends Message
         return $errors;
     }
 
+    /**
+     * @inheritdoc
+     */
     public static function fromRequest(array $data, int $opFlag): self
     {
         $errors = [];
@@ -194,6 +197,9 @@ class Create extends Message
         return $create;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function validate(int $opFlag): self
     {
         if ($this->template !== null) {

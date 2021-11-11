@@ -11,30 +11,28 @@ use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
- * Test Ledger Domain API calls.
+ * Test Journal Reference API calls.
  */
-class LedgerDomainTest extends TestCase
+class JournalReferenceTest extends TestCase
 {
     use CommonChecks;
     use CreateLedgerTrait;
     use RefreshDatabase;
 
     public array $baseRequest = [
-        'code' => 'ENG',
-        'names' => [
-            [
-                'name' => 'Engineering',
-                'language' => 'en'
-            ]
+        'code' => 'Customer 25',
+        'extra' => [
+            'customerId' => 25,
+            'name' => 'Testco Inc.'
         ],
-        'currency' => 'CAD'
     ];
 
 
     public function setUp(): void
     {
         parent::setUp();
-        self::$expectContent = 'domain';
+        self::$expectContent = 'reference';
+        $this->baseRequest['extra'] = json_encode($this->baseRequest['extra']);
     }
 
     public function testBadRequest()
@@ -45,7 +43,7 @@ class LedgerDomainTest extends TestCase
         );
 
         $response = $this->postJson(
-            'api/v1/ledger/domain/add', ['nonsense' => true]
+            'api/v1/ledger/reference/add', ['nonsense' => true]
         );
         $this->isFailure($response);
     }
@@ -62,13 +60,11 @@ class LedgerDomainTest extends TestCase
 
         // Add a domain
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/add', $this->baseRequest
+            'post', 'api/v1/ledger/reference/add', $this->baseRequest
         );
         $actual = $this->isSuccessful($response);
-        $this->hasRevisionElements($actual->domain);
-        $this->hasAttributes(['code', 'currency', 'names'], $actual->domain);
-        $this->assertEquals('ENG', $actual->domain->code);
-        $this->assertEquals('CAD', $actual->domain->currency);
+        $this->hasAttributes(['code', 'extra'], $actual->reference);
+        $this->assertEquals('Customer 25', $actual->reference->code);
     }
 
     public function testAddDuplicate()
@@ -81,13 +77,13 @@ class LedgerDomainTest extends TestCase
         // First we need a ledger
         $this->createLedger();
 
-        // Add SJ
+        // Add a reference
         $this->json(
-            'post', 'api/v1/ledger/domain/add', $this->baseRequest
+            'post', 'api/v1/ledger/reference/add', $this->baseRequest
         );
-        // Add SJ again
+        // Add it again
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/add', $this->baseRequest
+            'post', 'api/v1/ledger/reference/add', $this->baseRequest
         );
         $this->isFailure($response);
     }
@@ -104,22 +100,22 @@ class LedgerDomainTest extends TestCase
 
         // Add a domain
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/add', $this->baseRequest
+            'post', 'api/v1/ledger/reference/add', $this->baseRequest
         );
         $this->isSuccessful($response);
 
         // Now delete it
         $requestData = [
-            'code' => 'ENG',
+            'code' => 'Customer 25',
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/delete', $requestData
+            'post', 'api/v1/ledger/reference/delete', $requestData
         );
         $this->isSuccessful($response, 'success');
 
         // Confirm that a fetch fails
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/get', $requestData
+            'post', 'api/v1/ledger/reference/get', $requestData
         );
         $this->isFailure($response);
     }
@@ -134,26 +130,27 @@ class LedgerDomainTest extends TestCase
         // First we need a ledger
         $this->createLedger();
 
-        // Now fetch the default domain
+        // Add a reference
+        $this->json(
+            'post', 'api/v1/ledger/reference/add', $this->baseRequest
+        );
+        // Now fetch the same reference
         $requestData = [
-            'code' => 'GJ',
+            'code' => 'Customer 25',
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/get', $requestData
+            'post', 'api/v1/ledger/reference/get', $requestData
         );
         $actual = $this->isSuccessful($response);
-        $this->hasAttributes(
-            ['code', 'currency', 'names'],
-            $actual->domain
-        );
-        $this->hasRevisionElements($actual->domain);
-        $this->assertEquals('GJ', $actual->domain->code);
-        $this->assertEquals('CAD', $actual->domain->currency);
+        $this->hasAttributes(['code', 'extra'], $actual->reference);
+        $this->assertEquals('Customer 25', $actual->reference->code);
+        $extra = json_decode($actual->reference->extra);
+        $this->assertEquals(25, $extra->customerId);
 
         // Expect error with invalid code
         $requestData = ['code' => 'bob'];
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/get', $requestData
+            'post', 'api/v1/ledger/reference/get', $requestData
         );
         $this->isFailure($response);
     }
@@ -171,48 +168,38 @@ class LedgerDomainTest extends TestCase
         // First we need a ledger
         $this->createLedger();
 
-        // Verify the default domain is as expected
-        $rules = LedgerAccount::rules();
-        $this->assertEquals('GJ', $rules->domain->default);
-
-        // Try an update with bogus data
+        // Add a reference
+        $this->json(
+            'post', 'api/v1/ledger/reference/add', $this->baseRequest
+        );
+        // Try an update on nonexistent record
         $requestData = [
-            'revision' => 'bogus',
-            'code' => 'GJ',
+            'code' => 'nobody-here',
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/update', $requestData
+            'post', 'api/v1/ledger/reference/update', $requestData
         );
         $this->isFailure($response);
 
-        // Do a get so we have a valid revision
-        $response = $this->json(
-            'post', 'api/v1/ledger/domain/get', $requestData
-        );
-        $actual = $this->isSuccessful($response);
-
-        // Now try with a valid revision
+        // Now try an update on existing record
         $requestData = [
-            'revision' => $actual->domain->revision,
-            'code' => 'GJ',
-            'toCode' => 'Main'
+            'code' => 'Customer 25',
+            'toCode' => 'Customer 25B',
+            'extra' => json_encode([
+                'customerId' => 25,
+                'name' => 'Testco (rev B) Inc.'
+            ]),
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/update', $requestData
+            'post', 'api/v1/ledger/reference/update', $requestData
         );
         $result = $this->isSuccessful($response);
-        $this->assertEquals('MAIN', $result->domain->code);
-        $this->assertEquals('CAD', $result->domain->currency);
-
-        // Attempt a retry with the same (now invalid) revision.
-        $response = $this->json(
-            'post', 'api/v1/ledger/domain/update', $requestData
+        $this->assertEquals('Customer 25B', $result->reference->code);
+        $extra = json_decode($result->reference->extra);
+        $this->assertEquals(
+            'Testco (rev B) Inc.',
+            $extra->name
         );
-        $this->isFailure($response);
-
-        // Make sure the default domain has been updated
-        $rules = LedgerAccount::rules();
-        $this->assertEquals('MAIN', $rules->domain->default);
     }
 
 }

@@ -18,7 +18,7 @@ class CurrencyTest extends TestCase
     public function testFromRequest()
     {
         $parentRef = Currency::fromRequest(
-            $this->base, Message::OP_ADD | Message::OP_VALIDATE
+            $this->base, Message::OP_ADD | Message::FN_VALIDATE
         );
         $this->assertEquals('CAD', $parentRef->code);
         $this->assertEquals(2, $parentRef->decimals);
@@ -29,7 +29,7 @@ class CurrencyTest extends TestCase
         $bad = $this->base;
         unset($bad['decimals']);
         $this->expectException(Breaker::class);
-        Currency::fromRequest($bad, Message::OP_ADD | Message::OP_VALIDATE);
+        Currency::fromRequest($bad, Message::OP_ADD | Message::FN_VALIDATE);
     }
 
     public function testFromRequest_no_code()
@@ -37,7 +37,7 @@ class CurrencyTest extends TestCase
         $bad = $this->base;
         unset($bad['code']);
         $this->expectException(Breaker::class);
-        Currency::fromRequest($bad, Message::OP_ADD | Message::OP_VALIDATE);
+        Currency::fromRequest($bad, Message::OP_ADD | Message::FN_VALIDATE);
     }
 
 }

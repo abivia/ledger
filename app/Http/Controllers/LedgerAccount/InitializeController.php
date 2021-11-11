@@ -11,7 +11,7 @@ use App\Models\LedgerDomain;
 use App\Models\LedgerName;
 use App\Models\Messages\Ledger\Account;
 use App\Models\Messages\Ledger\Create;
-use App\Models\Messages\Ledger\ParentRef;
+use App\Models\Messages\Ledger\EntityRef;
 use App\Models\Messages\Message;
 use App\Models\SubJournal;
 use App\Traits\Audited;
@@ -142,7 +142,7 @@ class InitializeController extends LedgerAccountController
                     }
                 } else {
                     // No parent, always create
-                    $account->parent = new ParentRef();
+                    $account->parent = new EntityRef();
                     $account->parent->uuid = $created[''];
                     $create = true;
                 }

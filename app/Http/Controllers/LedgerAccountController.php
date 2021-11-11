@@ -340,7 +340,7 @@ class LedgerAccountController extends Controller
         if ($message->parent !== null) {
             // Get the new parent record
             /** @var LedgerAccount $ledgerParent */
-            $ledgerParent = LedgerAccount::findWith((array)$message->parent)->first();
+            $ledgerParent = LedgerAccount::findWith($message->parent)->first();
             if ($ledgerParent === null) {
                 throw Breaker::withCode(
                     Breaker::BAD_ACCOUNT, [__("Specified parent not found.")]

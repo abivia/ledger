@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Helpers\Revision;
+use App\Models\Messages\Ledger\EntityRef;
 use App\Models\Messages\Ledger\SubJournal as JournalMessage;
 use App\Traits\HasRevisions;
 use App\Traits\UuidPrimaryKey;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -47,6 +49,26 @@ class SubJournal extends Model
         $instance->refresh();
 
         return $instance;
+    }
+
+    /**
+     * @param EntityRef $entityRef
+     * @return Builder
+     * @throws Exception
+     * @noinspection PhpIncompatibleReturnTypeInspection
+     * @noinspection PhpDynamicAsStaticMethodCallInspection
+     */
+    public static function findWith(EntityRef $entityRef): Builder
+    {
+        if (isset($entityRef->uuid) && $entityRef->uuid !== null) {
+            $finder = self::where('domainUuid', $entityRef->uuid);
+        } elseif (isset($entityRef->code)) {
+            $finder = self::where('code', $entityRef->code);
+        } else {
+            throw new Exception('Journal reference must have either code or uuid entries');
+        }
+
+        return $finder;
     }
 
     public function names(): HasMany

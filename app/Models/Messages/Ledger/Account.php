@@ -22,16 +22,13 @@ class Account extends Message
      * @var Name[]|null
      */
     public ?array $names = null;
-    public ?ParentRef $parent = null;
+    public ?EntityRef $parent = null;
     public ?string $revision = null;
     public ?string $toCode = null;
     public ?string $uuid = null;
 
     /**
-     * @param array $data
-     * @param int $opFlag
-     * @return Account
-     * @throws Breaker
+     * @inheritdoc
      */
     public static function fromRequest(array $data, int $opFlag): Account
     {
@@ -78,7 +75,7 @@ class Account extends Message
             }
             if (isset($data['parent'])) {
                 try {
-                    $account->parent = ParentRef::fromRequest($data['parent'], $opFlag);
+                    $account->parent = EntityRef::fromRequest($data['parent'], $opFlag);
                 } catch (Breaker $exception) {
                     Merge::arrays($errors, $exception->getErrors());
                 }
@@ -91,13 +88,16 @@ class Account extends Message
         if (count($errors) !== 0) {
             throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);
         }
-        if ($opFlag & self::OP_VALIDATE) {
+        if ($opFlag & self::FN_VALIDATE) {
             $account->validate($opFlag);
         }
 
         return $account;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function validate(int $opFlag): self
     {
         $errors = [];
@@ -142,7 +142,7 @@ class Account extends Message
             }
             if ($this->parent !== null) {
                 try {
-                    $this->parent->validate($opFlag);
+                    $this->parent->validate($opFlag, $codeFormat);
                 } catch (Breaker $exception) {
                     Merge::arrays($errors, $exception->getErrors());
                 }

@@ -16,6 +16,9 @@ class SubJournal extends Message
     public array $names = [];
     public string $toCode;
 
+    /**
+     * @inheritdoc
+     */
     public static function fromRequest(array $data, int $opFlag): self
     {
         $subJournal = new static();
@@ -40,14 +43,16 @@ class SubJournal extends Message
                 $subJournal->toCode = strtoupper($data['toCode']);
             }
         }
-        if ($opFlag & self::OP_VALIDATE) {
+        if ($opFlag & self::FN_VALIDATE) {
             $subJournal->validate($opFlag);
         }
 
         return $subJournal;
     }
 
-
+    /**
+     * @inheritdoc
+     */
     public function validate(int $opFlag): self
     {
         $errors = [];
