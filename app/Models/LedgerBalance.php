@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $balance The current balance, a BCD string.
  * @property Carbon $created_at When the record was created.
  * @property string $currency The currency code for this balance
- * @property string $domain The organizational unit (department/division/etc.) identifier
+ * @property string $domainUuid The organizational unit (department/division/etc.) UUID
  * @property int $id Primary key
  * @property string $ledgerUuid ID of the ledger this balance applies to.
  * @property Carbon $updated_at When the record was updated.

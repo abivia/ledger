@@ -35,11 +35,13 @@ abstract class Message
 
     public function copy(array $data, int $opFlag): self
     {
-        foreach (self::$copyable as $info) {
+        foreach (static::$copyable as $info) {
             if (is_array($info)) {
                 [$property, $mask] = $info;
                 if (is_array($property)) {
                     [$property, $fromProperty] = $property;
+                } else {
+                    $fromProperty = $property;
                 }
             } else {
                 $property = $info;

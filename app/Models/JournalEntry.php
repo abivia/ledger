@@ -3,18 +3,17 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Helpers\Revision;
 use App\Models\Messages\Ledger\Entry;
+use App\Models\Messages\Message;
+use App\Traits\HasRevisions;
 use App\Traits\UuidPrimaryKey;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use RuntimeException;
-use function bcadd;
-use function bccomp;
 
 /**
  * Records a transaction between accounts.
@@ -27,7 +26,7 @@ use function bccomp;
  * @property string $description Description of the transaction (untranslated).
  * @property Collection $entries The associated journal detail records.
  * @property string $extra Extra data for application use.
- * @property string $journalEntryId UUID primary key.
+ * @property int $journalEntryId Primary key.
  * @property string $language The language this description is written in.
  * @property bool $posted Set when the transaction has been posted to the ledgers.
  * @property bool $reviewed Set when the transaction has been reviewed.
@@ -40,7 +39,7 @@ use function bccomp;
  */
 class JournalEntry extends Model
 {
-    use HasFactory, UuidPrimaryKey;
+    use HasFactory, HasRevisions;
 
     protected $casts = [
         'arguments' => 'array',
@@ -54,83 +53,19 @@ class JournalEntry extends Model
         'arguments', 'createdBy', 'currency', 'description', 'extra',
         'language', 'posted', 'reviewed', 'transDate', 'updatedBy'
     ];
-    private bool $posting = false;
+    protected $keyType = 'int';
     protected $primaryKey = 'journalEntryId';
 
     /**
      * @var string[] Relationships that should always be loaded
      */
-    protected $with = ['journal_detail'];
+    //protected $with = ['journal_detail'];
 
     //$by = Auth::id() ? 'User id ' . Auth::id() : 'unknown';
 
-    public function add(JournalDetail $entry): self
+    public function details(): HasMany
     {
-        /** @var JournalDetail $item */
-        foreach ($this->entries as $item) {
-            if ($item->sameAccount($entry)) {
-                throw new RuntimeException(
-                    "Can't add: duplicate account reference."
-                );
-            }
-        }
-        $entry->amount = bcadd($entry->amount, '0', $this->exponent);
-        $this->entries->push($entry);
-
-        return $this;
-    }
-
-    /**
-     * Set up event hooks
-     */
-    protected static function booted()
-    {
-        static::retrieved(function ($record) {
-            // Validate currency and load exponent
-            $record->currency($record->currency);
-        });
-        static::saved(function ($record) {
-            foreach ($record->entries as $item) {
-                $item->journalDetailId = $record->journalDetailId;
-                if ($item->isDirty()) {
-                    $item->save();
-                }
-            }
-            if (!$record->posting) {
-                DB::commit();
-            }
-        });
-        static::saving(function ($record) {
-            $state = $record->check();
-            if ($state !== true) {
-                throw new RuntimeException('Unable to save: ' . $state);
-            }
-            if (
-                $record->posted
-                && !$record->posting
-                && $record->deepWasChanged()
-            ) {
-                throw new RuntimeException('Unable to save: already posted.');
-            }
-            if (!$record->posting) {
-                DB::beginTransaction();
-            }
-            $record->updated_by = Auth::id() ? 'User id ' . Auth::id() : 'unknown';
-        });
-
-    }
-
-    public function description($desc, array $args = []): self
-    {
-        $this->description = $desc;
-        $this->arguments = $args;
-
-        return $this;
-    }
-
-    public function entries()
-    {
-        return $this->hasMany(JournalDetail::class, 'journalDetailId', 'journalDetailId');
+        return $this->hasMany(JournalDetail::class, 'journalEntryId', 'journalEntryId');
     }
 
     public function fillFromMessage(Entry $message): self
@@ -150,87 +85,24 @@ class JournalEntry extends Model
         return $this;
     }
 
-    public function getBalance()
+    public function toResponse(int $opFlags): array
     {
-        $balance = '0';
-        foreach ($this->entries as $item) {
-            $balance = bcadd($balance, $item->amount, $this->exponent);
-        }
-
-        return $balance;
-    }
-
-    public function getDescription()
-    {
-        return __($this->description, $this->arguments, $this->language);
-    }
-
-    public function onDate($date = null)
-    {
-        if (!$date instanceof Carbon) {
-            $date = new Carbon($date);
-        }
-        $this->trans_date = $date;
-
-        return $this;
-    }
-
-    public function post()
-    {
-        if (!$this->posted) {
-            try {
-                $this->posting = true;
-                DB::beginTransaction();
-                $this->posted = true;
-                $this->save();
-                // Update account balances. Thanks to bcmath we have to fetch/save.
-                foreach ($this->entries as $item) {
-                    $account = LedgerAccount::firstOrNew(LedgerAccount::pk([
-                        $item->entity_uuid, $item->code, $this->currency
-                    ]));
-                    $account->balance = bcadd(
-                        $account->balance, $item->amount, $this->exponent
-                    );
-                    $account->save();
-                }
-                DB::commit();
-                $this->posting = false;
-            } catch (\Exception $err) {
-                DB::rollBack();
-                $this->posting = false;
-                throw $err;
+        $response = [];
+        $response['id'] = $this->journalEntryId;
+        $response['date'] = $this->transDate->format($this->dateFormat);
+        if ($opFlags & Message::OP_GET) {
+            if (isset($this->subJournalUuid)) {
+                $subJournal = SubJournal::find($this->subJournalUuid);
+                $response['journal'] = $subJournal->code;
+                $response['journalUuid'] = $this->subJournalUuid;
             }
+            // TODO: get needs to return more info
         }
-        return $this;
-    }
+        $response['revision'] = Revision::create($this->revision, $this->updated_at);
+        $response['createdAt'] = $this->created_at;
+        $response['updatedAt'] = $this->updated_at;
 
-    public function unpost()
-    {
-        if ($this->posted) {
-            try {
-                $this->posting = true;
-                DB::beginTransaction();
-                // Reverse account balances. Thanks to bcmath we have to fetch/save.
-                foreach ($this->entries as $item) {
-                    $account = LedgerAccount::firstOrNew(LedgerAccount::pk([
-                        $item->entity_uuid, $item->code, $this->currency
-                    ]));
-                    $account->balance = bcsub(
-                        $account->balance, $item->amount, $this->exponent
-                    );
-                    $account->save();
-                }
-                $this->posted = false;
-                $this->save();
-                DB::commit();
-                $this->posting = false;
-            } catch (\Exception $err) {
-                DB::rollBack();
-                $this->posting = false;
-                throw $err;
-            }
-        }
-        return $this;
+        return $response;
     }
 
 }

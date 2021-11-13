@@ -2,8 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\JournalDetail;
+use App\Models\JournalEntry;
 use App\Models\LedgerAccount;
+use App\Models\LedgerBalance;
+use App\Models\LedgerDomain;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
@@ -13,7 +18,7 @@ use Tests\TestCase;
 /**
  * Test Ledger API calls that don't involve journal transactions.
  */
-class LedgerAccountTest extends TestCase
+class JournalEntryTest extends TestCase
 {
     use CommonChecks;
     use CreateLedgerTrait;
@@ -22,7 +27,7 @@ class LedgerAccountTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        self::$expectContent = 'account';
+        self::$expectContent = 'entry';
     }
 
     protected function addAccount(string $code, string $parentCode)
@@ -47,19 +52,6 @@ class LedgerAccountTest extends TestCase
         return $this->isSuccessful($response);
     }
 
-    public function testBadRequest()
-    {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
-        $response = $this->postJson(
-            'api/v1/ledger/root/create', ['nonsense' => true]
-        );
-        $this->isFailure($response);
-    }
-
     /**
      * Create a valid ledger
      *
@@ -72,65 +64,22 @@ class LedgerAccountTest extends TestCase
             User::factory()->create(),
             ['*']
         );
-        $response = $this->createLedger();
-
-        $this->isSuccessful($response, 'ledger');
-
-        LedgerAccount::loadRoot();
-        //print_r(LedgerAccount::root());
-    }
-
-    /**
-     * Create a more complex ledger and test parent links
-     *
-     * @return void
-     * @throws \Exception
-     */
-    public function testCreateCommon(): void
-    {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
         $response = $this->createLedger([], ['template' => 'common']);
 
         $this->isSuccessful($response, 'ledger');
 
         LedgerAccount::loadRoot();
-
-        // Get a sub-sub account
-        $account = LedgerAccount::where('code', '2110')->first();
-        $parent = LedgerAccount::find($account->parentUuid);
-        $this->assertEquals('2100', $parent->code);
-        $parent = LedgerAccount::find($parent->parentUuid);
-        $this->assertEquals('2000', $parent->code);
-        $parent = LedgerAccount::find($parent->parentUuid);
-        $this->assertEquals('', $parent->code);
-    }
-
-    /**
-     * Attempt to create a ledger with no currencies.
-     *
-     * @return void
-     * @throws \Exception
-     */
-    public function testCreateNoCurrency(): void
-    {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-        $badRequest = $this->createRequest;
-        unset($badRequest['currencies']);
-        $response = $this->postJson(
-            'api/v1/ledger/root/create', $badRequest
-        );
-
-        $this->isFailure($response);
-        $this->assertEquals(
-            'At least one currency is required.',
-            $response['errors'][1]
-        );
+        //print_r(LedgerAccount::root());
+        foreach (LedgerAccount::all() as $item) {
+            echo "$item->ledgerUuid $item->code ($item->parentUuid) ";
+            echo $item->category ? 'cat ' : '    ';
+            if ($item->debit) echo 'DR __';
+            if ($item->credit) echo '__ CR';
+            echo "\n";
+            foreach ($item->names as $name) {
+                echo "$name->name $name->language\n";
+            }
+        }
     }
 
     public function testAdd()
@@ -141,36 +90,60 @@ class LedgerAccountTest extends TestCase
         );
 
         // First we need a ledger
-        $this->createLedger();
+        $response = $this->createLedger([], ['template' => 'common']);
 
-        // Add an account
+        $this->isSuccessful($response, 'ledger');
+
+        // Add a transaction, sales to A/R
         $requestData = [
-            'code' => '1010',
-            'parent' => [
-                'code' => '1000',
-            ],
-            'names' => [
+            'currency' => 'CAD',
+            'description' => 'Sold the first thing!',
+            'date' => '2021-11-12',
+            'details' => [
                 [
-                    'name' => 'Cash in Bank',
-                    'language' => 'en',
-                ]
+                    'accountCode' => '1310',
+                    'debit' => '520.00'
+                ],
+                [
+                    'accountCode' => '4110',
+                    'credit' => '520.00'
+                ],
             ]
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/add', $requestData
+            'post', 'api/v1/ledger/entry/add', $requestData
         );
         $actual = $this->isSuccessful($response);
-        $this->hasRevisionElements($actual->account);
-        $this->hasAttributes(['uuid', 'code', 'names'], $actual->account);
-        $this->assertEquals('1010', $actual->account->code);
-        $this->assertEquals(
-            'Cash in Bank',
-            $actual->account->names[0]->name
+        $this->hasRevisionElements($actual->entry);
+
+        // Check that we really did do everything that was supposed to be done.
+        $journalEntry = JournalEntry::find($actual->entry->id);
+        $this->assertNotNull($journalEntry);
+        $this->assertTrue(
+            $journalEntry->transDate->equalTo(new Carbon($requestData['date']))
         );
-        $this->assertEquals(
-            'en',
-            $actual->account->names[0]->language
-        );
+        $this->assertEquals('CAD', $journalEntry->currency);
+        $this->assertEquals($requestData['description'], $journalEntry->description);
+        $ledgerDomain = LedgerDomain::find($journalEntry->domainUuid);
+        $this->assertNotNull($ledgerDomain);
+        $this->assertEquals('GJ', $ledgerDomain->code);
+
+        /** @var JournalDetail $detail */
+        foreach ($journalEntry->details as $detail) {
+            $ledgerAccount = LedgerAccount::find($detail->ledgerUuid);
+            $this->assertNotNull($ledgerAccount);
+            $ledgerBalance = LedgerBalance::where([
+                ['ledgerUuid', '=', $detail->ledgerUuid],
+                ['domainUuid', '=', $ledgerDomain->domainUuid],
+                ['currency', '=', $journalEntry->currency]]
+            )->first();
+            $this->assertNotNull($ledgerBalance);
+            if ($ledgerAccount->code === '1310') {
+                $this->assertEquals('-520.00', $ledgerBalance->balance);
+            } else {
+                $this->assertEquals('520.00', $ledgerBalance->balance);
+            }
+        }
     }
 
     public function testAddDuplicate()

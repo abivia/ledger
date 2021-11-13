@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use RuntimeException;
 
 /**
@@ -23,5 +24,10 @@ class JournalDetail extends Model
     protected $primaryKey = 'journalDetailId';
 
     public $timestamps = false;
+
+    public function balances(): HasMany
+    {
+        return $this->hasMany(LedgerBalance::class, 'ledgerUuid', 'ledgerUuid');
+    }
 
 }

@@ -12,8 +12,10 @@ class Detail extends Message
 {
     public const MAX_DECIMALS = 30;
 
-    public string $amount = '0';
+    public string $amount;
     public EntityRef $account;
+    public string $credit;
+    public string $debit;
     /**
      * @var int Amount sign (set on validation, amount is unchanged).
      */
@@ -22,6 +24,8 @@ class Detail extends Message
     protected static array $copyable = [
         ['amount', self::OP_ADD | self::OP_UPDATE],
         //['account', self::OP_ADD | UPDATE],
+        ['debit', self::OP_ADD | self::OP_UPDATE],
+        ['credit', self::OP_ADD | self::OP_UPDATE],
         //['reference', self::OP_ADD | self::OP_UPDATE],
     ];
 
@@ -50,11 +54,12 @@ class Detail extends Message
     {
         $detail = new static();
         $detail->copy($data, $opFlag);
-        if (isset($data['account'])) {
-            $detail->account = EntityRef::fromRequest($data['account'], $opFlag);
+        if (isset($data['accountCode'])) {
+            $detail->account = new EntityRef();
+            $detail->account->code = $data['accountCode'];
         }
         if (isset($data['reference'])) {
-            $detail->account = EntityRef::fromRequest($data['reference'], $opFlag);
+            $detail->reference = EntityRef::fromRequest($data['reference'], $opFlag);
         }
         if ($opFlag & self::FN_VALIDATE) {
             $detail->validate($opFlag);
@@ -85,12 +90,28 @@ class Detail extends Message
         } else {
             $errors[] = __('the code property is required');
         }
-        if (!preg_match('/^[+-]?[0-9]*\.?[0-9]*$/', $this->amount)) {
-            $errors[] = __('amount must be numeric');
+        $multiplier = '1';
+        if (isset($this->amount)) {
+            if (isset($this->credit) || isset($this->debit)) {
+                $errors[] = __('Transaction cannot have amount and debit/credit..');
+            }
+        } else {
+            if (isset($this->credit) === isset($this->debit)) {
+                $errors[] = __('Exactly one of debit or credit must be set.');
+            } elseif (isset($this->debit)) {
+                $this->amount = $this->debit;
+                $multiplier = '-1';
+            } elseif (isset($this->credit)) {
+                $this->amount = $this->credit;
+            }
         }
+        if (!preg_match('/^[+-]?[0-9]*\.?[0-9]*$/', $this->amount)) {
+            $errors[] = __('Transaction amount must be numeric');
+        }
+        $this->amount = rtrim(bcmul($multiplier, $this->amount, self::MAX_DECIMALS), '0');
         $this->signTest = bccomp($this->amount, '0', self::MAX_DECIMALS);
         if ($this->signTest === 0) {
-            $errors[] = __('amount must be nonzero');
+            $errors[] = __('Transaction amount must be nonzero');
         }
         if (count($errors)) {
             throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);

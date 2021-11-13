@@ -45,6 +45,7 @@ class InitializeController extends LedgerAccountController
 
     /**
      * Initialize a new Ledger
+     * TODO: Add initial balance creation.
      *
      * @param Create $message
      * @return LedgerAccount

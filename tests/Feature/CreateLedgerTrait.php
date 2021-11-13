@@ -48,12 +48,13 @@ trait CreateLedgerTrait {
         'template' => 'sections'
     ];
 
-    protected function createLedger(array $without = [])
+    protected function createLedger(array $without = [], array $with = [])
     {
         $create = $this->createRequest;
         foreach ($without as $item) {
             unset($create[$item]);
         }
+        $create = array_merge($create, $with);
         $response = $this->postJson(
             'api/v1/ledger/root/create', $create
         );

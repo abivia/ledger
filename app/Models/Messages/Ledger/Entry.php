@@ -28,7 +28,7 @@ class Entry extends Message
         ['posted', self::OP_ADD | self::OP_UPDATE],
         ['reviewed', self::OP_ADD | self::OP_UPDATE],
         ['revision', self::OP_UPDATE],
-        ['transDate', self::OP_ADD],
+        //[['date', 'transDate'], self::OP_ADD | self::OP_UPDATE],
     ];
 
     /**
@@ -107,6 +107,9 @@ class Entry extends Message
             }
             $entry->language = $data['language'] ?? $rules->language->default;
             $entry->reviewed = $data['reviewed'] ?? $rules->entry->reviewed;
+        }
+        if (isset($data['date'])) {
+            $entry->transDate = new Carbon($data['date']);
         }
         $entry->details = [];
         foreach ($data['details'] as $detail) {

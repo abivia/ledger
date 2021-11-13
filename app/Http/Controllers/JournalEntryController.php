@@ -57,36 +57,7 @@ class JournalEntryController extends Controller
             $journalEntry->save();
             $journalEntry->refresh();
             // Create the detail records
-            foreach ($message->details as $detail) {
-                $journalDetail = new JournalDetail();
-                $journalDetail->journalEntryId = $journalEntry->journalEntryId;
-                $journalDetail->ledgerUuid = $detail->account->uuid;
-                $journalDetail->amount = $detail->amount;
-                if ($detail->reference !== null) {
-                    $journalDetail->journalReferenceUuid = $detail->reference->uuid;
-                }
-                $journalDetail->save();
-                // Create/adjust the ledger balances
-                $ledgerBalance = LedgerBalance::where(
-                    ['ledgerUuid', '=', $journalDetail->ledgerUuid],
-                    ['domainUuid', '=', $this->ledgerDomain->domainUuid],
-                    ['currency', '=', $this->ledgerCurrency->code],
-                )->first();
-                if ($ledgerBalance === null) {
-                    $ledgerBalance = new LedgerBalance();
-                    $ledgerBalance->ledgerUuid = $journalDetail->ledgerUuid;
-                    $ledgerBalance->domainUuid = $this->ledgerDomain->domainUuid;
-                    $ledgerBalance->currency = $this->ledgerCurrency->code;
-                    $ledgerBalance->balance = $journalDetail->amount;
-                } else {
-                    $ledgerBalance->balance = bcadd(
-                        $ledgerBalance->balance,
-                        $journalDetail->amount,
-                        $this->ledgerCurrency->decimals
-                    );
-                }
-                $ledgerBalance->save();
-            }
+            $this->addDetails($journalEntry->journalEntryId, $message);
             DB::commit();
             $inTransaction = false;
             $this->auditLog($message);
@@ -100,23 +71,105 @@ class JournalEntryController extends Controller
         return $journalEntry;
     }
 
+    private function addDetails(int $journalEntryId, Entry $message)
+    {
+        foreach ($message->details as $detail) {
+            $journalDetail = new JournalDetail();
+            $journalDetail->journalEntryId = $journalEntryId;
+            $journalDetail->ledgerUuid = $detail->account->uuid;
+            $journalDetail->amount = $detail->amount;
+            if ($detail->reference !== null) {
+                $journalDetail->journalReferenceUuid = $detail->reference->uuid;
+            }
+            $journalDetail->save();
+            // Create/adjust the ledger balances
+            $ledgerBalance = LedgerBalance::where(
+                ['ledgerUuid', '=', $journalDetail->ledgerUuid],
+                ['domainUuid', '=', $this->ledgerDomain->domainUuid],
+                ['currency', '=', $this->ledgerCurrency->code],
+            )->first();
+            if ($ledgerBalance === null) {
+                $ledgerBalance = new LedgerBalance();
+                $ledgerBalance->ledgerUuid = $journalDetail->ledgerUuid;
+                $ledgerBalance->domainUuid = $this->ledgerDomain->domainUuid;
+                $ledgerBalance->currency = $this->ledgerCurrency->code;
+                $ledgerBalance->balance = $journalDetail->amount;
+            } else {
+                $ledgerBalance->balance = bcadd(
+                    $ledgerBalance->balance,
+                    $journalDetail->amount,
+                    $this->ledgerCurrency->decimals
+                );
+            }
+            $ledgerBalance->save();
+        }
+    }
+
+    /**
+     * @param Entry $message
+     * @throws Breaker
+     */
+    public function delete(Entry $message) {
+        $inTransaction = false;
+        // Ensure that the message contents are valid.
+        $this->validateEntry($message, Message::OP_DELETE);
+
+        try {
+            DB::beginTransaction();
+            $inTransaction = true;
+            // Get the Journal entry
+            $journalEntry = $this->fetch($message->id);
+            $journalEntry->checkRevision($message->revision ?? null);
+            // Delete the detail records and update balances
+            $this->deleteDetails($journalEntry);
+            // Delete the journal entry
+            $journalEntry->delete();
+            DB::commit();
+            $inTransaction = false;
+            $this->auditLog($message);
+        } catch (Exception $exception) {
+            if ($inTransaction) {
+                DB::rollBack();
+            }
+            throw $exception;
+        }
+
+        return;
+    }
+
+    private function deleteDetails(JournalEntry $journalEntry)
+    {
+        $journalDetails = JournalDetail::with(
+            ['balances' => function ($query) use ($journalEntry) {
+                $query->where('currency', $journalEntry->currency);
+            }])->where('journalEntryId', $journalEntry->journalEntryId)
+            ->all();
+        /** @var JournalDetail $oldDetail */
+        foreach ($journalDetails as $oldDetail) {
+            /** @var LedgerBalance $ledgerBalance */
+            $ledgerBalance = $oldDetail->balances->first();
+            $ledgerBalance->balance = bcsub($ledgerBalance->balance, $oldDetail->amount);
+            $ledgerBalance->save();
+        }
+    }
+
     /**
      * @param string $domainCode
      * @return JournalEntry
      * @throws Breaker
      */
-    private function fetch(string $domainCode): JournalEntry
+    private function fetch(int $id): JournalEntry
     {
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
-        $ledgerDomain = JournalEntry::where('code', $domainCode)->first();
-        if ($ledgerDomain === null) {
+        $journalEntry = JournalEntry::find($id);
+        if ($journalEntry === null) {
             throw Breaker::withCode(
                 Breaker::INVALID_OPERATION,
-                [__('domain :code does not exist', ['code' => $domainCode])]
+                [__('Journal entry :id does not exist', compact($id))]
             );
         }
 
-        return $ledgerDomain;
+        return $journalEntry;
     }
 
     /**
@@ -129,7 +182,7 @@ class JournalEntryController extends Controller
     public function get(Entry $message): JournalEntry
     {
         $message->validate(Message::OP_GET);
-        return $this->fetch($message->code);
+        return $this->fetch($message->id);
     }
 
     /**
@@ -145,6 +198,9 @@ class JournalEntryController extends Controller
         switch ($opFlag) {
             case Message::OP_ADD:
                 return $this->add($message);
+            case Message::OP_DELETE:
+                $this->delete($message);
+                return null;
             case Message::OP_GET:
                 return $this->get($message);
             case Message::OP_UPDATE:
@@ -163,36 +219,20 @@ class JournalEntryController extends Controller
      */
     public function update(Entry $message): JournalEntry
     {
-        $message->validate(Message::OP_UPDATE);
+        $this->validateEntry($message,Message::OP_UPDATE);
         $inTransaction = false;
         try {
-            $ledgerDomain = $this->fetch($message->code);
-            $ledgerDomain->checkRevision($message->revision ?? null);
-
-            $codeChange = $message->toCode !== null
-                && $ledgerDomain->code !== $message->toCode;
-            if ($codeChange) {
-                $ledgerDomain->code = $message->toCode;
-            }
-
-            if (isset($message->extra)) {
-                $ledgerDomain->extra = $message->extra;
-            }
+            $journalEntry = $this->fetch($message->id);
+            $journalEntry->checkRevision($message->revision ?? null);
 
             DB::beginTransaction();
             $inTransaction = true;
-            $this->updateDetails($ledgerDomain, $message);
-            $ledgerDomain->save();
-            // If we just changed the default domain, update settings in ledger root.
-            $flex = LedgerAccount::root()->flex;
-            if ($codeChange && $flex->rules->domain->default === $message->code) {
-                $flex->rules->domain->default = $ledgerDomain->code;
-                LedgerAccount::root()->flex = $flex;
-                LedgerAccount::saveRoot();
-            }
+            $journalEntry->fillFromMessage($message);
+            $this->updateDetails($journalEntry, $message);
+            $journalEntry->save();
             DB::commit();
             $inTransaction = false;
-            $ledgerDomain->refresh();
+            $journalEntry->refresh();
         } catch (Exception $exception) {
             if ($inTransaction) {
                 DB::rollBack();
@@ -200,22 +240,14 @@ class JournalEntryController extends Controller
             throw $exception;
         }
 
-        return $ledgerDomain;
+        return $journalEntry;
     }
 
-    protected function updateDetails(JournalEntry $ledgerDomain, Entry $message)
+    protected function updateDetails(JournalEntry $journalEntry, Entry $message)
     {
-        foreach ($message->names as $name) {
-            /** @var LedgerName $ledgerName */
-            $ledgerName = $ledgerDomain->names->firstWhere('language', $name->language);
-            if ($ledgerName === null) {
-                $ledgerName = new LedgerName();
-                $ledgerName->ownerUuid = $ledgerDomain->domainUuid;
-                $ledgerName->language = $name->language;
-            }
-            $ledgerName->name = $name->name;
-            $ledgerName->save();
-        }
+        // Remove existing details, undoing balance changes
+        $this->deleteDetails($journalEntry);
+        $this->addDetails($journalEntry->journalEntryId, $message);
     }
 
     /**
@@ -247,10 +279,10 @@ class JournalEntryController extends Controller
         }
 
         // If a journal is supplied, verify the code
-        if ($message->journal !== '') {
+        if (isset($message->journal)) {
             $this->subJournal = SubJournal::findWith($message->journal)->first();
             if ($this->subJournal === null) {
-                $errors[] = __('Journal :code not found.', ['code' => $message->journal]);
+                $errors[] = __('Journal :code not found.', ['code' => $message->journal->code]);
             } else {
                 $this->subJournal = null;
             }
@@ -258,6 +290,7 @@ class JournalEntryController extends Controller
 
         // Normalize the amounts and check for balance
         $balance = '0';
+        $unique = [];
         $precision = $this->ledgerCurrency->decimals;
         foreach ($message->details as $line => $detail) {
             // Make sure the account is valid and that we have the uuid
@@ -265,6 +298,16 @@ class JournalEntryController extends Controller
             if ($ledgerAccount === null) {
                 $errors[] = __('Detail line :line has an invalid account.', compact('line'));
             }
+            // Check that each account only appears once.
+            if (isset($unique[$ledgerAccount->ledgerUuid])) {
+                $errors[] = __(
+                    'The account :code cannot appear more than once in an entry',
+                    ['code' => $ledgerAccount->code]
+                );
+                continue;
+            }
+            $unique[$ledgerAccount->ledgerUuid] = true;
+
             // Make sure any reference is valid and that we have the uuid
             if ($detail->reference !== null) {
                 /** @var JournalReference $reference */
@@ -275,7 +318,7 @@ class JournalEntryController extends Controller
                     $detail->reference->uuid = $reference->journalReferenceUuid;
                 }
             }
-            bcadd($balance, $detail->normalizeAmount($precision));
+            $balance = bcadd($balance, $detail->normalizeAmount($precision));
         }
         if (bccomp($balance, '0') !== 0) {
             $errors[] = __('Entry amounts are out of balance by :balance.', compact('balance'));

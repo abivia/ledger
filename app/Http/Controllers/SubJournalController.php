@@ -66,6 +66,7 @@ class SubJournalController extends Controller
      * @param SubJournal $message
      * @return null
      * @throws Breaker
+     * @throws Exception
      */
     public function delete(SubJournal $message)
     {

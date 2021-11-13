@@ -1,0 +1,1803 @@
+{
+    "accounts": [
+        {
+            "names": [
+                {
+                    "name": "Assets",
+                    "language": "en"
+                }
+            ],
+            "code": 1000,
+            "category": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Current Assets",
+                    "language": "en"
+                }
+            ],
+            "code": 1100,
+            "parent": {
+                "code": 1000
+            },
+            "category": true,
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Cash and cash equivalents",
+                    "language": "en"
+                }
+            ],
+            "code": 1110,
+            "parent": {
+                "code": 1100
+            },
+            "category": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Bank checking",
+                    "language": "en"
+                },
+                {
+                    "name": "Bank chequing",
+                    "language": "en-CA"
+                }
+            ],
+            "code": 1120,
+            "parent": {
+                "code": 1100
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Bank savings",
+                    "language": "en"
+                }
+            ],
+            "code": 1130,
+            "parent": {
+                "code": 1100
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Online savings",
+                    "language": "en"
+                }
+            ],
+            "code": 1140,
+            "parent": {
+                "code": 1100
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Petty cash",
+                    "language": "en"
+                }
+            ],
+            "code": 1150,
+            "parent": {
+                "code": 1100
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Credit card processor",
+                    "language": "en"
+                }
+            ],
+            "code": 1160,
+            "parent": {
+                "code": 1100
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Short term marketable securities",
+                    "language": "en"
+                }
+            ],
+            "code": 1200,
+            "parent": {
+                "code": 1000
+            },
+            "category": true,
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Bonds",
+                    "language": "en"
+                }
+            ],
+            "code": 1210,
+            "parent": {
+                "code": 1200
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Accounts receivable",
+                    "language": "en"
+                }
+            ],
+            "code": 1300,
+            "parent": {
+                "code": 1000
+            },
+            "category": true,
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Current accounts receivable",
+                    "language": "en"
+                }
+            ],
+            "code": 1310,
+            "parent": {
+                "code": 1300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Allowance for doubtful debts",
+                    "language": "en"
+                }
+            ],
+            "code": 1320,
+            "parent": {
+                "code": 1300
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Inventory",
+                    "language": "en"
+                }
+            ],
+            "code": 1400,
+            "parent": {
+                "code": 1000
+            },
+            "category": true,
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Raw materials",
+                    "language": "en"
+                }
+            ],
+            "code": 1410,
+            "parent": {
+                "code": 1400
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Work in progress",
+                    "language": "en"
+                }
+            ],
+            "code": 1420,
+            "parent": {
+                "code": 1400
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Finished goods",
+                    "language": "en"
+                }
+            ],
+            "code": 1430,
+            "parent": {
+                "code": 1400
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Other receivables",
+                    "language": "en"
+                }
+            ],
+            "code": 1500,
+            "parent": {
+                "code": 1000
+            },
+            "category": true,
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Prepayments",
+                    "language": "en"
+                }
+            ],
+            "code": 1510,
+            "parent": {
+                "code": 1500
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Long term assets",
+                    "language": "en"
+                }
+            ],
+            "code": 1600,
+            "parent": {
+                "code": 1000
+            },
+            "category": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Long term marketable securities",
+                    "language": "en"
+                }
+            ],
+            "code": 1610,
+            "parent": {
+                "code": 1600
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Property, plant and equipment",
+                    "language": "en"
+                }
+            ],
+            "code": 1700,
+            "parent": {
+                "code": 1000
+            }
+        },
+        {
+            "names": [
+                {
+                    "name": "Property",
+                    "language": "en"
+                }
+            ],
+            "code": 1710,
+            "parent": {
+                "code": 1700
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Property Depreciation",
+                    "language": "en"
+                }
+            ],
+            "code": 1710,
+            "parent": {
+                "code": 1700
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Plant",
+                    "language": "en"
+                }
+            ],
+            "code": 1720,
+            "parent": {
+                "code": 1700
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Plant depreciation",
+                    "language": "en"
+                }
+            ],
+            "code": 1730,
+            "parent": {
+                "code": 1700
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Equipment",
+                    "language": "en"
+                }
+            ],
+            "code": 1740,
+            "parent": {
+                "code": 1700
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Equipment depreciation",
+                    "language": "en"
+                }
+            ],
+            "code": 1750,
+            "parent": {
+                "code": 1700
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Goodwill",
+                    "language": "en"
+                }
+            ],
+            "code": 1800,
+            "parent": {
+                "code": 1000
+            },
+            "category": true,
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Intellectual property",
+                    "language": "en"
+                }
+            ],
+            "code": 1810,
+            "parent": {
+                "code": 1800
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Intellectual property amortization",
+                    "language": "en"
+                }
+            ],
+            "code": 1820,
+            "parent": {
+                "code": 1800
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Other assets",
+                    "language": "en"
+                }
+            ],
+            "code": 1840,
+            "parent": {
+                "code": 1800
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Liabilities",
+                    "language": "en"
+                }
+            ],
+            "code": 2000,
+            "category": true,
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Current Liabilities",
+                    "language": "en"
+                }
+            ],
+            "code": 2100,
+            "parent": {
+                "code": 2000
+            },
+            "category": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Notes payable",
+                    "language": "en"
+                }
+            ],
+            "code": 2110,
+            "parent": {
+                "code": 2100
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Accounts payable",
+                    "language": "en"
+                }
+            ],
+            "code": 2120,
+            "parent": {
+                "code": 2100
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Other current liabilities",
+                    "language": "en"
+                }
+            ],
+            "code": 2200,
+            "parent": {
+                "code": 2000
+            },
+            "category": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Payroll payable",
+                    "language": "en"
+                }
+            ],
+            "code": 2210,
+            "parent": {
+                "code": 2200
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Interest payable",
+                    "language": "en"
+                }
+            ],
+            "code": 2220,
+            "parent": {
+                "code": 2200
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Accrued expenses",
+                    "language": "en"
+                }
+            ],
+            "code": 2230,
+            "parent": {
+                "code": 2200
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Unearned revenue",
+                    "language": "en"
+                }
+            ],
+            "code": 2240,
+            "parent": {
+                "code": 2200
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Sales Tax payable",
+                    "language": "en"
+                }
+            ],
+            "code": 2250,
+            "parent": {
+                "code": 2200
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Purchase Tax payable",
+                    "language": "en"
+                }
+            ],
+            "code": 2260,
+            "parent": {
+                "code": 2200
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Payroll tax payable",
+                    "language": "en"
+                }
+            ],
+            "code": 2270,
+            "parent": {
+                "code": 2200
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Income tax payable",
+                    "language": "en"
+                }
+            ],
+            "code": 2280,
+            "parent": {
+                "code": 2200
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Long-term liabilities",
+                    "language": "en"
+                }
+            ],
+            "code": 2300,
+            "parent": {
+                "code": 2000
+            },
+            "category": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Mortgage loan",
+                    "language": "en"
+                }
+            ],
+            "code": 2310,
+            "parent": {
+                "code": 2300
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Bonds payable",
+                    "language": "en"
+                }
+            ],
+            "code": 2320,
+            "parent": {
+                "code": 2300
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Equity",
+                    "language": "en"
+                }
+            ],
+            "code": 3000,
+            "category": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Common stock",
+                    "language": "en"
+                }
+            ],
+            "code": 3100,
+            "parent": {
+                "code": 3000
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Retained earnings",
+                    "language": "en"
+                }
+            ],
+            "code": 3200,
+            "parent": {
+                "code": 3000
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Income",
+                    "language": "en"
+                }
+            ],
+            "code": 4000,
+            "category": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Revenue",
+                    "language": "en"
+                }
+            ],
+            "code": 4100,
+            "parent": {
+                "code": 4000
+            },
+            "category": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Sales",
+                    "language": "en"
+                }
+            ],
+            "code": 4110,
+            "parent": {
+                "code": 4100
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Discounts allowed",
+                    "language": "en"
+                }
+            ],
+            "code": 4120,
+            "parent": {
+                "code": 4100
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Other Income",
+                    "language": "en"
+                }
+            ],
+            "code": 4200,
+            "parent": {
+                "code": 4000
+            },
+            "category": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Gain on sale of assets",
+                    "language": "en"
+                }
+            ],
+            "code": 4210,
+            "parent": {
+                "code": 4200
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Interest income",
+                    "language": "en"
+                }
+            ],
+            "code": 4220,
+            "parent": {
+                "code": 4200
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Insurance claims",
+                    "language": "en"
+                }
+            ],
+            "code": 4230,
+            "parent": {
+                "code": 4200
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Rent income",
+                    "language": "en"
+                }
+            ],
+            "code": 4240,
+            "parent": {
+                "code": 4200
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Cost of sales",
+                    "language": "en"
+                }
+            ],
+            "code": 5000,
+            "category": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Materials purchased",
+                    "language": "en"
+                }
+            ],
+            "code": 5110,
+            "parent": {
+                "code": 5000
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Packaging",
+                    "language": "en"
+                }
+            ],
+            "code": 5120,
+            "parent": {
+                "code": 5000
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Discounts taken",
+                    "language": "en"
+                }
+            ],
+            "code": 5130,
+            "parent": {
+                "code": 5000
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Carriage",
+                    "language": "en"
+                }
+            ],
+            "code": 5140,
+            "parent": {
+                "code": 5000
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Import duty",
+                    "language": "en"
+                }
+            ],
+            "code": 5150,
+            "parent": {
+                "code": 5000
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Transport insurance",
+                    "language": "en"
+                }
+            ],
+            "code": 5160,
+            "parent": {
+                "code": 5000
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Opening inventory",
+                    "language": "en"
+                }
+            ],
+            "code": 5170,
+            "parent": {
+                "code": 5000
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Closing inventory",
+                    "language": "en"
+                }
+            ],
+            "code": 5180,
+            "parent": {
+                "code": 5000
+            },
+            "credit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Productive Labour",
+                    "language": "en"
+                }
+            ],
+            "code": 5190,
+            "parent": {
+                "code": 5000
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Expenses",
+                    "language": "en"
+                }
+            ],
+            "code": 6000
+        },
+        {
+            "names": [
+                {
+                    "name": "Research and development",
+                    "language": "en"
+                }
+            ],
+            "code": 6100,
+            "parent": {
+                "code": 6000
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Sales and marketing",
+                    "language": "en"
+                }
+            ],
+            "code": 6200,
+            "parent": {
+                "code": 6000
+            },
+            "category": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Sales commissions",
+                    "language": "en"
+                }
+            ],
+            "code": 6210,
+            "parent": {
+                "code": 6200
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Sales promotion",
+                    "language": "en"
+                }
+            ],
+            "code": 6220,
+            "parent": {
+                "code": 6200
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Advertising",
+                    "language": "en"
+                }
+            ],
+            "code": 6230,
+            "parent": {
+                "code": 6200
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Gifts & samples",
+                    "language": "en"
+                }
+            ],
+            "code": 6240,
+            "parent": {
+                "code": 6200
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Marketing expenses",
+                    "language": "en"
+                }
+            ],
+            "code": 6250,
+            "parent": {
+                "code": 6200
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "General and administrative",
+                    "language": "en"
+                }
+            ],
+            "code": 6300,
+            "parent": {
+                "code": 6000
+            },
+            "category": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Payroll",
+                    "language": "en"
+                }
+            ],
+            "code": 6310,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Payroll expenses",
+                    "language": "en"
+                }
+            ],
+            "code": 6320,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Payroll benefits",
+                    "language": "en"
+                }
+            ],
+            "code": 6330,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Payroll taxes",
+                    "language": "en"
+                }
+            ],
+            "code": 6340,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Pensions",
+                    "language": "en"
+                }
+            ],
+            "code": 6350,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Recruitment expenses",
+                    "language": "en"
+                }
+            ],
+            "code": 6360,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Rent",
+                    "language": "en"
+                }
+            ],
+            "code": 6370,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Water",
+                    "language": "en"
+                }
+            ],
+            "code": 6380,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Property taxes",
+                    "language": "en"
+                }
+            ],
+            "code": 6390,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Premises insurance",
+                    "language": "en"
+                }
+            ],
+            "code": 6400,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Electricity",
+                    "language": "en"
+                }
+            ],
+            "code": 6410,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Gas",
+                    "language": "en"
+                }
+            ],
+            "code": 6420,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Oil",
+                    "language": "en"
+                }
+            ],
+            "code": 6430,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Other heating costs",
+                    "language": "en"
+                }
+            ],
+            "code": 6440,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Motor fuel",
+                    "language": "en"
+                }
+            ],
+            "code": 6450,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Motor repairs",
+                    "language": "en"
+                }
+            ],
+            "code": 6460,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Licenses",
+                    "language": "en"
+                }
+            ],
+            "code": 6470,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Vehicle insurance",
+                    "language": "en"
+                }
+            ],
+            "code": 6480,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Miscellaneous motor",
+                    "language": "en"
+                }
+            ],
+            "code": 6490,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Travelling",
+                    "language": "en"
+                }
+            ],
+            "code": 6500,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Car hire",
+                    "language": "en"
+                }
+            ],
+            "code": 6510,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Hotels",
+                    "language": "en"
+                }
+            ],
+            "code": 6520,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Entertainment",
+                    "language": "en"
+                }
+            ],
+            "code": 6530,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Subsistence",
+                    "language": "en"
+                }
+            ],
+            "code": 6540,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Printing",
+                    "language": "en"
+                }
+            ],
+            "code": 6550,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Postage & carriage",
+                    "language": "en"
+                }
+            ],
+            "code": 6560,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Telephone",
+                    "language": "en"
+                }
+            ],
+            "code": 6570,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Office stationery",
+                    "language": "en"
+                }
+            ],
+            "code": 6580,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Books",
+                    "language": "en"
+                }
+            ],
+            "code": 6590,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Legal fees",
+                    "language": "en"
+                }
+            ],
+            "code": 6600,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Audit & accountancy fees",
+                    "language": "en"
+                }
+            ],
+            "code": 6610,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Consultancy fees",
+                    "language": "en"
+                }
+            ],
+            "code": 6620,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Professional fees",
+                    "language": "en"
+                }
+            ],
+            "code": 6630,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Equipment hire",
+                    "language": "en"
+                }
+            ],
+            "code": 6640,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Equipment maintenance",
+                    "language": "en"
+                }
+            ],
+            "code": 6650,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Repairs & renewals",
+                    "language": "en"
+                }
+            ],
+            "code": 6660,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Cleaning",
+                    "language": "en"
+                }
+            ],
+            "code": 6670,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Laundry",
+                    "language": "en"
+                }
+            ],
+            "code": 6680,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Premises expenses",
+                    "language": "en"
+                }
+            ],
+            "code": 6690,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Bad debt expense",
+                    "language": "en"
+                }
+            ],
+            "code": 6700,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Donations",
+                    "language": "en"
+                }
+            ],
+            "code": 6710,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Subscriptions",
+                    "language": "en"
+                }
+            ],
+            "code": 6720,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Clothing costs",
+                    "language": "en"
+                }
+            ],
+            "code": 6730,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Training costs",
+                    "language": "en"
+                }
+            ],
+            "code": 6740,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Insurance",
+                    "language": "en"
+                }
+            ],
+            "code": 6750,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Refreshments",
+                    "language": "en"
+                }
+            ],
+            "code": 6760,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Suspense account",
+                    "language": "en"
+                }
+            ],
+            "code": 6770,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Clearing account",
+                    "language": "en"
+                }
+            ],
+            "code": 6780,
+            "parent": {
+                "code": 6300
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Depreciation",
+                    "language": "en"
+                }
+            ],
+            "code": 6800,
+            "parent": {
+                "code": 6000
+            },
+            "category": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Property depreciation",
+                    "language": "en"
+                }
+            ],
+            "code": 6810,
+            "parent": {
+                "code": 6800
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Plant depreciation",
+                    "language": "en"
+                }
+            ],
+            "code": 6820,
+            "parent": {
+                "code": 6800
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Equipment depreciation",
+                    "language": "en"
+                }
+            ],
+            "code": 6830,
+            "parent": {
+                "code": 6800
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Intellectual property amortization",
+                    "language": "en"
+                }
+            ],
+            "code": 6840,
+            "parent": {
+                "code": 6800
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Finance Costs",
+                    "language": "en"
+                }
+            ],
+            "code": 6900,
+            "parent": {
+                "code": 6000
+            }
+        },
+        {
+            "names": [
+                {
+                    "name": "Interest expense",
+                    "language": "en"
+                }
+            ],
+            "code": 6910,
+            "parent": {
+                "code": 6900
+            },
+            "category": true,
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Bank fees",
+                    "language": "en"
+                }
+            ],
+            "code": 6920,
+            "parent": {
+                "code": 6900
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Currency charges",
+                    "language": "en"
+                }
+            ],
+            "code": 6930,
+            "parent": {
+                "code": 6900
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Income Taxes",
+                    "language": "en"
+                }
+            ],
+            "code": 7100,
+            "parent": {
+                "code": 6000
+            },
+            "category": true,
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Federal Income Tax",
+                    "language": "en"
+                }
+            ],
+            "code": 7110,
+            "parent": {
+                "code": 7100
+            },
+            "debit": true
+        },
+        {
+            "names": [
+                {
+                    "name": "Administrative Subdomain Income Tax",
+                    "language": "en"
+                }
+            ],
+            "code": 7120,
+            "parent": {
+                "code": 7100
+            },
+            "debit": true
+        }
+    ]
+}
