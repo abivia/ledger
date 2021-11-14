@@ -22,12 +22,12 @@ class Entry extends Message
         [['descriptionArgs', 'arguments'], self::OP_ADD | self::OP_UPDATE],
         //['domain', self::OP_ADD],
         ['extra', self::OP_ADD | self::OP_UPDATE],
-        ['id', self::OP_UPDATE],
+        ['id', self::OP_DELETE | self::OP_GET | self::OP_UPDATE],
         //['journal', self::OP_ADD],
         ['language', self::OP_UPDATE],
         ['posted', self::OP_ADD | self::OP_UPDATE],
         ['reviewed', self::OP_ADD | self::OP_UPDATE],
-        ['revision', self::OP_UPDATE],
+        ['revision', self::OP_DELETE | self::OP_UPDATE],
         //[['date', 'transDate'], self::OP_ADD | self::OP_UPDATE],
     ];
 
@@ -108,12 +108,14 @@ class Entry extends Message
             $entry->language = $data['language'] ?? $rules->language->default;
             $entry->reviewed = $data['reviewed'] ?? $rules->entry->reviewed;
         }
-        if (isset($data['date'])) {
-            $entry->transDate = new Carbon($data['date']);
-        }
-        $entry->details = [];
-        foreach ($data['details'] as $detail) {
-            $entry->details[] = Detail::fromRequest($detail, $opFlag);
+        if ($opFlag & (self::OP_ADD | self::OP_UPDATE)) {
+            if (isset($data['date'])) {
+                $entry->transDate = new Carbon($data['date']);
+            }
+            $entry->details = [];
+            foreach ($data['details'] ?? [] as $detail) {
+                $entry->details[] = Detail::fromRequest($detail, $opFlag);
+            }
         }
         if ($opFlag & self::FN_VALIDATE) {
             $entry->validate($opFlag);
@@ -145,10 +147,12 @@ class Entry extends Message
                 $errors[] = __('Transaction date is required.');
             }
         }
-        if ($opFlag & self::OP_UPDATE) {
+        if ($opFlag & (self::OP_DELETE | self::OP_GET | self::OP_UPDATE)) {
             if ($this->id === null) {
-                $errors[] = __('Entry ID required for update.');
+                $errors[] = __('Entry ID required.');
             }
+        }
+        if ($opFlag & (self::OP_DELETE | self::OP_UPDATE)) {
             if ($this->revision === null) {
                 $errors[] = __('Entry revision code required for update.');
             }

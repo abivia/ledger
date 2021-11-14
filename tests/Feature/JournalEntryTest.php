@@ -52,6 +52,30 @@ class JournalEntryTest extends TestCase
         return $this->isSuccessful($response);
     }
 
+    protected function addSalesTransaction() {
+        // Add a transaction, sales to A/R
+        $requestData = [
+            'currency' => 'CAD',
+            'description' => 'Sold the first thing!',
+            'date' => '2021-11-12',
+            'details' => [
+                [
+                    'accountCode' => '1310',
+                    'debit' => '520.00'
+                ],
+                [
+                    'accountCode' => '4110',
+                    'credit' => '520.00'
+                ],
+            ]
+        ];
+        $response = $this->json(
+            'post', 'api/v1/ledger/entry/add', $requestData
+        );
+
+        return [$requestData, $response];
+    }
+
     /**
      * Create a valid ledger
      *
@@ -94,25 +118,7 @@ class JournalEntryTest extends TestCase
 
         $this->isSuccessful($response, 'ledger');
 
-        // Add a transaction, sales to A/R
-        $requestData = [
-            'currency' => 'CAD',
-            'description' => 'Sold the first thing!',
-            'date' => '2021-11-12',
-            'details' => [
-                [
-                    'accountCode' => '1310',
-                    'debit' => '520.00'
-                ],
-                [
-                    'accountCode' => '4110',
-                    'credit' => '520.00'
-                ],
-            ]
-        ];
-        $response = $this->json(
-            'post', 'api/v1/ledger/entry/add', $requestData
-        );
+        [$requestData, $response] = $this->addSalesTransaction();
         $actual = $this->isSuccessful($response);
         $this->hasRevisionElements($actual->entry);
 
@@ -146,40 +152,6 @@ class JournalEntryTest extends TestCase
         }
     }
 
-    public function testAddDuplicate()
-    {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
-        // First we need a ledger
-        $response = $this->postJson(
-            'api/v1/ledger/root/create', $this->createRequest
-        );
-        $this->isSuccessful($response, 'ledger');
-
-        // Add an account
-        $requestData = [
-            'code' => '1010',
-            'parent' => ['code' => '1000',],
-            'names' => [
-                [
-                    'name' => 'Cash in Bank',
-                    'language' => 'en',
-                ]
-            ]
-        ];
-        $response = $this->json(
-            'post', 'api/v1/ledger/account/add', $requestData
-        );
-        $response = $this->json(
-            'post', 'api/v1/ledger/account/add', $requestData
-        );
-        $actual = $this->isFailure($response);
-        //print_r($actual);
-    }
-
     public function testDelete()
     {
         Sanctum::actingAs(
@@ -187,52 +159,42 @@ class JournalEntryTest extends TestCase
             ['*']
         );
 
-        // First we need a ledger and an account
-        $this->createLedger();
-        $this->addAccount('1010', '1000');
+        // First we need a ledger and transaction
+        $this->createLedger([], ['template' => 'common']);
+
+        [$requestData, $response] = $this->addSalesTransaction();
+        $actual = $this->isSuccessful($response);
+
+        // Get the created data
+        $journalEntry = JournalEntry::find($actual->entry->id);
+        $this->assertNotNull($journalEntry);
+        $details = $journalEntry->details;
+        $ledgerDomain = LedgerDomain::find($journalEntry->domainUuid);
 
         // Now delete the account
-        $requestData = [
-            'code' => '1010',
+        $deleteData = [
+            'id' => $actual->entry->id,
+            'revision' => $actual->entry->revision,
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/delete', $requestData
+            'post', 'api/v1/ledger/entry/delete', $deleteData
         );
         $this->isSuccessful($response, 'success');
 
-        // Confirm that a fetch fails
-        $requestData = [
-            'code' => '1010',
-        ];
-        $response = $this->json(
-            'post', 'api/v1/ledger/account/get', $requestData
-        );
-        $actual = $this->isFailure($response, 'accounts');
-    }
-
-    public function testDeleteSubAccounts()
-    {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
-        // First we need a ledger
-        $this->createLedger();
-
-        // Add an account and a few sub-accounts
-        $this->addAccount('1010', '1000');
-        $this->addAccount('1011', '1010');
-        $this->addAccount('1012', '1010');
-
-        // Now delete the parent account
-        $requestData = [
-            'code' => '1010',
-        ];
-        $response = $this->json(
-            'post', 'api/v1/ledger/account/delete', $requestData
-        );
-        $this->isSuccessful($response, 'success');
+        // Confirm that records are deleted and balances corrected.
+        $journalEntryDeleted = JournalEntry::find($actual->entry->id);
+        $this->assertNull($journalEntryDeleted);
+        foreach ($details as $detail) {
+            $ledgerAccount = LedgerAccount::find($detail->ledgerUuid);
+            $this->assertNotNull($ledgerAccount);
+            $ledgerBalance = LedgerBalance::where([
+                    ['ledgerUuid', '=', $detail->ledgerUuid],
+                    ['domainUuid', '=', $ledgerDomain->domainUuid],
+                    ['currency', '=', $journalEntry->currency]]
+            )->first();
+            $this->assertNotNull($ledgerBalance);
+            $this->assertEquals('0.00', $ledgerBalance->balance);
+        }
     }
 
     public function testGet()

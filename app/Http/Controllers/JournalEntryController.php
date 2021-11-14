@@ -112,7 +112,7 @@ class JournalEntryController extends Controller
     public function delete(Entry $message) {
         $inTransaction = false;
         // Ensure that the message contents are valid.
-        $this->validateEntry($message, Message::OP_DELETE);
+        $message->validate(Message::OP_DELETE);
 
         try {
             DB::beginTransaction();
@@ -120,6 +120,8 @@ class JournalEntryController extends Controller
             // Get the Journal entry
             $journalEntry = $this->fetch($message->id);
             $journalEntry->checkRevision($message->revision ?? null);
+            // We need the currency
+            $this->getCurrency($journalEntry->currency);
             // Delete the detail records and update balances
             $this->deleteDetails($journalEntry);
             // Delete the journal entry
@@ -133,8 +135,6 @@ class JournalEntryController extends Controller
             }
             throw $exception;
         }
-
-        return;
     }
 
     private function deleteDetails(JournalEntry $journalEntry)
@@ -142,13 +142,14 @@ class JournalEntryController extends Controller
         $journalDetails = JournalDetail::with(
             ['balances' => function ($query) use ($journalEntry) {
                 $query->where('currency', $journalEntry->currency);
-            }])->where('journalEntryId', $journalEntry->journalEntryId)
-            ->all();
+            }])
+            ->where('journalEntryId', $journalEntry->journalEntryId)
+            ->get();
         /** @var JournalDetail $oldDetail */
         foreach ($journalDetails as $oldDetail) {
             /** @var LedgerBalance $ledgerBalance */
             $ledgerBalance = $oldDetail->balances->first();
-            $ledgerBalance->balance = bcsub($ledgerBalance->balance, $oldDetail->amount);
+            $ledgerBalance->balance = bcsub($ledgerBalance->balance, $oldDetail->amount, $this->ledgerCurrency->decimals);
             $ledgerBalance->save();
         }
     }
@@ -183,6 +184,14 @@ class JournalEntryController extends Controller
     {
         $message->validate(Message::OP_GET);
         return $this->fetch($message->id);
+    }
+
+    private function getCurrency($currency)
+    {
+        $this->ledgerCurrency = LedgerCurrency::find($currency);
+        if ($this->ledgerCurrency === null) {
+            $errors[] = __('Currency :code not found.', ['code' => $currency]);
+        }
     }
 
     /**
@@ -260,7 +269,7 @@ class JournalEntryController extends Controller
     private function validateEntry(Entry $message, int $opFlag)
     {
         // First the basics
-        $message->validate(Message::OP_ADD);
+        $message->validate($opFlag);
         $errors = [];
 
         // Get the domain
@@ -272,10 +281,7 @@ class JournalEntryController extends Controller
 
             // Get the currency, use the domain default if none provided
             $message->currency ??= $this->ledgerDomain->currencyDefault;
-            $this->ledgerCurrency = LedgerCurrency::find($message->currency);
-            if ($this->ledgerCurrency === null) {
-                $errors[] = __('Currency :code not found.', ['code' => $message->currency]);
-            }
+            $this->getCurrency($message->currency);
         }
 
         // If a journal is supplied, verify the code
