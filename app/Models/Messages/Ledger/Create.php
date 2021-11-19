@@ -124,11 +124,11 @@ class Create extends Message
         }
         if (count($this->domains) < 1 && $makeDefault) {
             // Create a default domain
-            $firstDomain = 'Ledger';
-            $this->domains['Ledger'] = [
-                'code' => 'Ledger',
+            $firstDomain = 'MAIN';
+            $this->domains['MAIN'] = [
+                'code' => 'MAIN',
                 'names' => [
-                    'name' => 'General Ledger',
+                    'name' => 'Main General Ledger',
                     'language' => 'en'
                 ]
             ];
