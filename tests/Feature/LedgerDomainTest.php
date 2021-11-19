@@ -136,7 +136,7 @@ class LedgerDomainTest extends TestCase
 
         // Now fetch the default domain
         $requestData = [
-            'code' => 'GJ',
+            'code' => 'Corp',
         ];
         $response = $this->json(
             'post', 'api/v1/ledger/domain/get', $requestData
@@ -147,7 +147,7 @@ class LedgerDomainTest extends TestCase
             $actual->domain
         );
         $this->hasRevisionElements($actual->domain);
-        $this->assertEquals('GJ', $actual->domain->code);
+        $this->assertEquals('Corp', $actual->domain->code);
         $this->assertEquals('CAD', $actual->domain->currency);
 
         // Expect error with invalid code
@@ -173,12 +173,12 @@ class LedgerDomainTest extends TestCase
 
         // Verify the default domain is as expected
         $rules = LedgerAccount::rules();
-        $this->assertEquals('GJ', $rules->domain->default);
+        $this->assertEquals('Corp', $rules->domain->default);
 
         // Try an update with bogus data
         $requestData = [
             'revision' => 'bogus',
-            'code' => 'GJ',
+            'code' => 'Corp',
         ];
         $response = $this->json(
             'post', 'api/v1/ledger/domain/update', $requestData
@@ -194,7 +194,7 @@ class LedgerDomainTest extends TestCase
         // Now try with a valid revision
         $requestData = [
             'revision' => $actual->domain->revision,
-            'code' => 'GJ',
+            'code' => 'Corp',
             'toCode' => 'Main'
         ];
         $response = $this->json(

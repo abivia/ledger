@@ -160,7 +160,7 @@ class JournalEntryTest extends TestCase
         $this->assertEquals($requestData['description'], $journalEntry->description);
         $ledgerDomain = LedgerDomain::find($journalEntry->domainUuid);
         $this->assertNotNull($ledgerDomain);
-        $this->assertEquals('GJ', $ledgerDomain->code);
+        $this->assertEquals('Corp', $ledgerDomain->code);
 
         /** @var JournalDetail $detail */
         foreach ($journalEntry->details as $detail) {
@@ -207,7 +207,7 @@ class JournalEntryTest extends TestCase
         $this->assertEquals($requestData['description'], $journalEntry->description);
         $ledgerDomain = LedgerDomain::find($journalEntry->domainUuid);
         $this->assertNotNull($ledgerDomain);
-        $this->assertEquals('GJ', $ledgerDomain->code);
+        $this->assertEquals('Corp', $ledgerDomain->code);
 
         $expectByCode = [
             '1310' => '-520.00',
@@ -322,66 +322,53 @@ class JournalEntryTest extends TestCase
             User::factory()->create(),
             ['*']
         );
-        $this->doesNotPerformAssertions();
-        return;
+        // First we need a ledger and transaction
+        $this->createLedger(['template'], ['template' => 'common']);
 
-        // First we need a ledger
-        $this->createLedger();
+        [$requestData, $addResponse] = $this->addSalesTransaction();
+        $addActual = $this->isSuccessful($addResponse);
 
-        // Add an account
-        $accountInfo = $this->addAccount('1010', '1000');
-
-        // Try an update with bogus data
-        $requestData = [
-            'revision' => 'bogus',
-            'code' => '1010',
-            'credit' => true
-        ];
+        // Update the transaction
+        $requestData['id'] = $addActual->entry->id;
+        $requestData['revision'] = $addActual->entry->revision;
+        $requestData['description'] = 'Oops, that was a rental!';
+        $requestData['details'][1]['accountCode'] = '4240';
         $response = $this->json(
-            'post', 'api/v1/ledger/account/update', $requestData
-        );
-        $this->isFailure($response);
-
-        // Now try with a valid revision
-        $requestData['revision'] = $accountInfo->account->revision;
-        $response = $this->json(
-            'post', 'api/v1/ledger/account/update', $requestData
-        );
-        $result = $this->isSuccessful($response, 'account');
-
-        // Attempt a retry with the same (now invalid) revision.
-        $requestData['revision'] = $accountInfo->account->revision;
-        $response = $this->json(
-            'post', 'api/v1/ledger/account/update', $requestData
-        );
-        $this->isFailure($response);
-
-        // Try again with a valid revision
-        $requestData['revision'] = $result->account->revision;
-        $response = $this->json(
-            'post', 'api/v1/ledger/account/update', $requestData
+            'post', 'api/v1/ledger/entry/update', $requestData
         );
         $result = $this->isSuccessful($response);
 
-        // Try setting both debit and credit true
-        $requestData['debit'] = true;
-        $requestData['revision'] = $result->account->revision;
-        $response = $this->json(
-            'post', 'api/v1/ledger/account/update', $requestData
+        // Check that we really did do everything that was supposed to be done.
+        $journalEntry = JournalEntry::find($addActual->entry->id);
+        $this->assertNotNull($journalEntry);
+        $this->assertTrue(
+            $journalEntry->transDate->equalTo(new Carbon($requestData['date']))
         );
-        $this->isFailure($response);
+        $this->assertEquals('CAD', $journalEntry->currency);
+        $this->assertEquals($requestData['description'], $journalEntry->description);
+        $ledgerDomain = LedgerDomain::find($journalEntry->domainUuid);
+        $this->assertNotNull($ledgerDomain);
+        $this->assertEquals('Corp', $ledgerDomain->code);
 
-        unset($requestData['credit']);
-        unset($requestData['debit']);
-        $requestData['names'] = [
-            ['name' => 'Updated Name', 'language' => 'en'],
-            ['name' => 'Additional Name', 'language' => 'en-ca'],
+        $expectByCode = [
+            '1310' => '-520.00',
+            '4110' => '0.00',
+            '4240' => '520.00',
         ];
-        $response = $this->json(
-            'post', 'api/v1/ledger/account/update', $requestData
-        );
-        $result = $this->isSuccessful($response);
-        $this->assertCount(2, $result->account->names);
+        // Check all balances in the ledger
+        foreach (LedgerAccount::all() as $ledgerAccount) {
+            /** @var LedgerBalance $ledgerBalance */
+            foreach ($ledgerAccount->balances as $ledgerBalance) {
+                $this->assertEquals('CAD', $ledgerBalance->currency);
+                $this->assertEquals(
+                    $expectByCode[$ledgerAccount->code],
+                    $ledgerBalance->balance,
+                    "For {$ledgerAccount->code}"
+                );
+                unset($expectByCode[$ledgerAccount->code]);
+            }
+        }
+        $this->assertCount(0, $expectByCode);
     }
 
 }

@@ -11,7 +11,7 @@ use Tests\TestCase;
 class SubJournalTest extends TestCase
 {
     protected array $base = [
-        'code' => 'GJ',
+        'code' => 'Corp',
         'names' => [
             ['name' => 'In English', 'language' => 'en'],
             ['name' => 'en francais', 'language' => 'fr'],
@@ -24,7 +24,7 @@ class SubJournalTest extends TestCase
         $subJournal = SubJournal::fromRequest(
             $this->base, Message::OP_ADD | Message::FN_VALIDATE
         );
-        $this->assertEquals('GJ', $subJournal->code);
+        $this->assertEquals('Corp', $subJournal->code);
         $this->assertCount(2, $subJournal->names);
     }
 }

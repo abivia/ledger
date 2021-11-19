@@ -10,14 +10,14 @@ trait CreateLedgerTrait {
         'language' => 'en-CA',
         'domains' => [
             [
-                'code' => 'GJ',
+                'code' => 'Corp',
                 'names' => [
                     [
-                        'name' => 'General Journal',
+                        'name' => 'General Corporate',
                         'language' => 'en-CA'
                     ],
                     [
-                        'name' => 'Journal général',
+                        'name' => 'Général Corporatif',
                         'language' => 'fr-CA'
                     ]
                 ]

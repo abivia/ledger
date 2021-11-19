@@ -6,10 +6,11 @@ use App\Exceptions\Breaker;
 use App\Models\JournalDetail;
 use App\Models\JournalEntry;
 use App\Models\JournalReference;
+use App\Models\LedgerAccount;
 use App\Models\LedgerBalance;
 use App\Models\LedgerCurrency;
 use App\Models\LedgerDomain;
-use App\Models\LedgerName;
+use App\Models\Messages\Ledger\EntityRef;
 use App\Models\Messages\Ledger\Entry;
 use App\Models\Messages\Message;
 use App\Models\SubJournal;
@@ -83,6 +84,7 @@ class JournalEntryController extends Controller
             }
             $journalDetail->save();
             // Create/adjust the ledger balances
+            /** @noinspection PhpDynamicAsStaticMethodCallInspection */
             $ledgerBalance = LedgerBalance::where(
                 [
                     ['ledgerUuid', '=', $journalDetail->ledgerUuid],
@@ -157,7 +159,7 @@ class JournalEntryController extends Controller
     }
 
     /**
-     * @param string $domainCode
+     * @param int $id
      * @return JournalEntry
      * @throws Breaker
      */
@@ -188,11 +190,18 @@ class JournalEntryController extends Controller
         return $this->fetch($message->id);
     }
 
+    /**
+     * @throws Breaker
+     */
     private function getCurrency($currency)
     {
+        /** @noinspection PhpDynamicAsStaticMethodCallInspection */
         $this->ledgerCurrency = LedgerCurrency::find($currency);
         if ($this->ledgerCurrency === null) {
-            $errors[] = __('Currency :code not found.', ['code' => $currency]);
+            throw Breaker::withCode(
+                Breaker::INVALID_DATA,
+                [__('Currency :code not found.', ['code' => $currency])]
+            );
         }
     }
 
@@ -267,6 +276,7 @@ class JournalEntryController extends Controller
      * @param Entry $message
      * @param int $opFlag
      * @throws Breaker
+     * @throws Exception
      */
     private function validateEntry(Entry $message, int $opFlag)
     {
@@ -275,6 +285,7 @@ class JournalEntryController extends Controller
         $errors = [];
 
         // Get the domain
+        $message->domain ??= new EntityRef(LedgerAccount::rules()->domain->default);
         $this->ledgerDomain = LedgerDomain::findWith($message->domain)->first();
         if ($this->ledgerDomain === null) {
             $errors[] = __('Domain :domain not found.', ['domain' => $message->domain]);
