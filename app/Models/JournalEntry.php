@@ -28,6 +28,7 @@ use Illuminate\Support\Collection;
  * @property string $extra Extra data for application use.
  * @property int $journalEntryId Primary key.
  * @property string $language The language this description is written in.
+ * @property bool $opening Set if this is the opening balance entry.
  * @property bool $posted Set when the transaction has been posted to the ledgers.
  * @property bool $reviewed Set when the transaction has been reviewed.
  * @property Carbon $revision Revision timestamp to detect race condition on update.
@@ -41,8 +42,13 @@ class JournalEntry extends Model
 {
     use HasFactory, HasRevisions;
 
+    protected $attributes = [
+        'opening' => false,
+    ];
+
     protected $casts = [
         'arguments' => 'array',
+        'opening' => 'boolean',
         'posted' => 'boolean',
         'reviewed' => 'boolean',
         'transDate' => 'datetime',
@@ -96,7 +102,23 @@ class JournalEntry extends Model
                 $response['journal'] = $subJournal->code;
                 $response['journalUuid'] = $this->subJournalUuid;
             }
-            // TODO: get needs to return more info
+            $response['description'] = $this->description;
+            if (count($this->arguments)) {
+                $response['descriptionArgs'] = $this->arguments;
+            }
+            $response['language'] = $this->language;
+            if (isset($this->extra) && $this->extra !== '') {
+                $response['extra'] = $this->extra;
+            }
+            $response['opening'] = $this->opening;
+            $response['posted'] = $this->posted;
+            $response['reviewed'] = $this->reviewed;
+            $response['currency'] = $this->currency;
+            $response['details'] = [];
+            /** @var JournalDetail $detail */
+            foreach ($this->details as $detail) {
+                $response['details'][] = $detail->toResponse();
+            }
         }
         $response['revision'] = Revision::create($this->revision, $this->updated_at);
         $response['createdAt'] = $this->created_at;

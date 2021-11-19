@@ -11,6 +11,7 @@ use App\Models\LedgerAccount;
 use App\Models\LedgerBalance;
 use App\Models\LedgerName;
 use App\Models\Messages\Ledger\Account;
+use App\Models\Messages\Ledger\EntityRef;
 use App\Models\Messages\Message;
 use App\Traits\Audited;
 use App\Traits\ControllerResultHandler;
@@ -289,15 +290,29 @@ class LedgerAccountController extends Controller
                 )]
             );
         }
-        if ($ledgerAccount->credit === false && $ledgerAccount->debit === false) {
+        if (!$ledgerAccount->category) {
+            if ($ledgerAccount->debit === $ledgerAccount->credit) {
+                throw Breaker::withCode(
+                    Breaker::INVALID_OPERATION,
+                    [__(
+                        "Non-category accounts must be either debit or credit accounts."
+                    )]
+                );
+            }
             // Must ensure that no sub-accounts are category accounts
-            // TODO: implement this.
-            throw Breaker::withCode(
-                Breaker::NOT_IMPLEMENTED,
-                [__(
-                    "Debit and credit both cleared not yet implemented."
-                )]
-            );
+            $subAccounts = LedgerAccount::where('ledgerUuid', $ledgerAccount->ledgerUuid)
+                ->get();
+            /** @var LedgerAccount $subAccount */
+            foreach ($subAccounts as $subAccount) {
+                if ($subAccount->category) {
+                    throw Breaker::withCode(
+                        Breaker::INVALID_OPERATION,
+                        [__(
+                            "Can't make account a non-category because it has category sub-accounts."
+                        )]
+                    );
+                }
+            }
         }
         if ($message->closed) {
             // We need to check balances before closing the account
@@ -346,7 +361,8 @@ class LedgerAccountController extends Controller
                     Breaker::BAD_ACCOUNT, [__("Specified parent not found.")]
                 );
             }
-            // TODO: need to ensure the account graph is acyclic and parents reach the root.
+            // Ensure the account graph is acyclic and parents reach the root.
+            LedgerAccount::parentPath($message->parent, new EntityRef($message->code));
             $ledgerAccount->parentUuid = $ledgerParent->ledgerUuid;
         } else {
             // Get the existing parent

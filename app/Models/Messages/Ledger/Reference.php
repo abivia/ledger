@@ -20,7 +20,7 @@ class Reference extends Message
     /**
      * @inheritdoc
      */
-    public static function fromRequest(array $data, int $opFlag): self
+    public static function fromRequest(array $data, int $opFlags): self
     {
         $reference = new static();
         if (isset($data['code'])) {
@@ -32,13 +32,13 @@ class Reference extends Message
         if (isset($data['uuid'])) {
             $reference->journalReferenceUuid = $data['uuid'];
         }
-        if ($opFlag & self::OP_UPDATE) {
+        if ($opFlags & self::OP_UPDATE) {
             if (isset($data['toCode'])) {
                 $reference->toCode = $data['toCode'];
             }
         }
-        if ($opFlag & self::FN_VALIDATE) {
-            $reference->validate($opFlag);
+        if ($opFlags & self::FN_VALIDATE) {
+            $reference->validate($opFlags);
         }
 
         return $reference;
@@ -47,7 +47,7 @@ class Reference extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlag): self
+    public function validate(int $opFlags): self
     {
         if (!isset($this->code)) {
             throw Breaker::withCode(

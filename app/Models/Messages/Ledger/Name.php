@@ -16,7 +16,7 @@ class Name extends Message
     /**
      * @inheritdoc
      */
-    public static function fromRequest(array $data, int $opFlag): self
+    public static function fromRequest(array $data, int $opFlags): self
     {
         $name = new static();
         if (isset($data['name'])) {
@@ -25,8 +25,8 @@ class Name extends Message
         if (isset($data['language'])) {
             $name->language = $data['language'];
         }
-        if ($opFlag & self::FN_VALIDATE) {
-            $name->validate($opFlag);
+        if ($opFlags & self::FN_VALIDATE) {
+            $name->validate($opFlags);
         }
 
         return $name;
@@ -61,7 +61,7 @@ class Name extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlag): self
+    public function validate(int $opFlags): self
     {
         if (!isset($this->name)) {
             throw Breaker::withCode(

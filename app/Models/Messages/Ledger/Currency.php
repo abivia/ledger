@@ -17,7 +17,7 @@ class Currency extends Message
     /**
      * @inheritdoc
      */
-    public static function fromRequest(array $data, int $opFlag)
+    public static function fromRequest(array $data, int $opFlags)
     : Currency {
         $errors = [];
         $result = new static();
@@ -27,13 +27,13 @@ class Currency extends Message
         }
 
         if (
-            !($opFlag & self::OP_DELETE)
+            !($opFlags & self::OP_DELETE)
             && isset($data['decimals'])
             && is_numeric($data['decimals'])
         ) {
             $result->decimals = (int)$data['decimals'];
         }
-        if ($opFlag & self::OP_UPDATE) {
+        if ($opFlags & self::OP_UPDATE) {
             if (isset($data['revision'])) {
                 $result->revision = $data['revision'];
             }
@@ -41,8 +41,8 @@ class Currency extends Message
                 $result->toCode = strtoupper($data['toCode']);
             }
         }
-        if ($opFlag & self::FN_VALIDATE) {
-            $result->validate($opFlag);
+        if ($opFlags & self::FN_VALIDATE) {
+            $result->validate($opFlags);
         }
 
         return $result;
@@ -51,19 +51,19 @@ class Currency extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlag): self
+    public function validate(int $opFlags): self
     {
         $errors = [];
         if (!isset($this->code)) {
             $errors[] = __('the code property is required');
         }
 
-        if (!($opFlag & (self::OP_DELETE | self::OP_GET))) {
+        if (!($opFlags & (self::OP_DELETE | self::OP_GET))) {
             if (!isset($this->decimals)) {
                 $errors[] = __('a numeric decimals property is required');
             }
         }
-        if ($opFlag & self::OP_UPDATE) {
+        if ($opFlags & self::OP_UPDATE) {
             if (!isset($this->revision)) {
                 $errors[] = __('the revision property is required');
             }

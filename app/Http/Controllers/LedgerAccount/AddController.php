@@ -8,6 +8,7 @@ use App\Http\Controllers\LedgerAccountController;
 use App\Models\LedgerAccount;
 use App\Models\LedgerName;
 use App\Models\Messages\Ledger\Account;
+use App\Models\Messages\Ledger\EntityRef;
 use App\Models\Messages\Message;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -75,24 +76,17 @@ class AddController extends LedgerAccountController
         // No parent implies the ledger root
         if (!isset($message->parent)) {
             $ledgerParent = LedgerAccount::root();
+            $parents = [$ledgerParent];
         } else {
             // Fetch the parent
             /** @var LedgerAccount $ledgerParent */
-            $ledgerParent = LedgerAccount::findWith((array)$message->parent)->first();
+            $ledgerParent = LedgerAccount::findWith($message->parent)->first();
             if ($ledgerParent === null) {
                 throw Breaker::withCode(
                     Breaker::BAD_ACCOUNT, [__("Specified parent not found.")]
                 );
             }
-            if ($ledgerParent->code === $message->code) {
-                throw Breaker::withCode(
-                    Breaker::BAD_ACCOUNT,
-                    [__(
-                        "Circular parent reference on account :code.",
-                        ['code' => $message->code]
-                    )]
-                );
-            }
+            $parents = LedgerAccount::parentPath($message->parent, new EntityRef($message->code));
         }
         $message->parent->uuid = $ledgerParent->ledgerUuid;
 
@@ -104,14 +98,21 @@ class AddController extends LedgerAccountController
             );
         }
         if (!($message->credit || $message->debit)) {
-            if (!($ledgerParent->credit || $ledgerParent->debit)) {
+            $found = false;
+            foreach ($parents as $ancestor) {
+                if (($ancestor->credit || $ancestor->debit)) {
+                    $message->credit = $ancestor->credit;
+                    $message->debit = $ancestor->debit;
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found && !$message->category) {
                 throw Breaker::withCode(
                     Breaker::INVALID_OPERATION,
-                    [__("Unable to inherit debit/credit status from parent.")]
+                    [__("Unable to inherit debit/credit status from parents.")]
                 );
             }
-            $message->credit = $ledgerParent->credit;
-            $message->debit = $ledgerParent->debit;
         }
     }
 

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\LedgerAccount;
 use App\Models\User;
+use Exception;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
@@ -18,6 +19,22 @@ class LedgerAccountTest extends TestCase
     use CommonChecks;
     use CreateLedgerTrait;
     use RefreshDatabase;
+
+    private function dumpLedger()
+    {
+        LedgerAccount::loadRoot();
+        //print_r(LedgerAccount::root());
+        foreach (LedgerAccount::all() as $item) {
+            echo "$item->ledgerUuid $item->code ($item->parentUuid) ";
+            echo $item->category ? 'cat ' : '    ';
+            if ($item->debit) echo 'DR __';
+            if ($item->credit) echo '__ CR';
+            echo "\n";
+            foreach ($item->names as $name) {
+                echo "$name->name $name->language\n";
+            }
+        }
+    }
 
     public function setUp(): void
     {
@@ -64,7 +81,7 @@ class LedgerAccountTest extends TestCase
      * Create a valid ledger
      *
      * @return void
-     * @throws \Exception
+     * @throws Exception
      */
     public function testCreate(): void
     {
@@ -84,7 +101,7 @@ class LedgerAccountTest extends TestCase
      * Create a more complex ledger and test parent links
      *
      * @return void
-     * @throws \Exception
+     * @throws Exception
      */
     public function testCreateCommon(): void
     {
@@ -92,7 +109,7 @@ class LedgerAccountTest extends TestCase
             User::factory()->create(),
             ['*']
         );
-        $response = $this->createLedger([], ['template' => 'common']);
+        $response = $this->createLedger(['template'], ['template' => 'common']);
 
         $this->isSuccessful($response, 'ledger');
 
@@ -109,10 +126,53 @@ class LedgerAccountTest extends TestCase
     }
 
     /**
+     * Create a ledger with a preset account
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testCreateWithAccounts(): void
+    {
+        Sanctum::actingAs(
+            User::factory()->create(),
+            ['*']
+        );
+        $response = $this->createLedger(
+            ['template'],
+            [
+            'accounts' => [
+                [
+                    'names' => [
+                        [
+                            'name' =>'Assets',
+                            'language' => 'en',
+                        ],
+                    ],
+                    'code' => '1100',
+                    'parent' => [
+                        'code' => '1000',
+                    ],
+                    'debit' => true,
+                ]
+            ],
+            'template' => 'sections'
+        ]);
+
+        $this->isSuccessful($response, 'ledger');
+
+        LedgerAccount::loadRoot();
+
+        // Get the sub-sub account and make sure it's connected correctly.
+        $account = LedgerAccount::where('code', '1100')->first();
+        $parent = LedgerAccount::find($account->parentUuid);
+        $this->assertEquals('1000', $parent->code);
+    }
+
+    /**
      * Attempt to create a ledger with no currencies.
      *
      * @return void
-     * @throws \Exception
+     * @throws Exception
      */
     public function testCreateNoCurrency(): void
     {
@@ -131,6 +191,68 @@ class LedgerAccountTest extends TestCase
             'At least one currency is required.',
             $response['errors'][1]
         );
+    }
+
+    /**
+     * Create a valid ledger
+     *
+     * @return void
+     * @throws \Exception
+     */
+    public function testCreateWithBalances(): void
+    {
+        Sanctum::actingAs(
+            User::factory()->create(),
+            ['*']
+        );
+        $balancePart = [
+            'balances' => [
+                // Cash in bank
+                [ 'code' => '1120', 'amount' => '-3000', 'currency' => 'CAD'],
+                // Savings
+                [ 'code' => '1130', 'amount' => '-10000', 'currency' => 'CAD'],
+                // A/R
+                [ 'code' => '1310', 'amount' => '-1500', 'currency' => 'CAD'],
+                // Retained earnings
+                [ 'code' => '3200', 'amount' => '14000', 'currency' => 'CAD'],
+                // A/P
+                [ 'code' => '2120', 'amount' => '500', 'currency' => 'CAD'],
+            ],
+            'template' => 'common'
+        ];
+        $response = $this->createLedger(['template'], $balancePart);
+
+        $this->isSuccessful($response, 'ledger');
+
+        //$this->dumpLedger();
+    }
+
+    /**
+     * Create a valid ledger
+     *
+     * @return void
+     * @throws \Exception
+     */
+    public function testCreateWithBalances_bad(): void
+    {
+        Sanctum::actingAs(
+            User::factory()->create(),
+            ['*']
+        );
+        $balancePart = [
+            'balances' => [
+                // Cash in bank
+                [ 'code' => '1120', 'amount' => '-3000', 'currency' => 'CAD'],
+                // Savings
+                [ 'code' => '1130', 'amount' => '-10000', 'currency' => 'CAD'],
+                // A/R
+                [ 'code' => '1310', 'amount' => '-1500', 'currency' => 'CAD'],
+            ],
+            'template' => 'common'
+        ];
+        $response = $this->createLedger(['template'], $balancePart, true);
+
+        $this->isFailure($response);
     }
 
     public function testAdd()
@@ -171,6 +293,35 @@ class LedgerAccountTest extends TestCase
             'en',
             $actual->account->names[0]->language
         );
+    }
+
+    public function testAddBadCode()
+    {
+        Sanctum::actingAs(
+            User::factory()->create(),
+            ['*']
+        );
+
+        // First we need a ledger
+        $this->createLedger();
+
+        // Add an account
+        $requestData = [
+            'code' => '10b/76',
+            'parent' => [
+                'code' => '1000',
+            ],
+            'names' => [
+                [
+                    'name' => 'Cash in Bank',
+                    'language' => 'en',
+                ]
+            ]
+        ];
+        $response = $this->json(
+            'post', 'api/v1/ledger/account/add', $requestData
+        );
+        $actual = $this->isFailure($response);
     }
 
     public function testAddDuplicate()
@@ -344,7 +495,7 @@ class LedgerAccountTest extends TestCase
     public function testLoadNonexistentRoot()
     {
         LedgerAccount::loadRoot();
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         LedgerAccount::root();
     }
 

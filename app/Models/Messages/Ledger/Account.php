@@ -30,11 +30,11 @@ class Account extends Message
     /**
      * @inheritdoc
      */
-    public static function fromRequest(array $data, int $opFlag): Account
+    public static function fromRequest(array $data, int $opFlags): Account
     {
         $errors = [];
         $account = new static();
-        if ($opFlag & self::OP_ADD) {
+        if ($opFlags & self::OP_ADD) {
             if (isset($data['code'])) {
                 $account->code = $data['code'];
             }
@@ -55,7 +55,7 @@ class Account extends Message
         if (isset($data['extra'])) {
             $account->extra = $data['extra'];
         }
-        if ($opFlag & self::OP_UPDATE) {
+        if ($opFlags & self::OP_UPDATE) {
             if (isset($data['revision'])) {
                 $account->revision = $data['revision'];
             }
@@ -63,19 +63,19 @@ class Account extends Message
                 $account->toCode = strtoupper($data['toCode']);
             }
         }
-        if ($opFlag & (self::OP_ADD | self::OP_UPDATE)) {
+        if ($opFlags & (self::OP_ADD | self::OP_UPDATE)) {
             try {
                 $account->names = Name::fromRequestList(
                     $data['names'] ?? [],
-                    $opFlag,
-                    ($opFlag & self::OP_ADD) ? 1 : 0
+                    $opFlags,
+                    ($opFlags & self::OP_ADD) ? 1 : 0
                 );
             } catch (Breaker $exception) {
                 Merge::arrays($errors, $exception->getErrors());
             }
             if (isset($data['parent'])) {
                 try {
-                    $account->parent = EntityRef::fromRequest($data['parent'], $opFlag);
+                    $account->parent = EntityRef::fromRequest($data['parent'], $opFlags);
                 } catch (Breaker $exception) {
                     Merge::arrays($errors, $exception->getErrors());
                 }
@@ -88,8 +88,8 @@ class Account extends Message
         if (count($errors) !== 0) {
             throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);
         }
-        if ($opFlag & self::FN_VALIDATE) {
-            $account->validate($opFlag);
+        if ($opFlags & self::FN_VALIDATE) {
+            $account->validate($opFlags);
         }
 
         return $account;
@@ -98,11 +98,11 @@ class Account extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlag): self
+    public function validate(int $opFlags): self
     {
         $errors = [];
         $codeFormat = LedgerAccount::rules()->account->codeFormat ?? '';
-        if ($opFlag & self::OP_ADD) {
+        if ($opFlags & self::OP_ADD) {
             if ($this->code === null) {
                 $errors[] = __("Request requires an account code.");
             } else {
@@ -120,7 +120,7 @@ class Account extends Message
                 $errors[] = __("Request requires either code or uuid.");
             }
         }
-        if ($opFlag & self::OP_UPDATE) {
+        if ($opFlags & self::OP_UPDATE) {
             if ($this->revision === null) {
                 $errors[] = __("Update request must supply a revision.");
             }
@@ -132,17 +132,17 @@ class Account extends Message
                 }
             }
         }
-        if ($opFlag & (self::OP_ADD | self::OP_UPDATE)) {
+        if ($opFlags & (self::OP_ADD | self::OP_UPDATE)) {
             try {
                 foreach ($this->names as $name) {
-                    $name->validate($opFlag);
+                    $name->validate($opFlags);
                 }
             } catch (Breaker $exception) {
                 Merge::arrays($errors, $exception->getErrors());
             }
             if ($this->parent !== null) {
                 try {
-                    $this->parent->validate($opFlag, $codeFormat);
+                    $this->parent->validate($opFlags, $codeFormat);
                 } catch (Breaker $exception) {
                     Merge::arrays($errors, $exception->getErrors());
                 }
@@ -152,7 +152,7 @@ class Account extends Message
             }
         }
         if (
-            $opFlag & self::OP_ADD
+            $opFlags & self::OP_ADD
             && count($this->names ?? []) === 0
         ) {
             $errors[] = __("Account create must have at least one name element.");

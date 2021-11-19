@@ -93,12 +93,12 @@ class Entry extends Message
     /**
      * @inheritdoc
      */
-    public static function fromRequest(array $data, int $opFlag): self
+    public static function fromRequest(array $data, int $opFlags): self
     {
         $rules = LedgerAccount::rules();
         $entry = new static();
-        $entry->copy($data, $opFlag);
-        if ($opFlag & self::OP_ADD) {
+        $entry->copy($data, $opFlags);
+        if ($opFlags & self::OP_ADD) {
             $entry->domain = new EntityRef();
             $entry->domain->code = $data['domain'] ?? $rules->domain->default;
             if (isset($data['journal'])) {
@@ -108,17 +108,17 @@ class Entry extends Message
             $entry->language = $data['language'] ?? $rules->language->default;
             $entry->reviewed = $data['reviewed'] ?? $rules->entry->reviewed;
         }
-        if ($opFlag & (self::OP_ADD | self::OP_UPDATE)) {
+        if ($opFlags & (self::OP_ADD | self::OP_UPDATE)) {
             if (isset($data['date'])) {
                 $entry->transDate = new Carbon($data['date']);
             }
             $entry->details = [];
             foreach ($data['details'] ?? [] as $detail) {
-                $entry->details[] = Detail::fromRequest($detail, $opFlag);
+                $entry->details[] = Detail::fromRequest($detail, $opFlags);
             }
         }
-        if ($opFlag & self::FN_VALIDATE) {
-            $entry->validate($opFlag);
+        if ($opFlags & self::FN_VALIDATE) {
+            $entry->validate($opFlags);
         }
 
         return $entry;
@@ -127,10 +127,10 @@ class Entry extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlag): self
+    public function validate(int $opFlags): self
     {
         $errors = [];
-        if ($opFlag & self::OP_ADD) {
+        if ($opFlags & self::OP_ADD) {
             if (count($this->details) === 0) {
                 $errors[] = __('Entry has no details.');
             }
@@ -147,12 +147,12 @@ class Entry extends Message
                 $errors[] = __('Transaction date is required.');
             }
         }
-        if ($opFlag & (self::OP_DELETE | self::OP_GET | self::OP_UPDATE)) {
+        if ($opFlags & (self::OP_DELETE | self::OP_GET | self::OP_UPDATE)) {
             if ($this->id === null) {
                 $errors[] = __('Entry ID required.');
             }
         }
-        if ($opFlag & (self::OP_DELETE | self::OP_UPDATE)) {
+        if ($opFlags & (self::OP_DELETE | self::OP_UPDATE)) {
             if ($this->revision === null) {
                 $errors[] = __('Entry revision code required for update.');
             }
@@ -163,7 +163,7 @@ class Entry extends Message
             $creditCount = 0;
             foreach ($this->details as $detail) {
                 try {
-                    $detail->validate($opFlag);
+                    $detail->validate($opFlags);
                     if ($detail->signTest > 0) {
                         ++$debitCount;
                     } else {

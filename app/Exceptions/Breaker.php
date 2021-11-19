@@ -17,6 +17,7 @@ class Breaker extends Exception
     public const NOT_IMPLEMENTED = 4;
     public const BAD_REVISION = 5;
     public const INVALID_DATA = 6;
+    public const INTEGRITY_ERROR = 7;
 
     protected array $errors;
 
@@ -25,6 +26,7 @@ class Breaker extends Exception
         self::BAD_ACCOUNT => 'Account invalid or not found.',
         self::BAD_REQUEST => 'Bad request.',
         self::BAD_REVISION => 'Outdated or invalid revision token.',
+        self::INTEGRITY_ERROR => 'Ledger data is inconsistent.',
         self::INVALID_DATA => 'Error in data source.',
         self::INVALID_OPERATION => 'Request violates business rule.',
         self::NOT_IMPLEMENTED => 'Feature is not implemented.',

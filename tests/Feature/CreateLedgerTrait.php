@@ -41,26 +41,29 @@ trait CreateLedgerTrait {
         ],
         'rules' => [
             'account' => [
-                'codeFormat' => '/[a-z0-9\-]+/i'
+                'codeFormat' => '/^[a-z0-9\-]+$/i'
             ]
         ],
         'extra' => 'arbitrary JSON',
         'template' => 'sections'
     ];
 
-    protected function createLedger(array $without = [], array $with = [])
-    {
+    protected function createLedger(
+        array $without = [],
+        array $with = [],
+        bool $expectErrors = false
+    ) {
         $create = $this->createRequest;
         foreach ($without as $item) {
             unset($create[$item]);
         }
-        $create = array_merge($create, $with);
+        $create = array_merge_recursive($create, $with);
         $response = $this->postJson(
             'api/v1/ledger/root/create', $create
         );
         $response->assertStatus(200);
         $this->assertTrue(isset($response['time']));
-        $this->assertFalse(isset($response['errors']));
+        $this->assertEquals($expectErrors, isset($response['errors']));
 
         return $response;
     }

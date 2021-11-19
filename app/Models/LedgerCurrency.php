@@ -25,6 +25,13 @@ class LedgerCurrency extends Model
 {
     use HasFactory;
 
+    /**
+     * @var string[] Casts for table columns
+     */
+    protected $casts = [
+        'decimals' => 'int',
+    ];
+
     protected $dateFormat = 'Y-m-d H:i:s.u';
     protected $fillable = ['code', 'decimals'];
     public $incrementing = false;

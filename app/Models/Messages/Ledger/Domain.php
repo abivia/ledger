@@ -22,14 +22,14 @@ class Domain extends Message
     /**
      * @inheritdoc
      */
-    public static function fromRequest(array $data, int $opFlag): self
+    public static function fromRequest(array $data, int $opFlags): self
     {
         $domain = new static();
         if ($data['code'] ?? false) {
             $domain->code = $data['code'];
         }
         if (isset($data['names'])) {
-            $domain->names = Name::fromRequestList($data['names'], $opFlag, 1);
+            $domain->names = Name::fromRequestList($data['names'], $opFlags, 1);
         }
         $domain->subJournals = $data['subJournals'] ?? false;
         if (isset($data['currency'])) {
@@ -38,7 +38,7 @@ class Domain extends Message
         if (isset($data['extra'])) {
             $domain->extra = $data['extra'];
         }
-        if ($opFlag & self::OP_UPDATE) {
+        if ($opFlags & self::OP_UPDATE) {
             if (isset($data['revision'])) {
                 $domain->revision = $data['revision'];
             }
@@ -46,8 +46,8 @@ class Domain extends Message
                 $domain->toCode = strtoupper($data['toCode']);
             }
         }
-        if ($opFlag & self::FN_VALIDATE) {
-            $domain->validate($opFlag);
+        if ($opFlags & self::FN_VALIDATE) {
+            $domain->validate($opFlags);
         }
 
         return $domain;
@@ -56,21 +56,21 @@ class Domain extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlag): self
+    public function validate(int $opFlags): self
     {
         $errors = [];
         if (!isset($this->code)) {
             $errors[] = 'the code property is required';
         }
-        if ($opFlag & self::OP_ADD && count($this->names) === 0) {
+        if ($opFlags & self::OP_ADD && count($this->names) === 0) {
             $errors[] = 'A non-empty names property is required';
         }
-        if ($opFlag & self::OP_UPDATE && !isset($this->revision)) {
+        if ($opFlags & self::OP_UPDATE && !isset($this->revision)) {
             $errors[] = 'A revision code is required';
         }
         try {
             foreach ($this->names as $name) {
-                $name->validate($opFlag);
+                $name->validate($opFlags);
             }
         } catch (Breaker $exception) {
             Merge::arrays($errors, $exception->getErrors());

@@ -144,8 +144,7 @@
             "parent": {
                 "code": 1000
             },
-            "category": true,
-            "debit": true
+            "category": true
         },
         {
             "names": [
@@ -289,7 +288,8 @@
             "code": 1700,
             "parent": {
                 "code": 1000
-            }
+            },
+            "category": true
         },
         {
             "names": [
@@ -912,7 +912,8 @@
                     "language": "en"
                 }
             ],
-            "code": 6000
+            "code": 6000,
+            "category": true
         },
         {
             "names": [
@@ -1717,7 +1718,8 @@
             "code": 6900,
             "parent": {
                 "code": 6000
-            }
+            },
+            "category": true
         },
         {
             "names": [

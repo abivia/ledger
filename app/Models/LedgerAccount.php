@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Exceptions\Breaker;
 use App\Helpers\Merge;
 use App\Helpers\Revision;
 use App\Models\Messages\Ledger\Account;
@@ -82,6 +83,11 @@ class LedgerAccount extends Model
 
     private static ?LedgerAccount $root = null;
 
+    public function balances(): HasMany
+    {
+        return $this->hasMany(LedgerBalance::class, 'ledgerUuid', 'ledgerUuid');
+    }
+
     private static function baseRuleSet()
     {
         self::$bootRules = new stdClass();
@@ -119,6 +125,11 @@ class LedgerAccount extends Model
         return $instance;
     }
 
+    public function entityRef(): EntityRef
+    {
+        return new EntityRef($this->code, $this->ledgerUuid);
+    }
+
     /**
      * @param EntityRef $entityRef
      * @return Builder
@@ -145,6 +156,18 @@ class LedgerAccount extends Model
         return json_decode($value);
     }
 
+    public function matchesEntity(EntityRef $ref): bool
+    {
+        $match = true;
+        if ($ref->uuid !== null && $ref->uuid !== $this->ledgerUuid) {
+            $match = false;
+        }
+        if ($ref->code !== null && $ref->code !== $this->code) {
+            $match = false;
+        }
+        return $match;
+    }
+
     public static function loadRoot()
     {
         self::$root = LedgerAccount::with('names')
@@ -155,6 +178,67 @@ class LedgerAccount extends Model
     public function names(): HasMany
     {
         return $this->hasMany(LedgerName::class, 'ownerUuid', 'ledgerUuid');
+    }
+
+    /**
+     * Get the path to the root for an account, optionally checking for an external
+     * circular reference.
+     *
+     * @param EntityRef $start
+     * @param ?EntityRef $lookFor
+     * @return LedgerAccount[] Account parents from $start up to the root.
+     * @throws Breaker If a circular reference is found.
+     * @throws Exception
+     */
+    public static function parentPath(EntityRef $start, ?EntityRef $lookFor): array
+    {
+        $next = clone $start;
+        $current = null;
+        $parents = [];
+        $parentsByUuid = [];
+        while (true) {
+            // Fetch the parent
+            /** @var LedgerAccount $ledgerAccount */
+            $ledgerAccount = self::findWith($next)->first();
+            if ($ledgerAccount === null) {
+                if ($current === null) {
+                    throw Breaker::withCode(
+                        Breaker::BAD_ACCOUNT,
+                        [__("Parent :parent not found."), ['parent' => $next]]
+                    );
+                } else {
+                    throw new Exception(__(
+                        "Parent :parent does not exist but is used in :account",
+                        ['parent' => $next, 'account' => $current]
+                    ));
+                }
+            }
+            if ($lookFor !== null && $ledgerAccount->matchesEntity($lookFor)) {
+                throw Breaker::withCode(
+                    Breaker::INVALID_OPERATION,
+                    [__(
+                        "Adding :start to :ref would cause a circular reference.",
+                        ['start' =>$start, 'ref' => $lookFor]
+                    )]
+                );
+            }
+            if (isset($parentsByUuid[$ledgerAccount->ledgerUuid])) {
+                throw new Exception(__(
+                    "Account :account is part of a closed parent reference loop.",
+                    ['account' => $current]
+                ));
+            }
+            $parentsByUuid[$ledgerAccount->ledgerUuid] = true;
+            $parents[] = $ledgerAccount;
+            $current = $ledgerAccount;
+            if ($ledgerAccount->parentUuid === null) {
+                break;
+            }
+            $next->code = null;
+            $next->uuid = $ledgerAccount->parentUuid;
+        }
+
+        return $parents;
     }
 
     /**
@@ -174,7 +258,7 @@ class LedgerAccount extends Model
         return self::$root;
     }
 
-    public static function rules()
+    public static function rules(): stdClass
     {
         if (self::$root === null) {
             self::loadRoot();

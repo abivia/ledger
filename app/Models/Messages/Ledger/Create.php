@@ -6,6 +6,8 @@ use App\Exceptions\Breaker;
 use App\Helpers\Merge;
 use App\Models\LedgerAccount;
 use App\Models\Messages\Message;
+use Carbon\Carbon;
+use TypeError;
 
 class Create extends Message
 {
@@ -14,6 +16,8 @@ class Create extends Message
      * @var Account[]
      */
     public array $accounts = [];
+
+    public array $balances = [];
     /**
      * @var Currency[]
      */
@@ -30,8 +34,10 @@ class Create extends Message
      * @var Name[]
      */
     public array $names = [];
+    public array $rules = [];
     public ?string $template = null;
     public ?string $templatePath = null;
+    public Carbon $transDate;
 
     private function extractAccounts(array $data): array
     {
@@ -40,14 +46,36 @@ class Create extends Message
         foreach ($data['accounts'] ?? [] as $index => $accountData) {
             try {
                 $message = Account::fromRequest(
-                    $accountData, self::OP_ADD | Message::FN_VALIDATE
+                    $accountData, self::OP_ADD| self::OP_CREATE
                 );
-                $accounts[$message->code] = $message;
+                $this->accounts[$message->code] = $message;
             } catch (Breaker $exception) {
                 $errors[] = __(
                     ":Property in position :index "
                     . implode(', ', $exception->getErrors()) . ".",
                     ['property' => 'Account', 'index' => $index + 1]
+                );
+            }
+        }
+
+        return $errors;
+    }
+
+    private function extractBalances(array $data): array
+    {
+        $errors = [];
+        $this->balances = [];
+        foreach ($data['balances'] ?? [] as $index => $balanceData) {
+            try {
+                $message = Balance::fromRequest(
+                    $balanceData, self::OP_ADD | self::OP_CREATE
+                );
+                $this->balances[] = $message;
+            } catch (Breaker $exception) {
+                $errors[] = __(
+                    ":Property in position :index "
+                    . implode(', ', $exception->getErrors()) . ".",
+                    ['property' => 'Balance', 'index' => $index + 1]
                 );
             }
         }
@@ -61,7 +89,7 @@ class Create extends Message
         $this->currencies = [];
         foreach ($data['currencies'] ?? [] as $index => $currency) {
             try {
-                $message = Currency::fromRequest($currency, self::OP_ADD | Message::FN_VALIDATE);
+                $message = Currency::fromRequest($currency, self::OP_ADD | self::OP_CREATE);
                 $this->currencies[$message->code] = $message;
             } catch (Breaker $exception) {
                 $errors[] = __(
@@ -81,7 +109,7 @@ class Create extends Message
         $firstDomain = null;
         foreach ($data['domains'] ?? [] as $index => $domain) {
             try {
-                $domain = Domain::fromRequest($domain, self::OP_ADD | Message::FN_VALIDATE);
+                $domain = Domain::fromRequest($domain, self::OP_ADD | self::OP_CREATE);
                 $this->domains[$domain->code] = $domain;
                 if ($firstDomain === null) {
                     $firstDomain = $domain->code;
@@ -96,11 +124,11 @@ class Create extends Message
         }
         if (count($this->domains) < 1 && $makeDefault) {
             // Create a default domain
-            $firstDomain = 'GJ';
-            $this->domains['GJ'] = [
-                'code' => 'GJ',
+            $firstDomain = 'Ledger';
+            $this->domains['Ledger'] = [
+                'code' => 'Ledger',
                 'names' => [
-                    'name' => 'General Journal',
+                    'name' => 'General Ledger',
                     'language' => 'en'
                 ]
             ];
@@ -125,7 +153,7 @@ class Create extends Message
         foreach ($data['journals'] ?? [] as $index => $journal) {
             try {
                 $journal = SubJournal::fromRequest(
-                    $journal, self::OP_ADD | Message::FN_VALIDATE
+                    $journal, self::OP_ADD | self::OP_CREATE
                 );
                 $this->journals[$journal->code] = $journal;
             } catch (Breaker $exception) {
@@ -145,7 +173,7 @@ class Create extends Message
         $this->names = [];
         foreach ($data['names'] ?? [] as $index => $name) {
             try {
-                $message = Name::fromRequest($name, self::OP_ADD | Message::FN_VALIDATE);
+                $message = Name::fromRequest($name, self::OP_ADD | self::OP_CREATE);
                 $this->names[$message->language] = $message;
             } catch (Breaker $exception) {
                 $errors[] = __(
@@ -164,30 +192,47 @@ class Create extends Message
     /**
      * @inheritdoc
      */
-    public static function fromRequest(array $data, int $opFlag): self
+    public static function fromRequest(array $data, int $opFlags): self
     {
         $errors = [];
-        // Set up the ledger boot rules object before loading anything.
-        if (isset($data['rules'])) {
-            // Recode and decode the rules as objects
-            LedgerAccount::bootRules($data['rules']);
-        }
         $create = new Create();
-        Merge::arrays($errors, $create->extractAccounts($data));
-        Merge::arrays($errors, $create->extractNames($data));
+        try {
+            Merge::arrays($errors, $create->extractAccounts($data));
+            Merge::arrays($errors, $create->extractBalances($data));
+            Merge::arrays($errors, $create->extractNames($data));
 
-        Merge::arrays($errors, $create->extractDomains($data, true));
-        Merge::arrays($errors, $create->extractCurrencies($data));
-        if (count($create->currencies) === 0) {
-            $errors[] = __('At least one currency is required.');
+            Merge::arrays($errors, $create->extractDomains($data, true));
+            Merge::arrays($errors, $create->extractCurrencies($data));
+            if (count($create->currencies) === 0) {
+                $errors[] = __('At least one currency is required.');
+            }
+
+            Merge::arrays($errors, $create->extractJournals($data));
+            if ($data['template'] ?? false) {
+                $create->template = $data['template'];
+            } else {
+                $create->template = null;
+                $create->templatePath = null;
+            }
+            if (isset($data['date'])) {
+                $create->transDate = new Carbon($data['date']);
+            }
         }
-
-        Merge::arrays($errors, $create->extractJournals($data));
-        if ($data['template'] ?? false) {
-            $create->template = $data['template'];
-        } else {
-            $create->template = null;
-            $create->templatePath = null;
+        catch (TypeError $exception) {
+            if (
+                preg_match(
+                    '!Cannot assign (\S+) .*?\$(\S+) of type \??(\S+)!',
+                    $exception->getMessage(),
+                    $matches
+                )
+            ) {
+                $errors[] = __(
+                    'Property :prop should be :expect, not :actual.',
+                    ['prop' => $matches[2], 'expect' => $matches[3], 'actual' => $matches[1]]
+                );
+            } else {
+                $errors[] = $exception->getMessage();
+            }
         }
         if (count($errors)) {
             // The request itself is not valid.
@@ -200,7 +245,7 @@ class Create extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlag): self
+    public function validate(int $opFlags): self
     {
         if ($this->template !== null) {
             $this->templatePath = resource_path(
@@ -213,16 +258,16 @@ class Create extends Message
             }
         }
         foreach ($this->accounts as $account) {
-            $account->validate(self::OP_ADD);
+            $account->validate($opFlags);
         }
         foreach ($this->currencies as $currency) {
-            $currency->validate(self::OP_ADD);
+            $currency->validate($opFlags);
         }
         foreach ($this->journals as $journal) {
-            $journal->validate(self::OP_ADD);
+            $journal->validate($opFlags);
         }
         foreach ($this->names as $name) {
-            $name->validate(self::OP_ADD);
+            $name->validate($opFlags);
         }
 
         return $this;

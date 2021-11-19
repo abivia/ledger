@@ -49,7 +49,7 @@ class JournalEntryTest extends TestCase
             'post', 'api/v1/ledger/account/add', $requestData
         );
 
-        return $this->isSuccessful($response);
+        return $this->isSuccessful($response, 'account');
     }
 
     protected function addSalesTransaction() {
@@ -76,6 +76,34 @@ class JournalEntryTest extends TestCase
         return [$requestData, $response];
     }
 
+    protected function addSplitTransaction() {
+        // Add a transaction, sales to A/R
+        $requestData = [
+            'currency' => 'CAD',
+            'description' => 'Got paid for the first thing!',
+            'date' => '2021-11-12',
+            'details' => [
+                [
+                    'accountCode' => '4110',
+                    'amount' => '-520.00'
+                ],
+                [
+                    'accountCode' => '1120',
+                    'amount' => '500.00'
+                ],
+                [
+                    'accountCode' => '2250',
+                    'amount' => '20.00'
+                ],
+            ]
+        ];
+        $response = $this->json(
+            'post', 'api/v1/ledger/entry/add', $requestData
+        );
+
+        return [$requestData, $response];
+    }
+
     /**
      * Create a valid ledger
      *
@@ -88,7 +116,7 @@ class JournalEntryTest extends TestCase
             User::factory()->create(),
             ['*']
         );
-        $response = $this->createLedger([], ['template' => 'common']);
+        $response = $this->createLedger(['template'], ['template' => 'common']);
 
         $this->isSuccessful($response, 'ledger');
 
@@ -114,7 +142,7 @@ class JournalEntryTest extends TestCase
         );
 
         // First we need a ledger
-        $response = $this->createLedger([], ['template' => 'common']);
+        $response = $this->createLedger(['template'], ['template' => 'common']);
 
         $this->isSuccessful($response, 'ledger');
 
@@ -139,9 +167,9 @@ class JournalEntryTest extends TestCase
             $ledgerAccount = LedgerAccount::find($detail->ledgerUuid);
             $this->assertNotNull($ledgerAccount);
             $ledgerBalance = LedgerBalance::where([
-                ['ledgerUuid', '=', $detail->ledgerUuid],
-                ['domainUuid', '=', $ledgerDomain->domainUuid],
-                ['currency', '=', $journalEntry->currency]]
+                    ['ledgerUuid', '=', $detail->ledgerUuid],
+                    ['domainUuid', '=', $ledgerDomain->domainUuid],
+                    ['currency', '=', $journalEntry->currency]]
             )->first();
             $this->assertNotNull($ledgerBalance);
             if ($ledgerAccount->code === '1310') {
@@ -152,6 +180,55 @@ class JournalEntryTest extends TestCase
         }
     }
 
+    public function testAddSplit()
+    {
+        Sanctum::actingAs(
+            User::factory()->create(),
+            ['*']
+        );
+
+        // First we need a ledger
+        $response = $this->createLedger(['template'], ['template' => 'common']);
+
+        $this->isSuccessful($response, 'ledger');
+
+        $this->addSalesTransaction();
+        [$requestData, $response] = $this->addSplitTransaction();
+        $actual = $this->isSuccessful($response);
+        $this->hasRevisionElements($actual->entry);
+
+        // Check that we really did do everything that was supposed to be done.
+        $journalEntry = JournalEntry::find($actual->entry->id);
+        $this->assertNotNull($journalEntry);
+        $this->assertTrue(
+            $journalEntry->transDate->equalTo(new Carbon($requestData['date']))
+        );
+        $this->assertEquals('CAD', $journalEntry->currency);
+        $this->assertEquals($requestData['description'], $journalEntry->description);
+        $ledgerDomain = LedgerDomain::find($journalEntry->domainUuid);
+        $this->assertNotNull($ledgerDomain);
+        $this->assertEquals('GJ', $ledgerDomain->code);
+
+        $expectByCode = [
+            '1310' => '-520.00',
+            '4110' => '0.00',
+            '1120' => '500.00',
+            '2250' => '20.00',
+        ];
+        // Check all balances in the ledger
+        foreach (LedgerAccount::all() as $ledgerAccount) {
+            /** @var LedgerBalance $ledgerBalance */
+            foreach ($ledgerAccount->balances as $ledgerBalance) {
+                $this->assertEquals('CAD', $ledgerBalance->currency);
+                $this->assertEquals(
+                    $expectByCode[$ledgerAccount->code], $ledgerBalance->balance
+                );
+                unset($expectByCode[$ledgerAccount->code]);
+            }
+        }
+        $this->assertCount(0, $expectByCode);
+    }
+
     public function testDelete()
     {
         Sanctum::actingAs(
@@ -160,7 +237,7 @@ class JournalEntryTest extends TestCase
         );
 
         // First we need a ledger and transaction
-        $this->createLedger([], ['template' => 'common']);
+        $this->createLedger(['template'], ['template' => 'common']);
 
         [$requestData, $response] = $this->addSalesTransaction();
         $actual = $this->isSuccessful($response);
@@ -204,94 +281,49 @@ class JournalEntryTest extends TestCase
             ['*']
         );
 
-        // First we need a ledger and an account
-        $this->createLedger();
-        $this->addAccount('1010', '1000');
+        // First we need a ledger and transaction
+        $this->createLedger(['template'], ['template' => 'common']);
 
-        // Now fetch the account
-        $requestData = [
-            'code' => '1010',
+        [$requestData, $addResponse] = $this->addSalesTransaction();
+        $addActual = $this->isSuccessful($addResponse);
+
+        // Get the created data by ID
+        $fetchData = [
+            'id' => $addActual->entry->id
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/get', $requestData
+            'post', 'api/v1/ledger/entry/get', $fetchData
         );
-        $actual = $this->isSuccessful($response);
-        $this->hasAttributes(['uuid', 'code', 'names'], $actual->account);
-        $this->hasRevisionElements($actual->account);
-        $this->assertEquals(
-            'Account 1010 with parent 1000',
-            $actual->account->names[0]->name
-        );
-        $this->assertEquals(
-            'en',
-            $actual->account->names[0]->language
-        );
+        $fetched = $this->isSuccessful($response);
+        $this->hasRevisionElements($fetched->entry);
 
-        // Now fetch by uuid
-        $uuid = $actual->account->uuid;
-        $requestData = ['uuid' => $uuid];
-        $response = $this->json(
-            'post', 'api/v1/ledger/account/get', $requestData
+        // Verify the contents
+        $entry = $fetched->entry;
+        $this->assertEquals($addActual->entry->id, $entry->id);
+        $date = new Carbon($entry->date);
+        $this->assertTrue(
+            $date->equalTo(new Carbon($requestData['date']))
         );
-        $this->isSuccessful($response);
-
-        // Now fetch with uuid and correct code
-        $uuid = $actual->account->uuid;
-        $requestData = ['code' => '1010', 'uuid' => $uuid];
-        $response = $this->json(
-            'post', 'api/v1/ledger/account/get', $requestData
-        );
-        $this->isSuccessful($response);
-
-        // Expect error when no code/uuid provided
-        $uuid = $actual->account->uuid;
-        $requestData = ['bogus' => '9999'];
-        $response = $this->json(
-            'post', 'api/v1/ledger/account/get', $requestData
-        );
-        $this->isFailure($response);
-
-        // Expect error with code mismatch
-        $uuid = $actual->account->uuid;
-        $requestData = ['code' => '9999', 'uuid' => $uuid];
-        $response = $this->json(
-            'post', 'api/v1/ledger/account/get', $requestData
-        );
-        $this->isFailure($response);
-
-        // Expect error with bad uuid
-        $uuid = $actual->account->uuid;
-        $requestData = ['uuid' => 'bob'];
-        $response = $this->json(
-            'post', 'api/v1/ledger/account/get', $requestData
-        );
-        $this->isFailure($response);
-
-        // Expect error with bad code
-        $uuid = $actual->account->uuid;
-        $requestData = ['code' => '9999'];
-        $response = $this->json(
-            'post', 'api/v1/ledger/account/get', $requestData
-        );
-        $this->isFailure($response);
+        $this->assertEquals('CAD', $entry->currency);
+        $this->assertEquals($requestData['description'], $entry->description);
+        $expectDetails = [
+            '1310' => '-520.00',
+            '4110' => '520.00',
+        ];
+        foreach ($entry->details as $detail) {
+            $this->assertArrayHasKey($detail->accountCode, $expectDetails);
+            $this->assertEquals($expectDetails[$detail->accountCode], $detail->amount);
+        }
     }
 
-    public function testLoadNonexistentRoot()
-    {
-        LedgerAccount::loadRoot();
-        $this->expectException(\Exception::class);
-        LedgerAccount::root();
-    }
-
-    /**
-     * TODO: create a separate test suite for structural updates (parent, category, etc).
-     */
     public function testUpdate()
     {
         Sanctum::actingAs(
             User::factory()->create(),
             ['*']
         );
+        $this->doesNotPerformAssertions();
+        return;
 
         // First we need a ledger
         $this->createLedger();
@@ -315,7 +347,7 @@ class JournalEntryTest extends TestCase
         $response = $this->json(
             'post', 'api/v1/ledger/account/update', $requestData
         );
-        $result = $this->isSuccessful($response);
+        $result = $this->isSuccessful($response, 'account');
 
         // Attempt a retry with the same (now invalid) revision.
         $requestData['revision'] = $accountInfo->account->revision;

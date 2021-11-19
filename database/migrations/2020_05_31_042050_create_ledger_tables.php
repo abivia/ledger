@@ -63,6 +63,7 @@ class CreateLedgerTables extends Migration
             $table->foreignUuid('domainUuid');
             $table->uuid('subJournalUuid')->nullable();
             $table->string('currency', self::CURRENCY_CODE_SIZE);
+            $table->tinyInteger('opening');
             $table->tinyInteger('posted');
             $table->tinyInteger('reviewed');
             // Description

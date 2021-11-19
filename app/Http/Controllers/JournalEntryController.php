@@ -84,9 +84,11 @@ class JournalEntryController extends Controller
             $journalDetail->save();
             // Create/adjust the ledger balances
             $ledgerBalance = LedgerBalance::where(
-                ['ledgerUuid', '=', $journalDetail->ledgerUuid],
-                ['domainUuid', '=', $this->ledgerDomain->domainUuid],
-                ['currency', '=', $this->ledgerCurrency->code],
+                [
+                    ['ledgerUuid', '=', $journalDetail->ledgerUuid],
+                    ['domainUuid', '=', $this->ledgerDomain->domainUuid],
+                    ['currency', '=', $this->ledgerCurrency->code],
+                ]
             )->first();
             if ($ledgerBalance === null) {
                 $ledgerBalance = new LedgerBalance();

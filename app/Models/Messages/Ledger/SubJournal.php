@@ -19,23 +19,23 @@ class SubJournal extends Message
     /**
      * @inheritdoc
      */
-    public static function fromRequest(array $data, int $opFlag): self
+    public static function fromRequest(array $data, int $opFlags): self
     {
         $subJournal = new static();
         if (isset($data['code'])) {
             $subJournal->code = $data['code'];
         }
-        if ($opFlag & (self::OP_ADD | self::OP_UPDATE)) {
+        if ($opFlags & (self::OP_ADD | self::OP_UPDATE)) {
             $subJournal->names = Name::fromRequestList(
                 $data['names'] ?? [],
-                $opFlag,
-                ($opFlag & self::OP_ADD) ? 1 : 0
+                $opFlags,
+                ($opFlags & self::OP_ADD) ? 1 : 0
             );
         }
         if (isset($data['extra'])) {
             $subJournal->extra = $data['extra'];
         }
-        if ($opFlag & self::OP_UPDATE) {
+        if ($opFlags & self::OP_UPDATE) {
             if (isset($data['revision'])) {
                 $subJournal->revision = $data['revision'];
             }
@@ -43,8 +43,8 @@ class SubJournal extends Message
                 $subJournal->toCode = strtoupper($data['toCode']);
             }
         }
-        if ($opFlag & self::FN_VALIDATE) {
-            $subJournal->validate($opFlag);
+        if ($opFlags & self::FN_VALIDATE) {
+            $subJournal->validate($opFlags);
         }
 
         return $subJournal;
@@ -53,16 +53,16 @@ class SubJournal extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlag): self
+    public function validate(int $opFlags): self
     {
         $errors = [];
         if (!isset($this->code)) {
             $errors[] = __('the code property is required');
         }
-        if ($opFlag & self::OP_ADD && count($this->names) === 0) {
+        if ($opFlags & self::OP_ADD && count($this->names) === 0) {
             $errors[] = __('at least one name property is required');
         }
-        if ($opFlag & self::OP_UPDATE && !isset($this->revision)) {
+        if ($opFlags & self::OP_UPDATE && !isset($this->revision)) {
             $errors[] = 'A revision code is required';
         }
         if (count($errors) !== 0) {

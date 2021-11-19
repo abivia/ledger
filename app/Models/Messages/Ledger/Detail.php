@@ -50,19 +50,23 @@ class Detail extends Message
     /**
      * @inheritdoc
      */
-    public static function fromRequest(array $data, int $opFlag): self
+    public static function fromRequest(array $data, int $opFlags): self
     {
         $detail = new static();
-        $detail->copy($data, $opFlag);
+        $detail->copy($data, $opFlags);
         if (isset($data['accountCode'])) {
             $detail->account = new EntityRef();
             $detail->account->code = $data['accountCode'];
         }
-        if (isset($data['reference'])) {
-            $detail->reference = EntityRef::fromRequest($data['reference'], $opFlag);
+        if (isset($data['accountUuid'])) {
+            $detail->account ??= new EntityRef();
+            $detail->account->code = $data['accountUuid'];
         }
-        if ($opFlag & self::FN_VALIDATE) {
-            $detail->validate($opFlag);
+        if (isset($data['reference'])) {
+            $detail->reference = EntityRef::fromRequest($data['reference'], $opFlags);
+        }
+        if ($opFlags & self::FN_VALIDATE) {
+            $detail->validate($opFlags);
         }
         return $detail;
     }
@@ -77,13 +81,13 @@ class Detail extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlag): Message
+    public function validate(int $opFlags): Message
     {
         $errors = [];
         if (isset($this->account)) {
             try {
                 $codeFormat = LedgerAccount::rules()->account->codeFormat ?? '';
-                $this->account->validate($opFlag, $codeFormat);
+                $this->account->validate($opFlags, $codeFormat);
             } catch (Breaker $exception) {
                 Merge::arrays($errors, $exception->getErrors());
             }

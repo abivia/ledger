@@ -30,4 +30,18 @@ class JournalDetail extends Model
         return $this->hasMany(LedgerBalance::class, 'ledgerUuid', 'ledgerUuid');
     }
 
+    public function toResponse(): array
+    {
+        $ledgerAccount = LedgerAccount::find($this->ledgerUuid);
+        $response = [];
+        $response['accountCode'] = $ledgerAccount->code;
+        $response['accountUuid'] = $ledgerAccount->ledgerUuid;
+        if ($this->journalReferenceUuid !== null) {
+            $response['reference'] = $this->journalReferenceUuid;
+        }
+        $response['amount'] = $this->amount;
+
+        return $response;
+    }
+
 }

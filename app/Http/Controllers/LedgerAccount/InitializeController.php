@@ -5,16 +5,21 @@ namespace App\Http\Controllers\LedgerAccount;
 
 use App\Exceptions\Breaker;
 use App\Http\Controllers\LedgerAccountController;
+use App\Models\JournalDetail;
+use App\Models\JournalEntry;
 use App\Models\LedgerAccount;
+use App\Models\LedgerBalance;
 use App\Models\LedgerCurrency;
 use App\Models\LedgerDomain;
 use App\Models\LedgerName;
 use App\Models\Messages\Ledger\Account;
+use App\Models\Messages\Ledger\Balance;
 use App\Models\Messages\Ledger\Create;
 use App\Models\Messages\Ledger\EntityRef;
 use App\Models\Messages\Message;
 use App\Models\SubJournal;
 use App\Traits\Audited;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use stdClass;
@@ -23,7 +28,19 @@ class InitializeController extends LedgerAccountController
 {
     use Audited;
 
+    /**
+     * @var LedgerAccount[]
+     */
+    private array $accounts;
+    /**
+     * @var LedgerCurrency[]
+     */
     private array $currencies = [];
+    /**
+     * @var LedgerDomain[]
+     */
+    private array $domains;
+
     private string $firstCurrency;
     /**
      * @var Create|null Data associated with initial ledger creation.
@@ -50,6 +67,7 @@ class InitializeController extends LedgerAccountController
      * @param Create $message
      * @return LedgerAccount
      * @throws Breaker
+     * @throws Exception
      */
     public function create(Create $message): LedgerAccount
     {
@@ -73,7 +91,8 @@ class InitializeController extends LedgerAccountController
             $this->initializeJournals();
             // Create accounts
             $this->initializeAccounts();
-
+            // Load initial balances
+            $this->initializeBalances();
             // Commit everything
             DB::commit();
             $inTransaction = false;
@@ -88,7 +107,10 @@ class InitializeController extends LedgerAccountController
         return LedgerAccount::root();
     }
 
-    private function createRoot(): string
+    /**
+     * @throws Exception
+     */
+    private function createRoot(): LedgerAccount
     {
         $root = new LedgerAccount();
         $root->code = '';
@@ -102,7 +124,8 @@ class InitializeController extends LedgerAccountController
         $root->flex = $flex;
         $root->save();
         LedgerAccount::loadRoot();
-        $rootUuid = LedgerAccount::root()->ledgerUuid;
+        $root = LedgerAccount::root();
+        $rootUuid = $root->ledgerUuid;
 
         // Create the name records
         foreach ($this->initData->names as $name) {
@@ -110,7 +133,7 @@ class InitializeController extends LedgerAccountController
             LedgerName::createFromMessage($name);
         }
 
-        return $rootUuid;
+        return $root;
     }
 
     /**
@@ -127,30 +150,36 @@ class InitializeController extends LedgerAccountController
         }
 
         // Create the ledger root account
-        $created = ['' => $this->createRoot()];
+        $this->accounts = ['' => $this->createRoot()];
 
         // Create the accounts
+        $errors = [];
         $emptyRun = false;
         while (!$emptyRun) {
             $emptyRun = true;
             foreach ($accounts as $code => $account) {
                 $parentCode = $account->parent->code ?? null;
                 $create = false;
-                if ($parentCode !== null) {
-                    if (isset($created[$parentCode])) {
-                        $account->parent->uuid = $created[$parentCode];
-                        $create = true;
-                    }
-                } else {
+                if ($parentCode === null) {
                     // No parent, always create
                     $account->parent = new EntityRef();
-                    $account->parent->uuid = $created[''];
+                    $account->parent->uuid = $this->accounts['']->ledgerUuid;
                     $create = true;
+                } elseif (isset($this->accounts[$parentCode])) {
+                    $parent = $this->accounts[$parentCode];
+                    $account->parent->uuid = $parent->ledgerUuid;
+                    $create = true;
+                    if ($account->category === true && $parent->category !== true) {
+                        $errors[] = __(
+                            "Account :code can't be a category because :parent is not a category.",
+                            ['code' => $code, 'parent' => $parentCode]
+                        );
+                    }
                 }
                 if ($create) {
                     /** @noinspection PhpDynamicAsStaticMethodCallInspection */
                     $ledgerAccount = LedgerAccount::createFromMessage($account);
-                    $created[$ledgerAccount->code] = $ledgerAccount->ledgerUuid;
+                    $this->accounts[$ledgerAccount->code] = $ledgerAccount;
                     // Create the name records
                     foreach ($account->names as $name) {
                         $name->ownerUuid = $ledgerAccount->ledgerUuid;
@@ -162,16 +191,119 @@ class InitializeController extends LedgerAccountController
             }
         }
         if (count($accounts)) {
-            throw Breaker::withCode(
-                Breaker::BAD_REQUEST,
-                [
-                    __(
-                        "Unable to create accounts :list because parent doesn't exist.",
-                        ['list' => implode(', ', array_keys($accounts))]
-                    )
-                ]
+            $errors[] = __(
+                "Unable to create accounts :list because parent doesn't exist.",
+                ['list' => implode(', ', array_keys($accounts))]
             );
+        }
+        if (count($errors)) {
+            throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);
+        }
+    }
 
+    /**
+     * @throws Breaker
+     */
+    private function initializeBalances()
+    {
+        // Start by making sure all the currencies balance
+        $currencyTotals = array_fill_keys(array_keys($this->currencies), '0');
+        $totals = array_fill_keys(array_keys($this->domains), $currencyTotals);
+        $byDomain = array_fill_keys(
+            array_keys($this->domains),
+            array_fill_keys(array_keys($this->currencies), [])
+        );
+
+        /** @var Balance $balance */
+        foreach ($this->initData->balances as $balance) {
+            $balance->validate(Message::OP_CREATE);
+            if (!isset($this->currencies[$balance->currency])) {
+                throw Breaker::withCode(
+                    Breaker::INVALID_DATA,
+                    __(
+                        'Balance for account :code has unknown currency :currency.',
+                        ['code' => $balance->account->code, 'currency' => $balance->currency]
+                    )
+                );
+            }
+            $byDomain[$balance->domain][$balance->currency][] = $balance;
+            $balance->addAmountTo(
+                $totals[$balance->domain][$balance->currency],
+                $this->currencies[$balance->currency]->decimals
+            );
+        }
+        $errors = [];
+        foreach ($totals as $domainCode => $byCurrency) {
+            foreach ($byCurrency as $currencyCode => $total) {
+                if (bccomp('0', $total, $this->currencies[$currencyCode]->decimals) !== 0) {
+                    $errors[] = __(
+                        'Opening balance mismatch in :domainCode for currency :currencyCode',
+                        compact('domainCode', 'currencyCode')
+                    );
+                }
+            }
+        }
+        if (count($errors) !== 0) {
+            throw Breaker::withCode(Breaker::INVALID_DATA, $errors);
+        }
+        $errors = [];
+        // Now generate an opening balance journal entry for each currency.
+        $language = LedgerAccount::rules()->language->default;
+        $transDate = $this->initData->transDate ?? new Carbon();
+        foreach ($byDomain as $domainCode => $byCurrency) {
+            $ledgerDomain = $this->domains[$domainCode];
+            /**
+             * @var string $currencyCode
+             * @var Balance[] $balances
+             */
+            foreach ($byCurrency as $currencyCode => $balances) {
+                // The opening balance is special as it can have any number of debits and credits.
+                $journalEntry = new JournalEntry();
+                $journalEntry->currency = $currencyCode;
+                $journalEntry->description = 'Opening Balance';
+                $journalEntry->domainUuid = $ledgerDomain->domainUuid;
+                $journalEntry->arguments = [];
+                $journalEntry->language = $language;
+                $journalEntry->opening = true;
+                $journalEntry->posted = true;
+                $journalEntry->reviewed = true;
+                $journalEntry->transDate = $transDate;
+                $journalEntry->save();
+                $journalEntry->refresh();
+
+                foreach ($balances as $detail) {
+                    $ledgerAccount = $this->accounts[$detail->account->code] ?? null;
+                    if ($ledgerAccount === null) {
+                        $errors[] = __(
+                            "Account :code is not defined.",
+                            ['code' => $detail->account->code]
+                        );
+                        continue;
+                    }
+                    if (!($ledgerAccount->debit || $ledgerAccount->credit)) {
+                        $errors[] = __(
+                            "Account :code can't be posted to.",
+                            ['code' => $detail->account->code]
+                        );
+                        continue;
+                    }
+                    $journalDetail = new JournalDetail();
+                    $journalDetail->journalEntryId = $journalEntry->journalEntryId;
+                    $journalDetail->ledgerUuid = $ledgerAccount->ledgerUuid;
+                    $journalDetail->amount = $detail->amount;
+                    $journalDetail->save();
+                    // Create the ledger balances
+                    $ledgerBalance = new LedgerBalance();
+                    $ledgerBalance->ledgerUuid = $journalDetail->ledgerUuid;
+                    $ledgerBalance->domainUuid = $ledgerDomain->domainUuid;
+                    $ledgerBalance->currency = $detail->currency;
+                    $ledgerBalance->balance = $detail->amount;
+                    $ledgerBalance->save();
+                }
+            }
+        }
+        if (count($errors) !== 0) {
+            throw Breaker::withCode(Breaker::INVALID_DATA, $errors);
         }
     }
 
@@ -181,8 +313,7 @@ class InitializeController extends LedgerAccountController
         $this->firstCurrency = '';
         foreach ($this->initData->currencies as $currencyCode => $currency) {
             /** @noinspection PhpDynamicAsStaticMethodCallInspection */
-            LedgerCurrency::createFromMessage($currency);
-            $this->currencies[$currencyCode] = $currencyCode;
+            $this->currencies[$currencyCode] = LedgerCurrency::createFromMessage($currency);
             if ($this->firstCurrency === '') {
                 $this->firstCurrency = $currencyCode;
             }
@@ -194,6 +325,7 @@ class InitializeController extends LedgerAccountController
      */
     private function initializeDomains(): void
     {
+        $this->domains = [];
         foreach ($this->initData->domains as $domainCode => $domain) {
             $domain->currencyDefault = $domain->currencyDefault ?? $this->firstCurrency;
             if (!($this->currencies[$domain->currencyDefault] ?? false)) {
@@ -204,6 +336,7 @@ class InitializeController extends LedgerAccountController
                 throw Breaker::withCode(Breaker::BAD_REQUEST);
             }
             $ledgerDomain = LedgerDomain::createFromMessage($domain);
+            $this->domains[$domainCode] = $ledgerDomain;
             $ledgerUuid = $ledgerDomain->domainUuid;
             // Create the name records
             foreach ($domain->names as $name) {
@@ -215,7 +348,7 @@ class InitializeController extends LedgerAccountController
 
     private function initializeJournals()
     {
-        foreach ($this->initData->journals as $journalCode => $journal) {
+        foreach ($this->initData->journals as $journal) {
             $ledgerJournal = SubJournal::createFromMessage($journal);
             $ledgerUuid = $ledgerJournal->subJournalUuid;
             // Create the name records
@@ -245,7 +378,9 @@ class InitializeController extends LedgerAccountController
         }
         foreach ($template['accounts'] as $account) {
             try {
-                $message = Account::fromRequest($account, Message::OP_ADD);
+                $message = Account::fromRequest(
+                    $account, Message::OP_ADD | Message::FN_VALIDATE
+                );
             } catch (Breaker $exception) {
                 $errors = $exception->getErrors();
                 $errors[] = __(
