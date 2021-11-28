@@ -22,7 +22,7 @@ class SubJournalTest extends TestCase
     public function testFromRequestAdd()
     {
         $subJournal = SubJournal::fromRequest(
-            $this->base, Message::OP_ADD | Message::FN_VALIDATE
+            $this->base, Message::OP_ADD | Message::F_VALIDATE
         );
         $this->assertEquals('Corp', $subJournal->code);
         $this->assertCount(2, $subJournal->names);

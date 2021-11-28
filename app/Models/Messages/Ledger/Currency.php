@@ -41,7 +41,7 @@ class Currency extends Message
                 $result->toCode = strtoupper($data['toCode']);
             }
         }
-        if ($opFlags & self::FN_VALIDATE) {
+        if ($opFlags & self::F_VALIDATE) {
             $result->validate($opFlags);
         }
 

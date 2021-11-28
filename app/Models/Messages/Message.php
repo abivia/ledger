@@ -8,14 +8,22 @@ use function Symfony\Component\String\s;
 abstract class Message
 {
     // Message flag settings State/Function flags from bit 30 down
-    public const FN_VALIDATE = 2**30;
+    /**
+     * Set when the request came from the JSON API.
+     */
+    public const F_API = 2**30;
+    /**
+     * Set on a request to validate the message.
+     */
+    public const F_VALIDATE = 2**29;
 
     // Operation flags from bit 0 up.
     public const OP_ADD = 1;
     public const OP_CREATE = 2;
     public const OP_DELETE = 2**2;
     public const OP_GET = 2**3;
-    public const OP_UPDATE = 2**4;
+    public const OP_QUERY = 2**4;
+    public const OP_UPDATE = 2**5;
 
     /**
      * @var array Each element is either a property name or array of
@@ -24,13 +32,16 @@ abstract class Message
      */
     protected static array $copyable = [];
 
+    private int $opFlags;
+
     private static array $opMap = [
         'add' => self::OP_ADD,
         'create' => self::OP_CREATE,
         'delete' => self::OP_DELETE,
         'get' => self::OP_GET,
+        'query' => self::OP_QUERY,
         'update' => self::OP_UPDATE,
-        'validate' => self::FN_VALIDATE,
+        'validate' => self::F_VALIDATE,
     ];
 
     public function copy(array $data, int $opFlags): self
@@ -70,16 +81,29 @@ abstract class Message
      * Convert a method name to an operation bitmask.
      *
      * @param string $method The method name.
-     * @param int|null $disallow Optional bitmask of methods to ignore.
+     * @param array $options Options are:
+     * add Bitmask of flags to add to the result.
+     * allowZero boolean, if not set an exception is thrown when there is no matching flag.
+     * disallow Bitmask of methods to ignore.
      * @return int Operation bitmask, zero if not recognized or disallowed.
+     * @throws Breaker
      */
-    public static function toOpFlag(string $method, int $disallow = null): int
+    public static function toOpFlags(string $method, array $options = []): int
     {
-        $opFlag = self::$opMap[$method] ?? 0;
-        if ($opFlag !== 0 && $disallow !== null) {
-            $opFlag &= ~$disallow;
+        $opFlags = self::$opMap[$method] ?? 0;
+        if ($opFlags !== 0 && isset($options['disallow'])) {
+            $opFlags &= ~$options['disallow'];
         }
-        return $opFlag;
+        if (!($options['allowZero'] ?? false) && $opFlags === 0) {
+            throw Breaker::withCode(
+                Breaker::INVALID_OPERATION,
+                [':operation is not a valid function.', ['operation' => $method]]
+            );
+        }
+        if (isset($options['add'])) {
+            $opFlags |= $options['add'];
+        }
+        return $opFlags;
     }
 
     /**

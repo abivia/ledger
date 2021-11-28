@@ -36,6 +36,11 @@ class Detail extends Message
 
     public ?EntityRef $reference = null;
 
+    public function __construct(EntityRef $account, string $amount) {
+        $this->account = $account;
+        $this->amount = $amount;
+    }
+
     public function findAccount(): ?LedgerAccount
     {
         if ($this->ledgerAccount === null) {
@@ -65,7 +70,7 @@ class Detail extends Message
         if (isset($data['reference'])) {
             $detail->reference = EntityRef::fromRequest($data['reference'], $opFlags);
         }
-        if ($opFlags & self::FN_VALIDATE) {
+        if ($opFlags & self::F_VALIDATE) {
             $detail->validate($opFlags);
         }
         return $detail;
@@ -105,8 +110,10 @@ class Detail extends Message
             } elseif (isset($this->debit)) {
                 $this->amount = $this->debit;
                 $multiplier = '-1';
+                $this->debit = '';
             } elseif (isset($this->credit)) {
                 $this->amount = $this->credit;
+                $this->credit = '';
             }
         }
         if (!preg_match('/^[+-]?[0-9]*\.?[0-9]*$/', $this->amount)) {

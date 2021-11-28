@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Exceptions\Breaker;
-use App\Http\Controllers\LedgerAccount\InitializeController;
+use App\Http\Controllers\LedgerAccount\CreateController;
 use App\Models\LedgerAccount;
 use App\Models\Messages\Ledger\Create;
 use App\Models\Messages\Message;
@@ -23,7 +23,7 @@ class LedgerCreateApiController
         $this->errors = [];
         try {
             // The Ledger must be empty
-            InitializeController::checkNoLedgerExists();
+            CreateController::checkNoLedgerExists();
 
             $message = Create::fromRequest($request->all(), Message::OP_ADD | Message::OP_CREATE);
             // Set up the ledger boot rules object before loading anything.
@@ -32,7 +32,7 @@ class LedgerCreateApiController
                 LedgerAccount::bootRules($request->input('rules'));
             }
 
-            $controller = new InitializeController();
+            $controller = new CreateController();
             $ledgerAccount = $controller->create($message);
             //$response['whatever'] = $ledgerAccount->toResponse();
 

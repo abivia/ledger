@@ -50,6 +50,7 @@ class Entry extends Message
      * @var ?EntityRef Ledger domain. If not provided the default is used.
      */
     public ?EntityRef $domain;
+
     /**
      * @var mixed
      */
@@ -95,18 +96,13 @@ class Entry extends Message
      */
     public static function fromRequest(array $data, int $opFlags): self
     {
-        $rules = LedgerAccount::rules();
         $entry = new static();
         $entry->copy($data, $opFlags);
         if ($opFlags & self::OP_ADD) {
-            $entry->domain = new EntityRef();
-            $entry->domain->code = $data['domain'] ?? $rules->domain->default;
             if (isset($data['journal'])) {
                 $entry->journal = new EntityRef();
                 $entry->journal->code = $data['journal'];
             }
-            $entry->language = $data['language'] ?? $rules->language->default;
-            $entry->reviewed = $data['reviewed'] ?? $rules->entry->reviewed;
         }
         if ($opFlags & (self::OP_ADD | self::OP_UPDATE)) {
             if (isset($data['date'])) {
@@ -117,7 +113,7 @@ class Entry extends Message
                 $entry->details[] = Detail::fromRequest($detail, $opFlags);
             }
         }
-        if ($opFlags & self::FN_VALIDATE) {
+        if ($opFlags & self::F_VALIDATE) {
             $entry->validate($opFlags);
         }
 
@@ -138,13 +134,14 @@ class Entry extends Message
                 $errors[] = __('Transaction description is required.');
             }
             if (!isset($this->domain)) {
-                $errors[] = __('Domain is required.');
+                $this->domain = new EntityRef();
+                $this->domain->code = LedgerAccount::rules()->domain->default;
             }
             if (!isset($this->language)) {
-                $errors[] = __('Description language is required.');
+                $this->language = LedgerAccount::rules()->language->default;
             }
             if (!isset($this->transDate)) {
-                $errors[] = __('Transaction date is required.');
+                $this->reviewed = LedgerAccount::rules()->entry->reviewed;
             }
         }
         if ($opFlags & (self::OP_DELETE | self::OP_GET | self::OP_UPDATE)) {

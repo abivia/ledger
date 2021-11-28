@@ -24,7 +24,7 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use stdClass;
 
-class InitializeController extends LedgerAccountController
+class CreateController extends LedgerAccountController
 {
     use Audited;
 
@@ -379,7 +379,7 @@ class InitializeController extends LedgerAccountController
         foreach ($template['accounts'] as $account) {
             try {
                 $message = Account::fromRequest(
-                    $account, Message::OP_ADD | Message::FN_VALIDATE
+                    $account, Message::OP_ADD | Message::F_VALIDATE
                 );
             } catch (Breaker $exception) {
                 $errors = $exception->getErrors();

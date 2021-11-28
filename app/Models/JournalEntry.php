@@ -44,6 +44,7 @@ class JournalEntry extends Model
 
     protected $attributes = [
         'opening' => false,
+        'posted' => true,
     ];
 
     protected $casts = [

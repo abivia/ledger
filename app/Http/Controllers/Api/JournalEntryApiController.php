@@ -5,11 +5,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\Breaker;
 use App\Http\Controllers\JournalEntryController;
-use App\Http\Controllers\JournalReferenceController;
-use App\Http\Controllers\LedgerDomainController;
-use App\Models\Messages\Ledger\Domain;
 use App\Models\Messages\Ledger\Entry;
-use App\Models\Messages\Ledger\Reference;
+use App\Models\Messages\Ledger\EntryQuery;
 use App\Models\Messages\Message;
 use App\Traits\ControllerResultHandler;
 use Exception;
@@ -33,20 +30,24 @@ class JournalEntryApiController
         $this->errors = [];
         $response = [];
         try {
-            $opFlag = Message::toOpFlag($operation, Message::OP_CREATE);
-            if ($opFlag === 0) {
-                throw Breaker::withCode(
-                    Breaker::INVALID_OPERATION,
-                    [':operation is not a valid function.', ['operation' => $operation]]
-                );
-            }
-            $message = Entry::fromRequest($request->all(), $opFlag);
+            $opFlags = Message::toOpFlags(
+                $operation, ['add' => Message::F_API, 'disallow' => Message::OP_CREATE]
+            );
             $controller = new JournalEntryController();
-            $journalEntry = $controller->run($message, $opFlag);
-            if ($opFlag & Message::OP_DELETE) {
-                $response['success'] = true;
+            if ($opFlags & Message::OP_QUERY) {
+                $message = EntryQuery::fromRequest($request->all(), $opFlags);
+                $response['entries'] = [];
+                foreach ($controller->query($message, $opFlags) as $entry) {
+                    $response['entries'][] = $entry->toResponse(Message::OP_GET);
+                }
             } else {
-                $response['entry'] = $journalEntry->toResponse($opFlag);
+                $message = Entry::fromRequest($request->all(), $opFlags);
+                $journalEntry = $controller->run($message, $opFlags);
+                if ($opFlags & Message::OP_DELETE) {
+                    $response['success'] = true;
+                } else {
+                    $response['entry'] = $journalEntry->toResponse($opFlags);
+                }
             }
         } catch (Breaker $exception) {
             $this->errors[] = $exception->getErrors();

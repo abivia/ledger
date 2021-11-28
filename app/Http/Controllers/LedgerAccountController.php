@@ -7,15 +7,19 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\Breaker;
 use App\Http\Controllers\LedgerAccount\AddController;
+use App\Http\Controllers\LedgerAccount\CreateController;
 use App\Models\LedgerAccount;
 use App\Models\LedgerBalance;
 use App\Models\LedgerName;
 use App\Models\Messages\Ledger\Account;
+use App\Models\Messages\Ledger\Create;
 use App\Models\Messages\Ledger\EntityRef;
+use App\Models\Messages\Ledger\AccountQuery;
 use App\Models\Messages\Message;
 use App\Traits\Audited;
 use App\Traits\ControllerResultHandler;
 use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use stdClass;
 
@@ -37,6 +41,19 @@ class LedgerAccountController extends Controller
     {
         $controller = new AddController();
         return $controller->add($message);
+    }
+
+    /**
+     * Adding an account to the ledger.
+     *
+     * @param Account $message
+     * @return LedgerAccount
+     * @throws Breaker
+     */
+    public function create(Create $message): LedgerAccount
+    {
+        $controller = new CreateController();
+        return $controller->create($message);
     }
 
     /**
@@ -170,16 +187,39 @@ class LedgerAccountController extends Controller
     }
 
     /**
+     * @param AccountQuery $message
+     * @param int $opFlags
+     * @return Collection
+     * @throws Breaker
+     */
+    public function query(AccountQuery $message, int $opFlags): Collection
+    {
+        $message->validate($opFlags);
+        $query = LedgerAccount::query()
+            ->orderBy('code');
+        $query->limit($message->limit);
+        if (isset($message->after)) {
+            try {
+                $query = LedgerAccount::whereEntity('>', $message->after, $query);
+            } catch (Exception $exception) {
+                throw Breaker::withCode(Breaker::BAD_ACCOUNT, [$exception->getMessage()]);
+            }
+        }
+
+        return $query->get();
+    }
+
+    /**
      * Perform a currency operation.
      *
      * @param Account $message
-     * @param int $opFlag
+     * @param int $opFlags
      * @return LedgerAccount|null
      * @throws Breaker
      */
-    public function run(Account $message, int $opFlag): ?LedgerAccount
+    public function run(Account $message, int $opFlags): ?LedgerAccount
     {
-        switch ($opFlag) {
+        switch ($opFlags) {
             case Message::OP_ADD:
                 return $this->add($message);
             case Message::OP_DELETE:

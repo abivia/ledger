@@ -12,10 +12,12 @@ use App\Models\LedgerCurrency;
 use App\Models\LedgerDomain;
 use App\Models\Messages\Ledger\EntityRef;
 use App\Models\Messages\Ledger\Entry;
+use App\Models\Messages\Ledger\EntryQuery;
 use App\Models\Messages\Message;
 use App\Models\SubJournal;
 use App\Traits\Audited;
 use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class JournalEntryController extends Controller
@@ -203,6 +205,25 @@ class JournalEntryController extends Controller
                 [__('Currency :code not found.', ['code' => $currency])]
             );
         }
+    }
+
+    /**
+     * @param EntryQuery $message
+     * @param int $opFlags
+     * @return Collection
+     * @throws Breaker
+     */
+    public function query(EntryQuery $message, int $opFlags): Collection
+    {
+        $message->validate($opFlags);
+        $query = JournalEntry::query()
+            ->orderBy('transDate');
+        $query->limit($message->limit);
+        if (isset($message->after)) {
+            $query->where('id','>', $message->after);
+        }
+
+        return $query->get();
     }
 
     /**

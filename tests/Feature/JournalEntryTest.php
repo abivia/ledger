@@ -120,18 +120,7 @@ class JournalEntryTest extends TestCase
 
         $this->isSuccessful($response, 'ledger');
 
-        LedgerAccount::loadRoot();
-        //print_r(LedgerAccount::root());
-        foreach (LedgerAccount::all() as $item) {
-            echo "$item->ledgerUuid $item->code ($item->parentUuid) ";
-            echo $item->category ? 'cat ' : '    ';
-            if ($item->debit) echo 'DR __';
-            if ($item->credit) echo '__ CR';
-            echo "\n";
-            foreach ($item->names as $name) {
-                echo "$name->name $name->language\n";
-            }
-        }
+        //$this->dumpLedger();
     }
 
     public function testAdd()

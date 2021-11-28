@@ -11,7 +11,7 @@ class Name extends Message
     public string $language;
     public string $name;
     public string $ownerUuid;
-    public ?string $revision;
+    //public ?string $revision;
 
     /**
      * @inheritdoc
@@ -25,7 +25,7 @@ class Name extends Message
         if (isset($data['language'])) {
             $name->language = $data['language'];
         }
-        if ($opFlags & self::FN_VALIDATE) {
+        if ($opFlags & self::F_VALIDATE) {
             $name->validate($opFlags);
         }
 
@@ -46,7 +46,7 @@ class Name extends Message
         $names = [];
         foreach ($data as $nameData) {
             $message = self::fromRequest($nameData, $opFlag);
-            $names[$message->language] = $message;
+            $names[$message->language ?? ''] = $message;
         }
         if (count($names) < $minimum) {
             $entry = $minimum === 1 ? 'entry' : 'entries';

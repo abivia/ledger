@@ -23,7 +23,7 @@ class DomainTest extends TestCase
     public function testFromRequestAdd()
     {
         $domain = Domain::fromRequest(
-            $this->base, Message::OP_ADD | Message::FN_VALIDATE
+            $this->base, Message::OP_ADD | Message::F_VALIDATE
         );
         $this->assertEquals('GL', $domain->code);
         $this->assertCount(2, $domain->names);
@@ -36,7 +36,7 @@ class DomainTest extends TestCase
         unset($base['names']);
         $this->expectException(Breaker::class);
         Domain::fromRequest(
-            $base, Message::OP_ADD | Message::FN_VALIDATE
+            $base, Message::OP_ADD | Message::F_VALIDATE
         );
     }
 
@@ -46,7 +46,7 @@ class DomainTest extends TestCase
         unset($base['names']);
         $base['revision'] = 'revision-code';
         $domain = Domain::fromRequest(
-            $base, Message::OP_DELETE | Message::FN_VALIDATE
+            $base, Message::OP_DELETE | Message::F_VALIDATE
         );
         $this->assertEquals('GL', $domain->code);
         $this->assertEquals('CAD', $domain->currencyDefault);
@@ -57,7 +57,7 @@ class DomainTest extends TestCase
         $base = $this->base;
         unset($base['names']);
         $domain = Domain::fromRequest(
-            $base, Message::OP_DELETE | Message::FN_VALIDATE
+            $base, Message::OP_DELETE | Message::F_VALIDATE
         );
         $this->assertEquals('GL', $domain->code);
         $this->assertEquals('CAD', $domain->currencyDefault);
@@ -66,7 +66,7 @@ class DomainTest extends TestCase
     public function testFromRequestGet()
     {
         $domain = Domain::fromRequest(
-            $this->base, Message::OP_ADD | Message::FN_VALIDATE
+            $this->base, Message::OP_ADD | Message::F_VALIDATE
         );
         $this->assertEquals('GL', $domain->code);
         $this->assertCount(2, $domain->names);
@@ -76,7 +76,7 @@ class DomainTest extends TestCase
     public function testFromRequestUpdate()
     {
         $domain = Domain::fromRequest(
-            $this->base, Message::OP_ADD | Message::FN_VALIDATE
+            $this->base, Message::OP_ADD | Message::F_VALIDATE
         );
         $this->assertEquals('GL', $domain->code);
         $this->assertCount(2, $domain->names);

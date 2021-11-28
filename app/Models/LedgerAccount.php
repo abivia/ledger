@@ -92,12 +92,14 @@ class LedgerAccount extends Model
     {
         self::$bootRules = new stdClass();
 
+        self::$bootRules->account = new stdClass();
         self::$bootRules->domain = new stdClass();
         // Default is to leave transactions as not reviewed
         self::$bootRules->entry = new stdClass();
         self::$bootRules->entry->reviewed = false;
         self::$bootRules->language = new stdClass();
         self::$bootRules->language->default = App::getLocale();
+        self::$bootRules->pageSize = 100;
     }
 
     public static function bootRules(array $data)
@@ -144,7 +146,7 @@ class LedgerAccount extends Model
         } elseif (isset($entityRef->code)) {
             $finder = self::where('code', $entityRef->code);
         } else {
-            throw new Exception('Account reference must have either code or uuid entries');
+            throw new Exception(__('Account reference must have either code or uuid entries'));
         }
 
         return $finder;
@@ -251,7 +253,7 @@ class LedgerAccount extends Model
         if (self::$root === null) {
             self::loadRoot();
             if (self::$root === null) {
-                throw new Exception('Ledger root is not defined.');
+                throw new Exception(__('Ledger root is not defined.'));
             }
         }
 
@@ -272,7 +274,10 @@ class LedgerAccount extends Model
         return self::$root->flex->rules;
     }
 
-    public static function saveRoot()
+    /**
+     * @return LedgerAccount|null
+     */
+    public static function saveRoot(): ?LedgerAccount
     {
         if (self::$root !== null) {
             self::$root->save();
@@ -316,6 +321,44 @@ class LedgerAccount extends Model
         $response['updatedAt'] = $this->updated_at;
 
         return $response;
+    }
+
+    /**
+     * @param string $operator
+     * @param EntityRef $entityRef
+     * @param Builder $query
+     * @return Builder
+     * @throws Exception
+     */
+    public static function whereEntity(
+        string $operator, EntityRef $entityRef, ?Builder $query = null
+    ): Builder
+    {
+        if ($query === null) {
+            $query = self::query();
+        }
+        if (isset($entityRef->code)) {
+            // We have a code so simple case, just use it
+            $finder = $query->where('code', $operator, $entityRef->code);
+        } elseif (isset($entityRef->uuid) && $entityRef->uuid !== null) {
+            if ($operator === '=') {
+                // With an equal operator, the UUID can be used directly.
+                $finder = $query->where('ledgerUuid', $operator, $entityRef->uuid);
+            } else {
+                // Other operators need the account code, so get that first.
+                $ref = self::find($entityRef->uuid);
+                if ($ref === null) {
+                    throw new Exception(
+                        __('Account :uuid not found.', ['uuid' => $entityRef->uuid])
+                    );
+                }
+                $finder = $query->where('code', $operator, $ref->code);
+            }
+        } else {
+            throw new Exception(__('Account reference must have either code or uuid entries'));
+        }
+
+        return $finder;
     }
 
 }

@@ -6,6 +6,7 @@ use App\Exceptions\Breaker;
 
 use App\Http\Controllers\LedgerAccountController;
 use App\Models\Messages\Ledger\Account;
+use App\Models\Messages\Ledger\AccountQuery;
 use App\Models\Messages\Message;
 use App\Traits\ControllerResultHandler;
 use Exception;
@@ -29,20 +30,24 @@ class LedgerAccountApiController
         $this->errors = [];
         $response = [];
         try {
-            $opFlag = Message::toOpFlag($operation, Message::OP_CREATE);
-            if ($opFlag === 0) {
-                throw Breaker::withCode(
-                    Breaker::INVALID_OPERATION,
-                    [':operation is not a valid function.', ['operation' => $operation]]
-                );
-            }
-            $message = Account::fromRequest($request->all(), $opFlag);
+            $opFlags = Message::toOpFlags(
+                $operation, ['add' => Message::F_API, 'disallow' => Message::OP_CREATE]
+            );
             $controller = new LedgerAccountController();
-            $ledgerAccount = $controller->run($message, $opFlag);
-            if ($opFlag & Message::OP_DELETE) {
-                $response['success'] = true;
+            if ($opFlags & Message::OP_QUERY) {
+                $message = AccountQuery::fromRequest($request->all(), $opFlags);
+                $response['accounts'] = [];
+                foreach ($controller->query($message, $opFlags) as $entry) {
+                    $response['accounts'][] = $entry->toResponse([]);
+                }
             } else {
-                $response['account'] = $ledgerAccount->toResponse();
+                $message = Account::fromRequest($request->all(), $opFlags);
+                $ledgerAccount = $controller->run($message, $opFlags);
+                if ($opFlags & Message::OP_DELETE) {
+                    $response['success'] = true;
+                } else {
+                    $response['account'] = $ledgerAccount->toResponse();
+                }
             }
         } catch (Breaker $exception) {
             $this->errors[] = $exception->getErrors();

@@ -171,7 +171,11 @@ class Create extends Message
     {
         $errors = [];
         $this->names = [];
-        foreach ($data['names'] ?? [] as $index => $name) {
+        $nameList = $data['names'] ?? [];
+        if (isset($data['name'])) {
+            array_unshift($nameList, ['name' => $data['name']]);
+        }
+        foreach ($nameList as $index => $name) {
             try {
                 $message = Name::fromRequest($name, self::OP_ADD | self::OP_CREATE);
                 $this->names[$message->language] = $message;

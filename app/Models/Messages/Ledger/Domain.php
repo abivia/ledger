@@ -29,7 +29,11 @@ class Domain extends Message
             $domain->code = $data['code'];
         }
         if (isset($data['names'])) {
-            $domain->names = Name::fromRequestList($data['names'], $opFlags, 1);
+            $nameList = $data['names'] ?? [];
+            if (isset($data['name'])) {
+                array_unshift($nameList, ['name' => $data['name']]);
+            }
+            $domain->names = Name::fromRequestList($nameList, $opFlags, 1);
         }
         $domain->subJournals = $data['subJournals'] ?? false;
         if (isset($data['currency'])) {
@@ -46,7 +50,7 @@ class Domain extends Message
                 $domain->toCode = strtoupper($data['toCode']);
             }
         }
-        if ($opFlags & self::FN_VALIDATE) {
+        if ($opFlags & self::F_VALIDATE) {
             $domain->validate($opFlags);
         }
 

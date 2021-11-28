@@ -18,7 +18,7 @@ class AccountRefTest extends TestCase
     public function testFromRequest()
     {
         $parentRef = EntityRef::fromRequest(
-            $this->base, Message::OP_ADD | Message::FN_VALIDATE
+            $this->base, Message::OP_ADD | Message::F_VALIDATE
         );
         $this->assertEquals('1010', $parentRef->code);
         $this->assertEquals('some-fake-uuid', $parentRef->uuid);

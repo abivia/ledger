@@ -14,8 +14,7 @@ class EntityRef extends Message
     public ?string $code = null;
 
     protected static array $copyable = [
-        ['code', self::OP_ADD | self::OP_DELETE | self::OP_UPDATE],
-        ['uuid', self::OP_ADD | self::OP_DELETE | self::OP_UPDATE],
+        'code', 'uuid',
     ];
 
     /**
@@ -52,7 +51,7 @@ class EntityRef extends Message
     {
         $entityRef = new static();
         $entityRef->copy($data, $opFlags);
-        if ($opFlags & self::FN_VALIDATE) {
+        if ($opFlags & self::F_VALIDATE) {
             $codeFormat = LedgerAccount::rules()->account->codeFormat ?? '';
             $entityRef->validate($opFlags, $codeFormat);
         }

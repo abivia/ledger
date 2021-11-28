@@ -20,22 +20,6 @@ class LedgerAccountTest extends TestCase
     use CreateLedgerTrait;
     use RefreshDatabase;
 
-    private function dumpLedger()
-    {
-        LedgerAccount::loadRoot();
-        //print_r(LedgerAccount::root());
-        foreach (LedgerAccount::all() as $item) {
-            echo "$item->ledgerUuid $item->code ($item->parentUuid) ";
-            echo $item->category ? 'cat ' : '    ';
-            if ($item->debit) echo 'DR __';
-            if ($item->credit) echo '__ CR';
-            echo "\n";
-            foreach ($item->names as $name) {
-                echo "$name->name $name->language\n";
-            }
-        }
-    }
-
     public function setUp(): void
     {
         parent::setUp();
@@ -271,10 +255,11 @@ class LedgerAccountTest extends TestCase
             'parent' => [
                 'code' => '1000',
             ],
+            'name' => 'Cash in Bank',
             'names' => [
                 [
-                    'name' => 'Cash in Bank',
-                    'language' => 'en',
+                    'name' => 'Cash Stash',
+                    'language' => 'en-YO',
                 ]
             ]
         ];
@@ -285,6 +270,7 @@ class LedgerAccountTest extends TestCase
         $this->hasRevisionElements($actual->account);
         $this->hasAttributes(['uuid', 'code', 'names'], $actual->account);
         $this->assertEquals('1010', $actual->account->code);
+        $this->assertCount(2, $actual->account->names);
         $this->assertEquals(
             'Cash in Bank',
             $actual->account->names[0]->name
@@ -292,6 +278,14 @@ class LedgerAccountTest extends TestCase
         $this->assertEquals(
             'en',
             $actual->account->names[0]->language
+        );
+        $this->assertEquals(
+            'Cash Stash',
+            $actual->account->names[1]->name
+        );
+        $this->assertEquals(
+            'en-YO',
+            $actual->account->names[1]->language
         );
     }
 

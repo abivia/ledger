@@ -29,13 +29,9 @@ class LedgerDomainApiController
         $this->errors = [];
         $response = [];
         try {
-            $opFlag = Message::toOpFlag($operation, Message::OP_CREATE);
-            if ($opFlag === 0) {
-                throw Breaker::withCode(
-                    Breaker::INVALID_OPERATION,
-                    [':operation is not a valid function.', ['operation' => $operation]]
-                );
-            }
+            $opFlag = Message::toOpFlags(
+                $operation, ['add' => Message::F_API, 'disallow' => Message::OP_CREATE]
+            );
             $message = Domain::fromRequest($request->all(), $opFlag);
             $controller = new LedgerDomainController();
             $ledgerDomain = $controller->run($message, $opFlag);

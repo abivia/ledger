@@ -14,6 +14,7 @@ class SubJournal extends Message
      */
     public $extra;
     public array $names = [];
+    public string $revision;
     public string $toCode;
 
     /**
@@ -26,10 +27,12 @@ class SubJournal extends Message
             $subJournal->code = $data['code'];
         }
         if ($opFlags & (self::OP_ADD | self::OP_UPDATE)) {
+            $nameList = $data['names'] ?? [];
+            if (isset($data['name'])) {
+                array_unshift($nameList, ['name' => $data['name']]);
+            }
             $subJournal->names = Name::fromRequestList(
-                $data['names'] ?? [],
-                $opFlags,
-                ($opFlags & self::OP_ADD) ? 1 : 0
+                $nameList, $opFlags, ($opFlags & self::OP_ADD) ? 1 : 0
             );
         }
         if (isset($data['extra'])) {
@@ -43,7 +46,7 @@ class SubJournal extends Message
                 $subJournal->toCode = strtoupper($data['toCode']);
             }
         }
-        if ($opFlags & self::FN_VALIDATE) {
+        if ($opFlags & self::F_VALIDATE) {
             $subJournal->validate($opFlags);
         }
 

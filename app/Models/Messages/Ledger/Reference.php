@@ -37,7 +37,7 @@ class Reference extends Message
                 $reference->toCode = $data['toCode'];
             }
         }
-        if ($opFlags & self::FN_VALIDATE) {
+        if ($opFlags & self::F_VALIDATE) {
             $reference->validate($opFlags);
         }
 

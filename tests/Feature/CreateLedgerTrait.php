@@ -42,7 +42,8 @@ trait CreateLedgerTrait {
         'rules' => [
             'account' => [
                 'codeFormat' => '/^[a-z0-9\-]+$/i'
-            ]
+            ],
+            'pageSize' => 25,
         ],
         'extra' => 'arbitrary JSON',
         'template' => 'sections'

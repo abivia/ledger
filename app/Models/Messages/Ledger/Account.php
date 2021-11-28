@@ -65,10 +65,12 @@ class Account extends Message
         }
         if ($opFlags & (self::OP_ADD | self::OP_UPDATE)) {
             try {
+                $nameList = $data['names'] ?? [];
+                if (isset($data['name'])) {
+                    array_unshift($nameList, ['name' => $data['name']]);
+                }
                 $account->names = Name::fromRequestList(
-                    $data['names'] ?? [],
-                    $opFlags,
-                    ($opFlags & self::OP_ADD) ? 1 : 0
+                    $nameList, $opFlags, ($opFlags & self::OP_ADD) ? 1 : 0
                 );
             } catch (Breaker $exception) {
                 Merge::arrays($errors, $exception->getErrors());
@@ -88,7 +90,7 @@ class Account extends Message
         if (count($errors) !== 0) {
             throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);
         }
-        if ($opFlags & self::FN_VALIDATE) {
+        if ($opFlags & self::F_VALIDATE) {
             $account->validate($opFlags);
         }
 
