@@ -26,12 +26,6 @@ class LedgerCreateApiController
             CreateController::checkNoLedgerExists();
 
             $message = Create::fromRequest($request->all(), Message::OP_ADD | Message::OP_CREATE);
-            // Set up the ledger boot rules object before loading anything.
-            if ($request->has('rules')) {
-                // Recode and decode the rules as objects
-                LedgerAccount::bootRules($request->input('rules'));
-            }
-
             $controller = new CreateController();
             $ledgerAccount = $controller->create($message);
             //$response['whatever'] = $ledgerAccount->toResponse();

@@ -99,15 +99,8 @@ class LedgerAccount extends Model
         self::$bootRules->entry->reviewed = false;
         self::$bootRules->language = new stdClass();
         self::$bootRules->language->default = App::getLocale();
+        self::$bootRules->openDate = Carbon::now()->format(self::systemDateFormat());
         self::$bootRules->pageSize = 100;
-    }
-
-    public static function bootRules(array $data)
-    {
-        if (!isset(self::$bootRules)) {
-            self::baseRuleSet();
-        }
-        Merge::objects(self::$bootRules, json_decode(json_encode($data)));
     }
 
     public static function createFromMessage(Account $message): self
@@ -260,6 +253,11 @@ class LedgerAccount extends Model
         return self::$root;
     }
 
+    /**
+     * Get the current rule set. During ledger creation, this is a set of bootstrap rules.
+     *
+     * @return stdClass
+     */
     public static function rules(): stdClass
     {
         if (self::$root === null) {
@@ -290,6 +288,29 @@ class LedgerAccount extends Model
     public function setFlexAttribute($value)
     {
         $this->attributes['flex'] = json_encode($value);
+    }
+
+    public static function setRules(array $data)
+    {
+        if (self::$root === null) {
+            self::loadRoot();
+            if (self::$root === null) {
+                if (!isset(self::$bootRules)) {
+                    self::baseRuleSet();
+                }
+                Merge::arrayToObject(self::$bootRules, $data);
+                return self::$bootRules;
+            }
+        }
+        Merge::arrayToObject(self::$root->flex->rules, $data);
+        self::$root->save();
+
+        return self::$root->flex->rules;
+    }
+
+    public static function systemDateFormat(): string {
+        $dummy = new self();
+        return $dummy->getDateFormat();
     }
 
     /**

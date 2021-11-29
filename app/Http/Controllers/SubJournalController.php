@@ -148,7 +148,7 @@ class SubJournalController extends Controller
      */
     public function run(SubJournal $message, int $opFlag): ?LedgerSubJournal
     {
-        switch ($opFlag) {
+        switch ($opFlag & Message::ALL_OPS) {
             case Message::OP_ADD:
                 return $this->add($message);
             case Message::OP_DELETE:

@@ -151,7 +151,7 @@ class LedgerCurrencyController extends Controller
      */
     public function run(Currency $message, int $opFlag): ?LedgerCurrency
     {
-        switch ($opFlag) {
+        switch ($opFlag & Message::ALL_OPS) {
             case Message::OP_ADD:
                 return $this->add($message);
             case Message::OP_DELETE:

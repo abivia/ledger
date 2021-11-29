@@ -36,9 +36,13 @@ class Detail extends Message
 
     public ?EntityRef $reference = null;
 
-    public function __construct(EntityRef $account, string $amount) {
-        $this->account = $account;
-        $this->amount = $amount;
+    public function __construct(?EntityRef $account = null, ?string $amount = null) {
+        if ($account !== null) {
+            $this->account = $account;
+        }
+        if ($amount !== null) {
+            $this->amount = $amount;
+        }
     }
 
     public function findAccount(): ?LedgerAccount

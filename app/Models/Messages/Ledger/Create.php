@@ -17,6 +17,9 @@ class Create extends Message
      */
     public array $accounts = [];
 
+    /**
+     * @var Balance[] Opening balances
+     */
     public array $balances = [];
     /**
      * @var Currency[]
@@ -102,45 +105,20 @@ class Create extends Message
         return $errors;
     }
 
-    private function extractDomains(array $data, bool $makeDefault = false): array
+    private function extractDomains(array $data): array
     {
         $errors = [];
         $this->domains = [];
-        $firstDomain = null;
         foreach ($data['domains'] ?? [] as $index => $domain) {
             try {
                 $domain = Domain::fromRequest($domain, self::OP_ADD | self::OP_CREATE);
-                $this->domains[$domain->code] = $domain;
-                if ($firstDomain === null) {
-                    $firstDomain = $domain->code;
-                }
+                $this->domains[] = $domain;
             } catch (Breaker $exception) {
                 $errors[] = __(
                     ":Property in position :index "
                     . implode(', ', $exception->getErrors()) . ".",
                     ['property' => 'Domain', 'index' => $index + 1]
                 );
-            }
-        }
-        if (count($this->domains) < 1 && $makeDefault) {
-            // Create a default domain
-            $firstDomain = 'MAIN';
-            $this->domains['MAIN'] = [
-                'code' => 'MAIN',
-                'names' => [
-                    'name' => 'Main General Ledger',
-                    'language' => 'en'
-                ]
-            ];
-        }
-        if ($firstDomain !== null) {
-            $defaultDomain = LedgerAccount::rules()->domain->default ?? null;
-            $ruleUpdate = ['domain' => ['default' => $firstDomain]];
-            if (
-                $defaultDomain === null
-                || !isset($this->domains[$defaultDomain])
-            ) {
-                LedgerAccount::bootRules($ruleUpdate);
             }
         }
         return $errors;
@@ -221,6 +199,7 @@ class Create extends Message
             if (isset($data['date'])) {
                 $create->transDate = new Carbon($data['date']);
             }
+            $create->rules = $data['rules'] ?? [];
         }
         catch (TypeError $exception) {
             if (
@@ -251,6 +230,7 @@ class Create extends Message
      */
     public function validate(int $opFlags): self
     {
+        $this->transDate ??= Carbon::now();
         if ($this->template !== null) {
             $this->templatePath = resource_path(
                 "ledger/charts/{$this->template}.json"
@@ -266,6 +246,20 @@ class Create extends Message
         }
         foreach ($this->currencies as $currency) {
             $currency->validate($opFlags);
+        }
+        if (count($this->domains) === 0) {
+            // Create a default domain
+            $this->domains['MAIN'] = domain::fromRequest(
+                [
+                    'code' => 'MAIN',
+                    'names' => [
+                        'name' => 'Main General Ledger',
+                        'language' => 'en'
+                    ]
+                ],
+                Message::OP_CREATE
+            );
+
         }
         foreach ($this->journals as $journal) {
             $journal->validate($opFlags);

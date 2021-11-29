@@ -18,6 +18,7 @@ abstract class Message
     public const F_VALIDATE = 2**29;
 
     // Operation flags from bit 0 up.
+    public const ALL_OPS = 0b111111;
     public const OP_ADD = 1;
     public const OP_CREATE = 2;
     public const OP_DELETE = 2**2;
@@ -31,8 +32,6 @@ abstract class Message
      * match the current operation flags.
      */
     protected static array $copyable = [];
-
-    private int $opFlags;
 
     private static array $opMap = [
         'add' => self::OP_ADD,

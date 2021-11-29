@@ -46,7 +46,7 @@ class LedgerAccountController extends Controller
     /**
      * Adding an account to the ledger.
      *
-     * @param Account $message
+     * @param Create $message
      * @return LedgerAccount
      * @throws Breaker
      */
@@ -219,7 +219,7 @@ class LedgerAccountController extends Controller
      */
     public function run(Account $message, int $opFlags): ?LedgerAccount
     {
-        switch ($opFlags) {
+        switch ($opFlags & Message::ALL_OPS) {
             case Message::OP_ADD:
                 return $this->add($message);
             case Message::OP_DELETE:
@@ -263,10 +263,12 @@ class LedgerAccountController extends Controller
                 if ($message->category) {
                     // Verify that the parent is a category or root
                     if (!$ledgerParent->category) {
-                        $this->errors[] = __(
-                            "Account can't be a category because parent is not a category."
+                        throw Breaker::withCode(
+                            Breaker::INVALID_OPERATION,
+                            [__(
+                                "Account can't be a category because parent is not a category."
+                            )]
                         );
-                        throw Breaker::withCode(Breaker::INVALID_OPERATION);
                     }
                 } else {
                     // Verify that no children are categories

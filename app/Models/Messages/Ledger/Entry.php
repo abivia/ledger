@@ -126,6 +126,7 @@ class Entry extends Message
     public function validate(int $opFlags): self
     {
         $errors = [];
+        $rules = LedgerAccount::rules();
         if ($opFlags & self::OP_ADD) {
             if (count($this->details) === 0) {
                 $errors[] = __('Entry has no details.');
@@ -135,13 +136,22 @@ class Entry extends Message
             }
             if (!isset($this->domain)) {
                 $this->domain = new EntityRef();
-                $this->domain->code = LedgerAccount::rules()->domain->default;
+                $this->domain->code = $rules->domain->default;
             }
             if (!isset($this->language)) {
-                $this->language = LedgerAccount::rules()->language->default;
+                $this->language = $rules->language->default;
             }
             if (!isset($this->transDate)) {
-                $this->reviewed = LedgerAccount::rules()->entry->reviewed;
+                $this->reviewed = $rules->entry->reviewed;
+            }
+        }
+        if ($opFlags & self::OP_ADD || self::OP_UPDATE) {
+            $openDate = Carbon::parse($rules->openDate);
+            if ($this->transDate->lessThan($openDate)) {
+                $errors[] = __(
+                    'Transaction date cannot be earlier than opening date :date.',
+                    ['date' => $openDate->format(LedgerAccount::systemDateFormat())]
+                );
             }
         }
         if ($opFlags & (self::OP_DELETE | self::OP_GET | self::OP_UPDATE)) {

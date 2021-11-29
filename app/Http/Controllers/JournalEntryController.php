@@ -217,13 +217,34 @@ class JournalEntryController extends Controller
     {
         $message->validate($opFlags);
         $query = JournalEntry::query()
-            ->orderBy('transDate');
-        $query->limit($message->limit);
-        if (isset($message->after)) {
-            $query->where('id','>', $message->after);
+            ->orderBy('transDate')
+            ->orderBy('journalEntryId');
+        // Apply the date range
+        $dateFormat = LedgerAccount::systemDateFormat();
+        if (isset($message->date) && isset($message->dateEnding)) {
+            $query->whereBetween(
+                'transDate',
+                [$message->date->format($dateFormat), $message->dateEnding->format($dateFormat)]
+            );
+        } elseif (isset($message->date)) {
+            $query->where('transDate', '>=', $message->date->format($dateFormat));
+        } elseif (isset($message->dateEnding)) {
+            $query->where('transDate', '<=', $message->dateEnding->format($dateFormat));
         }
+        if (isset($message->after)) {
+            $afterDate = $message->afterDate->format($dateFormat);
+            $query->where('transDate', '>', $afterDate)
+                ->orWhere(function ($query) use ($message, $afterDate){
+                    $query->where('journalEntryId','>', $message->after)
+                        ->where('transDate', '=', $afterDate);
+                });
+        }
+        if (isset($message->limit)) {
+            $query->limit($message->limit);
+        }
+        $results = $query->get();
 
-        return $query->get();
+        return $results;
     }
 
     /**
@@ -236,7 +257,7 @@ class JournalEntryController extends Controller
      */
     public function run(Entry $message, int $opFlag): ?JournalEntry
     {
-        switch ($opFlag) {
+        switch ($opFlag & Message::ALL_OPS) {
             case Message::OP_ADD:
                 return $this->add($message);
             case Message::OP_DELETE:

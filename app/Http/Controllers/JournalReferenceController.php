@@ -145,7 +145,7 @@ class JournalReferenceController extends Controller
      */
     public function run(Reference $message, int $opFlag): ?JournalReference
     {
-        switch ($opFlag) {
+        switch ($opFlag & Message::ALL_OPS) {
             case Message::OP_ADD:
                 return $this->add($message);
             case Message::OP_DELETE:

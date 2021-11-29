@@ -170,7 +170,7 @@ class LedgerDomainController extends Controller
      */
     public function run(Domain $message, int $opFlag): ?LedgerDomain
     {
-        switch ($opFlag) {
+        switch ($opFlag & Message::ALL_OPS) {
             case Message::OP_ADD:
                 return $this->add($message);
             case Message::OP_DELETE:

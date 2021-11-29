@@ -33,7 +33,7 @@ class CreateController extends LedgerAccountController
      */
     private array $accounts;
     /**
-     * @var LedgerCurrency[]
+     * @var LedgerCurrency[] Supported currencies.
      */
     private array $currencies = [];
     /**
@@ -71,12 +71,19 @@ class CreateController extends LedgerAccountController
      */
     public function create(Create $message): LedgerAccount
     {
-        $message->validate(Message::OP_CREATE);
-        $this->errors = [];
-        $inTransaction = false;
         try {
             // The Ledger must be empty
             self::checkNoLedgerExists();
+
+            // Set up the ledger boot rules object before anything else.
+            if (isset($message->rules)) {
+                // Merge the rules into the defaults
+                LedgerAccount::setRules($message->rules);
+            }
+
+            $message->validate(Message::OP_CREATE);
+            $this->errors = [];
+            $inTransaction = false;
 
             $this->initData = $message;
 
@@ -117,9 +124,10 @@ class CreateController extends LedgerAccountController
         $root->parentUuid = null;
         $root->category = true;
 
-        // Save the rules and a revision salt into the flex property.
+        // Commit the boot rules and a revision salt into the flex property.
         $flex = new stdClass();
         $flex->rules = LedgerAccount::rules();
+        $flex->rules->openDate = $this->initData->transDate->format(LedgerAccount::systemDateFormat());
         $flex->salt = bin2hex(random_bytes(16));
         $root->flex = $flex;
         $root->save();
@@ -326,7 +334,8 @@ class CreateController extends LedgerAccountController
     private function initializeDomains(): void
     {
         $this->domains = [];
-        foreach ($this->initData->domains as $domainCode => $domain) {
+        foreach ($this->initData->domains as $domain) {
+            $domainCode = $domain->code;
             $domain->currencyDefault = $domain->currencyDefault ?? $this->firstCurrency;
             if (!($this->currencies[$domain->currencyDefault] ?? false)) {
                 $this->errors[] = __(
@@ -343,6 +352,20 @@ class CreateController extends LedgerAccountController
                 $name->ownerUuid = $ledgerUuid;
                 LedgerName::createFromMessage($name);
             }
+        }
+        // Validate or set the default domain
+        $defaultDomain = LedgerAccount::rules()->domain->default ?? null;
+        if ($defaultDomain !== null) {
+            if (!isset($this->domains[$defaultDomain])) {
+                $this->errors[] = __(
+                    'Default domain :domain is not defined.',
+                    ['domain' => $defaultDomain]
+                );
+                throw Breaker::withCode(Breaker::BAD_REQUEST);
+            }
+        } else {
+            $ruleUpdate = ['domain' => ['default' => array_key_first($this->domains)]];
+            LedgerAccount::setRules($ruleUpdate);
         }
     }
 
