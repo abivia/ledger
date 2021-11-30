@@ -40,6 +40,7 @@ class LedgerAccount extends Model
 {
     use HasFactory, HasRevisions, UuidPrimaryKey;
 
+    const CODE_SIZE = 32;
     /**
      * @var array Model default attributes.
      */

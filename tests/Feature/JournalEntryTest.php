@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Helpers\Merge;
 use App\Models\JournalDetail;
 use App\Models\JournalEntry;
+use App\Models\JournalReference;
 use App\Models\LedgerAccount;
 use App\Models\LedgerBalance;
 use App\Models\LedgerDomain;
@@ -216,6 +218,62 @@ class JournalEntryTest extends TestCase
             }
         }
         $this->assertCount(0, $expectByCode);
+    }
+
+    public function testAddSplitWithReference()
+    {
+        Sanctum::actingAs(
+            User::factory()->create(),
+            ['*']
+        );
+
+        // First we need a ledger
+        $response = $this->createLedger(['template'], ['template' => 'common']);
+
+        $this->isSuccessful($response, 'ledger');
+
+        // Add a reference
+        $ref = new JournalReference();
+        $ref->code = 'cust1';
+        $ref->save();
+        $ref->refresh();
+
+        // Add a split with the reference
+        $requestData = [
+            'currency' => 'CAD',
+            'description' => 'Got paid for the first thing!',
+            'date' => '2021-11-12',
+            'details' => [
+                [
+                    'accountCode' => '4110',
+                    'amount' => '-520.00',
+                ],
+                [
+                    'accountCode' => '1120',
+                    'amount' => '500.00',
+                    'reference' => [
+                        'code' => 'cust1',
+                    ],
+                ],
+                [
+                    'accountCode' => '2250',
+                    'amount' => '20.00',
+                ],
+            ]
+        ];
+        $response = $this->json(
+            'post', 'api/v1/ledger/entry/add', $requestData
+        );
+
+        $actual = $this->isSuccessful($response);
+        $this->hasRevisionElements($actual->entry);
+
+        // Check that the reference was stored successfully.
+        $journalEntry = JournalEntry::find($actual->entry->id);
+        $this->assertNotNull($journalEntry);
+        $detail = $journalEntry->details()->skip(1)->first();
+        $this->assertEquals($ref->journalReferenceUuid, $detail->journalReferenceUuid);
+
     }
 
     public function testDelete()

@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Collection;
 
 /**
@@ -90,6 +91,18 @@ class JournalEntry extends Model
         }
 
         return $this;
+    }
+
+    public function references(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            JournalReference::class,
+            JournalDetail::class,
+            'journalEntryId',
+            'journalReferenceUuid',
+            'journalEntryId',
+            'journalReferenceUuid',
+        );
     }
 
     public function toResponse(int $opFlags): array

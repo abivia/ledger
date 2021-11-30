@@ -25,6 +25,9 @@ class LedgerCurrency extends Model
 {
     use HasFactory;
 
+    const AMOUNT_SIZE = 32;
+    const CODE_SIZE = 16;
+
     /**
      * @var string[] Casts for table columns
      */

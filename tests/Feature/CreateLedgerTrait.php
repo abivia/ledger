@@ -28,6 +28,10 @@ trait CreateLedgerTrait {
             [
                 'code' => 'CAD',
                 'decimals' => 2
+            ],
+            [
+                'code' => 'ZZZ',
+                'decimals' => 4
             ]
         ],
         'names' => [

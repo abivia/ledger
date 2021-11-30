@@ -24,6 +24,8 @@ class LedgerName extends Model
 {
     use HasFactory;
 
+    const CODE_SIZE = 8;
+
     protected $dateFormat = 'Y-m-d H:i:s.u';
     protected $fillable = ['language', 'name', 'ownerUuid'];
 

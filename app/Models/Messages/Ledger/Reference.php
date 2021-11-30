@@ -5,6 +5,7 @@ namespace App\Models\Messages\Ledger;
 
 use App\Exceptions\Breaker;
 use App\Helpers\Merge;
+use App\Models\JournalReference;
 use App\Models\Messages\Message;
 
 class Reference extends Message
@@ -42,6 +43,25 @@ class Reference extends Message
         }
 
         return $reference;
+    }
+
+    /**
+     * Verify that the reference is valid, filling in the UUID if missing.
+     * @throws Breaker
+     */
+    public function lookup(): self
+    {
+        $journalReference = JournalReference::findWith($this)->first();
+        if ($journalReference === null) {
+            throw Breaker::withCode(
+                Breaker::BAD_REQUEST, [__('Reference does not exist.')]
+            );
+        }
+        if (!isset($this->journalReferenceUuid)) {
+            $this->journalReferenceUuid = $journalReference->journalReferneceUuid;
+        }
+
+        return $this;
     }
 
     /**

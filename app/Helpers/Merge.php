@@ -10,7 +10,7 @@ class Merge
 {
     public static function arrays(array &$target, array $source)
     {
-        $target = array_merge($target, $source);
+        $target = array_merge_recursive($target, $source);
     }
 
     public static function arrayToObject(stdClass $target, array $source)

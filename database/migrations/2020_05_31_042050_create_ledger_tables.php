@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\LedgerAccount;
+use App\Models\LedgerCurrency;
+use App\Models\LedgerName;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -7,11 +10,6 @@ use Illuminate\Support\Facades\Schema;
 
 class CreateLedgerTables extends Migration
 {
-    const ACCOUNT_CODE_SIZE = 32;
-    const AMOUNT_SIZE = 32;
-    const CURRENCY_CODE_SIZE = 16;
-    const LANGUAGE_CODE_SIZE = 8;
-
     /**
      * Reverse the migrations.
      *
@@ -49,7 +47,7 @@ class CreateLedgerTables extends Migration
             $table->uuid('ledgerUuid')->index();
 
             // The [split] transaction amount
-            $table->string('amount', self::AMOUNT_SIZE);
+            $table->string('amount', LedgerCurrency::AMOUNT_SIZE);
 
             // Reference to an external entity.
             $table->uuid('journalReferenceUuid')->nullable();
@@ -62,7 +60,7 @@ class CreateLedgerTables extends Migration
             $table->timestamp('transDate');
             $table->foreignUuid('domainUuid');
             $table->uuid('subJournalUuid')->nullable();
-            $table->string('currency', self::CURRENCY_CODE_SIZE);
+            $table->string('currency', LedgerCurrency::CODE_SIZE);
             $table->tinyInteger('opening');
             $table->tinyInteger('posted');
             $table->tinyInteger('reviewed');
@@ -94,7 +92,7 @@ class CreateLedgerTables extends Migration
             // Invariant account identifier
             $table->uuid('ledgerUuid')->primary();
             // User accessible account identifier
-            $table->string('code', self::ACCOUNT_CODE_SIZE)->unique();
+            $table->string('code', LedgerAccount::CODE_SIZE)->unique();
             $table->uuid('parentUuid')->nullable()->index();
             // Debit/credit flags: only the root is neither, otherwise one must be set.
             $table->boolean('debit');
@@ -116,8 +114,8 @@ class CreateLedgerTables extends Migration
             $table->bigIncrements('id');
             $table->foreignUuid('ledgerUuid');
             $table->foreignUuid('domainUuid');
-            $table->string('currency', self::CURRENCY_CODE_SIZE);
-            $table->string('balance', self::AMOUNT_SIZE);
+            $table->string('currency', LedgerCurrency::CODE_SIZE);
+            $table->string('balance', LedgerCurrency::AMOUNT_SIZE);
             $table->timestamps(6);
 
             $table->unique(['ledgerUuid', 'domainUuid', 'currency']);
@@ -125,7 +123,7 @@ class CreateLedgerTables extends Migration
 
         // Ledger currencies
         Schema::create('ledger_currencies', function (Blueprint $table) {
-            $table->string('code', self::CURRENCY_CODE_SIZE)->primary();
+            $table->string('code', LedgerCurrency::CODE_SIZE)->primary();
             $table->integer('decimals');
             $table->timestamp('revision', 6)
                 ->useCurrentOnUpdate()->nullable();
@@ -135,10 +133,10 @@ class CreateLedgerTables extends Migration
         // Ledger domains
         Schema::create('ledger_domains', function (Blueprint $table) {
             $table->uuid('domainUuid')->primary();
-            $table->string('code', self::ACCOUNT_CODE_SIZE)->unique();
+            $table->string('code', LedgerAccount::CODE_SIZE)->unique();
             $table->longText('extra')->nullable();
             $table->json('flex')->nullable();
-            $table->string('currencyDefault', self::CURRENCY_CODE_SIZE);
+            $table->string('currencyDefault', LedgerCurrency::CODE_SIZE);
             $table->boolean('subJournals')->default(false);
             $table->timestamp('revision', 6)
                 ->useCurrentOnUpdate()->nullable();
@@ -151,7 +149,7 @@ class CreateLedgerTables extends Migration
             $table->bigIncrements('id');
 
             $table->uuid('ownerUuid');
-            $table->string('language', self::LANGUAGE_CODE_SIZE);
+            $table->string('language', LedgerName::CODE_SIZE);
             $table->string('name');
             $table->timestamps(6);
 
@@ -160,7 +158,7 @@ class CreateLedgerTables extends Migration
 
         Schema::create('sub_journals', function (Blueprint $table) {
             $table->uuid('subJournalUuid')->primary();
-            $table->string('code', self::ACCOUNT_CODE_SIZE);
+            $table->string('code', LedgerAccount::CODE_SIZE);
             $table->longText('extra')->nullable();
             $table->timestamp('revision', 6)
                 ->useCurrentOnUpdate()->nullable();

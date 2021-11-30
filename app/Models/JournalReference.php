@@ -9,13 +9,16 @@ use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * Link to an external account entity (customer, vendor, etc.).
  *
  * @property string $code External identifier.
+ * @property Carbon $created_at
  * @property string $extra Application specific information.
  * @property string $journalReferenceUuid UUID primary key.
+ * @property Carbon $updated_at
  * @mixin Builder
  */
 class JournalReference extends Model
@@ -42,16 +45,16 @@ class JournalReference extends Model
     }
 
     /**
-     * @param EntityRef $reference
+     * @param Reference $reference
      * @return Builder
      * @throws Exception
      * @noinspection PhpIncompatibleReturnTypeInspection
      * @noinspection PhpDynamicAsStaticMethodCallInspection
      */
-    public static function findWith(EntityRef $reference): Builder
+    public static function findWith(Reference $reference): Builder
     {
-        if (isset($reference->uuid)) {
-            $finder = self::where('journalReferenceUuid', $reference->uuid);
+        if (isset($reference->journalReferenceUuid)) {
+            $finder = self::where('journalReferenceUuid', $reference->journalReferenceUuid);
         } elseif (isset($reference->code)) {
             $finder = self::where('code', $reference->code);
         } else {

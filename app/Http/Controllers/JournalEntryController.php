@@ -18,6 +18,7 @@ use App\Models\SubJournal;
 use App\Traits\Audited;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 class JournalEntryController extends Controller
@@ -82,7 +83,7 @@ class JournalEntryController extends Controller
             $journalDetail->ledgerUuid = $detail->account->uuid;
             $journalDetail->amount = $detail->amount;
             if ($detail->reference !== null) {
-                $journalDetail->journalReferenceUuid = $detail->reference->uuid;
+                $journalDetail->journalReferenceUuid = $detail->reference->journalReferenceUuid;
             }
             $journalDetail->save();
             // Create/adjust the ledger balances
@@ -216,35 +217,13 @@ class JournalEntryController extends Controller
     public function query(EntryQuery $message, int $opFlags): Collection
     {
         $message->validate($opFlags);
-        $query = JournalEntry::query()
-            ->orderBy('transDate')
+        $query = $message->query();
+        $query->orderBy('transDate')
             ->orderBy('journalEntryId');
-        // Apply the date range
-        $dateFormat = LedgerAccount::systemDateFormat();
-        if (isset($message->date) && isset($message->dateEnding)) {
-            $query->whereBetween(
-                'transDate',
-                [$message->date->format($dateFormat), $message->dateEnding->format($dateFormat)]
-            );
-        } elseif (isset($message->date)) {
-            $query->where('transDate', '>=', $message->date->format($dateFormat));
-        } elseif (isset($message->dateEnding)) {
-            $query->where('transDate', '<=', $message->dateEnding->format($dateFormat));
-        }
-        if (isset($message->after)) {
-            $afterDate = $message->afterDate->format($dateFormat);
-            $query->where('transDate', '>', $afterDate)
-                ->orWhere(function ($query) use ($message, $afterDate){
-                    $query->where('journalEntryId','>', $message->after)
-                        ->where('transDate', '=', $afterDate);
-                });
-        }
-        if (isset($message->limit)) {
-            $query->limit($message->limit);
-        }
-        $results = $query->get();
 
-        return $results;
+        //$foo = $query->toSql();
+
+        return $query->get();
     }
 
     /**
