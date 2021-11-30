@@ -34,7 +34,7 @@ class Detail extends Message
      */
     private ?LedgerAccount $ledgerAccount = null;
 
-    public ?EntityRef $reference = null;
+    public ?Reference $reference = null;
 
     public function __construct(?EntityRef $account = null, ?string $amount = null) {
         if ($account !== null) {
@@ -72,7 +72,7 @@ class Detail extends Message
             $detail->account->code = $data['accountUuid'];
         }
         if (isset($data['reference'])) {
-            $detail->reference = EntityRef::fromRequest($data['reference'], $opFlags);
+            $detail->reference = Reference::fromRequest($data['reference'], $opFlags);
         }
         if ($opFlags & self::F_VALIDATE) {
             $detail->validate($opFlags);

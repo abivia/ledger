@@ -290,6 +290,29 @@ class LedgerAccount extends Model
         $this->attributes['flex'] = json_encode($value);
     }
 
+    /**
+     * Merge data into the rule set.
+     * @return stdClass
+     */
+    public static function resetRules()
+    {
+        self::$root = null;
+        self::loadRoot();
+        if (self::$root === null) {
+            if (!isset(self::$bootRules)) {
+                self::baseRuleSet();
+            }
+            return self::$bootRules;
+        }
+
+        return self::$root->flex->rules;
+    }
+
+    /**
+     * Merge data into the rule set.
+     * @param array $data
+     * @return stdClass
+     */
     public static function setRules(array $data)
     {
         if (self::$root === null) {

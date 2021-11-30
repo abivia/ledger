@@ -45,7 +45,7 @@ class JournalEntryQueryTest extends TestCase
         self::$expectContent = 'entries';
         // Create a ledger and a set of transactions.
         $this->createLedger(
-            ['template'],
+            ['template', 'date'],
             ['template' => 'common', 'date' => '2001-01-01']
         );
         // Subtract one

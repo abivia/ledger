@@ -68,6 +68,9 @@ trait CommonChecks {
         $expectContent = $expect ?? self::$expectContent;
         $response->assertStatus(200);
         $this->assertTrue(isset($response['time']));
+        if (isset($response['errors'])) {
+            print_r($response['errors']);
+        }
         $this->assertFalse(isset($response['errors']));
         if ($expectContent !== '') {
             $this->assertTrue(isset($response[$expectContent]));

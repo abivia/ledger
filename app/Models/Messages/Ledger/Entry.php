@@ -145,7 +145,7 @@ class Entry extends Message
                 $this->reviewed = $rules->entry->reviewed;
             }
         }
-        if ($opFlags & self::OP_ADD || self::OP_UPDATE) {
+        if ($opFlags & (self::OP_ADD | self::OP_UPDATE)) {
             $openDate = Carbon::parse($rules->openDate);
             if ($this->transDate->lessThan($openDate)) {
                 $errors[] = __(

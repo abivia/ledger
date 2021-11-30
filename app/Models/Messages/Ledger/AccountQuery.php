@@ -15,21 +15,15 @@ class AccountQuery extends Message {
      * @var EntityRef For pagination, first record after this position
      */
     public EntityRef $after;
+
     protected static array $copyable = [
         'limit'
     ];
     /**
-     * @var EntityRef[]
-     */
-    public array $entities = [];
-    /**
      * @var ?EntityRef Ledger domain. If not provided the default is used.
      */
     public ?EntityRef $domain;
-    /**
-     * @var Message[] Message objects that limit query results
-     */
-    public array $filters = [];
+
     public int $limit;
     public string $range;
     public string $rangeEnding;

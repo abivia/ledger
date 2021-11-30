@@ -85,20 +85,9 @@ class JournalReferenceController extends Controller
                 )]
             );
         }
-        $inTransaction = false;
-        try {
-//            DB::beginTransaction();
-            $inTransaction = true;
-            $journalReference->delete();
-//            DB::commit();
-            $inTransaction = false;
-            $this->auditLog($message);
-        } catch (Exception $exception) {
-            if ($inTransaction) {
-//                DB::rollBack();
-            }
-            throw $exception;
-        }
+        // Single query, transactions not required.
+        $journalReference->delete();
+        $this->auditLog($message);
 
         return null;
     }

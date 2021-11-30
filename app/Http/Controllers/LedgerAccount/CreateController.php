@@ -76,6 +76,7 @@ class CreateController extends LedgerAccountController
             self::checkNoLedgerExists();
 
             // Set up the ledger boot rules object before anything else.
+            LedgerAccount::resetRules();
             if (isset($message->rules)) {
                 // Merge the rules into the defaults
                 LedgerAccount::setRules($message->rules);
@@ -357,11 +358,13 @@ class CreateController extends LedgerAccountController
         $defaultDomain = LedgerAccount::rules()->domain->default ?? null;
         if ($defaultDomain !== null) {
             if (!isset($this->domains[$defaultDomain])) {
-                $this->errors[] = __(
-                    'Default domain :domain is not defined.',
-                    ['domain' => $defaultDomain]
+                throw Breaker::withCode(
+                    Breaker::BAD_REQUEST,
+                    [__(
+                        'Default domain :domain is not defined.',
+                        ['domain' => $defaultDomain]
+                    )]
                 );
-                throw Breaker::withCode(Breaker::BAD_REQUEST);
             }
         } else {
             $ruleUpdate = ['domain' => ['default' => array_key_first($this->domains)]];

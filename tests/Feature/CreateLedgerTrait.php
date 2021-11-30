@@ -8,6 +8,7 @@ namespace Tests\Feature;
 trait CreateLedgerTrait {
     protected array $createRequest = [
         'language' => 'en-CA',
+        'date' => '2021-01-01',
         'domains' => [
             [
                 'code' => 'Corp',
