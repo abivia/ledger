@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Traits;
+namespace Abivia\Ledger\Traits;
 
 use Illuminate\Support\Facades\Log;
 
