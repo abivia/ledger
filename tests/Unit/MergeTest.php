@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\Unit;
+namespace Abivia\Ledger\Tests\Unit;
 
-use App\Helpers\Merge;
+use Abivia\Ledger\Helpers\Merge;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 

@@ -1,27 +1,21 @@
-<?php /** @noinspection PhpParamsInspection */
+<?php /** @noinspection PhpUnhandledExceptionInspection */
 
-namespace Tests\Feature;
+/** @noinspection PhpParamsInspection */
 
-use App\Exceptions\Breaker;
-use App\Http\Controllers\JournalEntryController;
-use App\Models\JournalDetail;
-use App\Models\JournalEntry;
-use App\Models\JournalReference;
-use App\Models\LedgerAccount;
-use App\Models\LedgerBalance;
-use App\Models\LedgerDomain;
-use App\Models\Messages\Ledger\Detail;
-use App\Models\Messages\Ledger\EntityRef;
-use App\Models\Messages\Ledger\Entry;
-use App\Models\Messages\Ledger\EntryQuery;
-use App\Models\Messages\Ledger\Reference;
-use App\Models\Messages\Message;
-use App\Models\User;
+namespace Abivia\Ledger\Tests\Feature;
+
+use Abivia\Ledger\Exceptions\Breaker;
+use Abivia\Ledger\Http\Controllers\JournalEntryController;
+use Abivia\Ledger\Models\LedgerAccount;
+use Abivia\Ledger\Messages\Ledger\Detail;
+use Abivia\Ledger\Messages\Ledger\EntityRef;
+use Abivia\Ledger\Messages\Ledger\Entry;
+use Abivia\Ledger\Messages\Ledger\EntryQuery;
+use Abivia\Ledger\Messages\Message;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
-use Tests\TestCase;
+use Abivia\Ledger\Tests\TestCase;
 use function array_shift;
 
 /**
@@ -41,10 +35,6 @@ class JournalEntryQueryAmountTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
         self::$expectContent = 'entries';
         // Create a ledger and a set of transactions.
         $this->createLedger(
@@ -179,35 +169,35 @@ class JournalEntryQueryAmountTest extends TestCase
         $fetchData = [];
         $fetchData['amount'] = ['100.60', '120'];
         $response = $this->json(
-            'post', 'api/v1/ledger/entry/query', $fetchData
+            'post', 'api/ledger/entry/query', $fetchData
         );
         $actual = $this->isSuccessful($response);
         $this->assertCount(0, $actual->entries);
 
         $fetchData['amount'] = ['2.10', '2.20'];
         $response = $this->json(
-            'post', 'api/v1/ledger/entry/query', $fetchData
+            'post', 'api/ledger/entry/query', $fetchData
         );
         $actual = $this->isSuccessful($response);
         $this->assertCount(0, $actual->entries);
 
         $fetchData['amount'] = ['2.00', '6'];
         $response = $this->json(
-            'post', 'api/v1/ledger/entry/query', $fetchData
+            'post', 'api/ledger/entry/query', $fetchData
         );
         $actual = $this->isSuccessful($response);
         $this->assertCount(10, $actual->entries);
 
         $fetchData['amount'] = ['8.00', '11.00'];
         $response = $this->json(
-            'post', 'api/v1/ledger/entry/query', $fetchData
+            'post', 'api/ledger/entry/query', $fetchData
         );
         $actual = $this->isSuccessful($response);
         $this->assertCount(8, $actual->entries);
 
         $fetchData['amount'] = ['-2', '-6'];
         $response = $this->json(
-            'post', 'api/v1/ledger/entry/query', $fetchData
+            'post', 'api/ledger/entry/query', $fetchData
         );
         $actual = $this->isSuccessful($response);
         $this->assertCount(10, $actual->entries);
@@ -215,7 +205,7 @@ class JournalEntryQueryAmountTest extends TestCase
 
         $fetchData['amount'] = ['2', '-6'];
         $response = $this->json(
-            'post', 'api/v1/ledger/entry/query', $fetchData
+            'post', 'api/ledger/entry/query', $fetchData
         );
         $actual = $this->isSuccessful($response);
         $this->assertCount(10, $actual->entries);
@@ -227,28 +217,28 @@ class JournalEntryQueryAmountTest extends TestCase
         $fetchData = [];
         $fetchData['amount'] = '27.60';
         $response = $this->json(
-            'post', 'api/v1/ledger/entry/query', $fetchData
+            'post', 'api/ledger/entry/query', $fetchData
         );
         $actual = $this->isSuccessful($response);
         $this->assertCount(0, $actual->entries);
 
         $fetchData['amount'] = '2.00';
         $response = $this->json(
-            'post', 'api/v1/ledger/entry/query', $fetchData
+            'post', 'api/ledger/entry/query', $fetchData
         );
         $actual = $this->isSuccessful($response);
         $this->assertCount(2, $actual->entries);
 
         $fetchData['amount'] = '2.001';
         $response = $this->json(
-            'post', 'api/v1/ledger/entry/query', $fetchData
+            'post', 'api/ledger/entry/query', $fetchData
         );
         $actual = $this->isSuccessful($response);
         $this->assertCount(2, $actual->entries);
 
         $fetchData['amount'] = '-2.0';
         $response = $this->json(
-            'post', 'api/v1/ledger/entry/query', $fetchData
+            'post', 'api/ledger/entry/query', $fetchData
         );
         $actual = $this->isSuccessful($response);
         $this->assertCount(2, $actual->entries);

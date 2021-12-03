@@ -1,12 +1,12 @@
 <?php
 /** @noinspection PhpUnhandledExceptionInspection */
 
-namespace Tests\Unit\Models\Messages\Ledger;
+namespace Abivia\Ledger\Tests\Unit\Models\Messages\Ledger;
 
-use App\Exceptions\Breaker;
-use App\Models\Messages\Ledger\Name;
-use App\Models\Messages\Message;
-use Tests\TestCase;
+use Abivia\Ledger\Exceptions\Breaker;
+use Abivia\Ledger\Messages\Ledger\Name;
+use Abivia\Ledger\Messages\Message;
+use Abivia\Ledger\Tests\TestCase;
 
 
 class NameTest extends TestCase

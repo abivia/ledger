@@ -1,27 +1,23 @@
-<?php /** @noinspection PhpParamsInspection */
+<?php /** @noinspection PhpUnhandledExceptionInspection */
 
-namespace Tests\Feature;
+/** @noinspection PhpParamsInspection */
 
-use App\Exceptions\Breaker;
-use App\Http\Controllers\JournalEntryController;
-use App\Models\JournalDetail;
-use App\Models\JournalEntry;
-use App\Models\JournalReference;
-use App\Models\LedgerAccount;
-use App\Models\LedgerBalance;
-use App\Models\LedgerDomain;
-use App\Models\Messages\Ledger\Detail;
-use App\Models\Messages\Ledger\EntityRef;
-use App\Models\Messages\Ledger\Entry;
-use App\Models\Messages\Ledger\EntryQuery;
-use App\Models\Messages\Ledger\Reference;
-use App\Models\Messages\Message;
-use App\Models\User;
+namespace Abivia\Ledger\Tests\Feature;
+
+use Abivia\Ledger\Exceptions\Breaker;
+use Abivia\Ledger\Http\Controllers\JournalEntryController;
+use Abivia\Ledger\Models\JournalReference;
+use Abivia\Ledger\Models\LedgerAccount;
+use Abivia\Ledger\Messages\Ledger\Detail;
+use Abivia\Ledger\Messages\Ledger\EntityRef;
+use Abivia\Ledger\Messages\Ledger\Entry;
+use Abivia\Ledger\Messages\Ledger\EntryQuery;
+use Abivia\Ledger\Messages\Ledger\Reference;
+use Abivia\Ledger\Messages\Message;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
-use Tests\TestCase;
+use Abivia\Ledger\Tests\TestCase;
 use function array_shift;
 
 /**
@@ -34,32 +30,14 @@ class JournalEntryQueryReferenceTest extends TestCase
     use CommonChecks;
     use CreateLedgerTrait;
     use RefreshDatabase;
-
-    private array $references = [];
     private array $referenceUses = [];
-
-    public function setUp(): void
-    {
-        parent::setUp();
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-        self::$expectContent = 'entries';
-        // Create a ledger and a set of transactions.
-        $this->createLedger(
-            ['template', 'date'],
-            ['template' => 'common', 'date' => '2001-01-01']
-        );
-        // Subtract one
-        $this->addRandomTransactions(self::TRANS_COUNT - 1);
-
-    }
+    private array $references = [];
 
     /**
      * @throws Exception
      */
-    protected function addRandomTransactions(int $count) {
+    protected function addRandomTransactions(int $count)
+    {
         // Get a list of accounts in the ledger
         $codes = [];
         foreach (LedgerAccount::all() as $account) {
@@ -121,6 +99,39 @@ class JournalEntryQueryReferenceTest extends TestCase
         }
     }
 
+    public function setUp(): void
+    {
+        parent::setUp();
+        self::$expectContent = 'entries';
+        // Create a ledger and a set of transactions.
+        $this->createLedger(
+            ['template', 'date'],
+            ['template' => 'common', 'date' => '2001-01-01']
+        );
+        // Subtract one
+        $this->addRandomTransactions(self::TRANS_COUNT - 1);
+
+    }
+
+    public function testQueryApiReferences()
+    {
+        // Query for everything, paginated
+        $fetchData = [];
+        foreach ($this->referenceUses as $code => $count) {
+            $fetchData['reference'] = $code;
+            $response = $this->json(
+                'post', 'api/ledger/entry/query', $fetchData
+            );
+            $actual = $this->isSuccessful($response);
+            $entries = $actual->entries;
+            if (count($entries) !== 25) {
+                $this->assertCount($count, $entries);
+            } elseif ($count <= 25) {
+                $this->fail('Unexpected result pagination.');
+            }
+        }
+    }
+
     public function testQueryReferences()
     {
         // Query for each reference, verifying entry counts
@@ -131,25 +142,6 @@ class JournalEntryQueryReferenceTest extends TestCase
             $controller = new JournalEntryController();
             $entries = $controller->query($query, Message::OP_QUERY);
             $this->assertCount($count, $entries);
-        }
-    }
-
-    public function testQueryApiReferences()
-    {
-        // Query for everything, paginated
-        $fetchData = [];
-        foreach ($this->referenceUses as $code => $count) {
-            $fetchData['reference'] = $code;
-            $response = $this->json(
-                'post', 'api/v1/ledger/entry/query', $fetchData
-            );
-            $actual = $this->isSuccessful($response);
-            $entries = $actual->entries;
-            if (count($entries) !== 25) {
-                $this->assertCount($count, $entries);
-            } elseif ($count <= 25) {
-                $this->fail('Unexpected result pagination.');
-            }
         }
     }
 

@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\LedgerAccount;
-use App\Models\LedgerCurrency;
-use App\Models\LedgerName;
+use Abivia\Ledger\Models\LedgerAccount;
+use Abivia\Ledger\Models\LedgerCurrency;
+use Abivia\Ledger\Models\LedgerName;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

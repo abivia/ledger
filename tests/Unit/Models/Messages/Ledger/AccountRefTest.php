@@ -1,11 +1,11 @@
 <?php
 /** @noinspection PhpUnhandledExceptionInspection */
 
-namespace Tests\Unit\Models\Messages\Ledger;
+namespace Abivia\Ledger\Tests\Unit\Models\Messages\Ledger;
 
-use App\Models\Messages\Ledger\EntityRef;
-use App\Models\Messages\Message;
-use Tests\TestCase;
+use Abivia\Ledger\Messages\Ledger\EntityRef;
+use Abivia\Ledger\Messages\Message;
+use Abivia\Ledger\Tests\TestCase;
 
 
 class AccountRefTest extends TestCase

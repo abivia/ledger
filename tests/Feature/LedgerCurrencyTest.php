@@ -1,14 +1,10 @@
 <?php /** @noinspection PhpParamsInspection */
 
-namespace Tests\Feature;
+namespace Abivia\Ledger\Tests\Feature;
 
-use App\Models\LedgerCurrency;
-use App\Models\User;
+
+use Abivia\Ledger\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Testing\TestResponse;
-use Laravel\Sanctum\Sanctum;
-use Tests\TestCase;
 
 /**
  * Test Ledger Currency API calls.
@@ -27,24 +23,14 @@ class LedgerCurrencyTest extends TestCase
 
     public function testBadRequest()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         $response = $this->postJson(
-            'api/v1/ledger/currency/add', ['nonsense' => true]
+            'api/ledger/currency/add', ['nonsense' => true]
         );
         $this->isFailure($response);
     }
 
     public function testAdd()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         //Create a ledger
         $this->createLedger();
 
@@ -54,7 +40,7 @@ class LedgerCurrencyTest extends TestCase
             'decimals' => 4
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/add', $requestData
+            'post', 'api/ledger/currency/add', $requestData
         );
         $actual = $this->isSuccessful($response);
         $this->hasRevisionElements($actual->currency);
@@ -65,11 +51,6 @@ class LedgerCurrencyTest extends TestCase
 
     public function testAddDuplicate()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger
         $this->createLedger();
 
@@ -79,18 +60,13 @@ class LedgerCurrencyTest extends TestCase
             'decimals' => 4
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/add', $requestData
+            'post', 'api/ledger/currency/add', $requestData
         );
         $actual = $this->isFailure($response);
     }
 
     public function testDelete()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger and an account
         $this->createLedger();
 
@@ -100,7 +76,7 @@ class LedgerCurrencyTest extends TestCase
             'decimals' => 4
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/add', $requestData
+            'post', 'api/ledger/currency/add', $requestData
         );
         $actual = $this->isSuccessful($response);
 
@@ -109,7 +85,7 @@ class LedgerCurrencyTest extends TestCase
             'code' => 'FUD',
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/delete', $requestData
+            'post', 'api/ledger/currency/delete', $requestData
         );
         $actual = $this->isSuccessful($response, 'success');
 
@@ -118,18 +94,13 @@ class LedgerCurrencyTest extends TestCase
             'code' => 'FUD',
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/get', $requestData
+            'post', 'api/ledger/currency/get', $requestData
         );
         $actual = $this->isFailure($response);
     }
 
     public function testGet()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger
         $this->createLedger();
 
@@ -138,7 +109,7 @@ class LedgerCurrencyTest extends TestCase
             'code' => 'CAD',
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/get', $requestData
+            'post', 'api/ledger/currency/get', $requestData
         );
         $actual = $this->isSuccessful($response);
         $this->hasAttributes(['code', 'decimals'], $actual->currency);
@@ -149,7 +120,7 @@ class LedgerCurrencyTest extends TestCase
         // Expect error with invalid code
         $requestData = ['code' => 'bob'];
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/get', $requestData
+            'post', 'api/ledger/currency/get', $requestData
         );
         $this->isFailure($response);
     }
@@ -159,11 +130,6 @@ class LedgerCurrencyTest extends TestCase
      */
     public function testUpdate()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger
         $this->createLedger();
 
@@ -173,13 +139,13 @@ class LedgerCurrencyTest extends TestCase
             'code' => 'CAD',
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/update', $requestData
+            'post', 'api/ledger/currency/update', $requestData
         );
         $this->isFailure($response);
 
         // Do a get so we have a valid revision
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/get', $requestData
+            'post', 'api/ledger/currency/get', $requestData
         );
         $actual = $this->isSuccessful($response);
 
@@ -191,7 +157,7 @@ class LedgerCurrencyTest extends TestCase
             'toCode' => 'bob'
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/update', $requestData
+            'post', 'api/ledger/currency/update', $requestData
         );
         $result = $this->isSuccessful($response);
         $this->assertEquals('BOB', $result->currency->code);
@@ -199,7 +165,7 @@ class LedgerCurrencyTest extends TestCase
 
         // Attempt a retry with the same (now invalid) revision.
         $response = $this->json(
-            'post', 'api/v1/ledger/currency/update', $requestData
+            'post', 'api/ledger/currency/update', $requestData
         );
         $this->isFailure($response);
     }

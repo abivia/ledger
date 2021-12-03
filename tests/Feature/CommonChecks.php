@@ -3,9 +3,9 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature;
+namespace Abivia\Ledger\Tests\Feature;
 
-use App\Models\LedgerAccount;
+use Abivia\Ledger\Models\LedgerAccount;
 use Illuminate\Testing\TestResponse;
 
 trait CommonChecks {

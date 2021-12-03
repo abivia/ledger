@@ -1,10 +1,28 @@
 <?php
 
-namespace Tests;
+namespace Abivia\Ledger\Tests;
 
-use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Abivia\Ledger\LedgerServiceProvider;
 
-abstract class TestCase extends BaseTestCase
+abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
-    use CreatesApplication;
+    protected $loadEnvironmentVariables = true;
+
+    protected function getEnvironmentSetUp($app)
+    {
+        // perform environment setup
+    }
+
+    protected function getPackageProviders($app)
+    {
+        return [
+            LedgerServiceProvider::class,
+        ];
+    }
+
+    public function setUp(): void
+    {
+        parent::setUp();
+        // additional setup
+    }
 }

@@ -1,62 +1,50 @@
 {
     "name": "abivia/ledger",
-    "type": "project",
+    "type": "library",
     "description": "Basic general ledger and journal.",
     "keywords": [
-        "framework",
-        "laravel"
+        "abivia",
+        "accounting",
+        "journal",
+        "laravel",
+        "ledger"
+    ],
+    "authors": [
+        {
+            "name": "Alan Langford",
+            "email": "ledger@abivia.com",
+            "homepage": "https://ledger.abivia.com",
+            "role": "Developer"
+        }
     ],
     "license": "MIT",
     "require": {
         "ext-bcmath": "*",
         "ext-json": "*",
         "ext-pdo": "*",
-        "fruitcake/laravel-cors": "^2.0",
-        "guzzlehttp/guzzle": "^7.0.1",
-        "laravel/framework": "^8.54",
-        "laravel/sanctum": "^2.11",
-        "laravel/tinker": "^2.5",
-        "php": "^7.4"
+        "php": "^7.4|^8.0"
     },
     "require-dev": {
         "ext-pdo_sqlite": "*",
-        "facade/ignition": "^2.5",
-        "fakerphp/faker": "^1.9.1",
-        "laravel/sail": "^1.0.1",
-        "mockery/mockery": "^1.4.4",
-        "nunomaduro/collision": "^5.10",
+        "orchestra/testbench":  "^6.0",
         "phpunit/phpunit": "^9.5.8"
     },
     "autoload": {
         "psr-4": {
-            "App\\": "app/",
-            "Database\\Factories\\": "database/factories/",
-            "Database\\Seeders\\": "database/seeders/"
+            "Abivia\\Ledger\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Tests\\": "tests/"
+            "Abivia\\Ledger\\Tests\\": "tests/"
         }
-    },
-    "scripts": {
-        "post-autoload-dump": [
-            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi"
-        ],
-        "post-update-cmd": [
-            "@php artisan vendor:publish --tag=laravel-assets --ansi"
-        ],
-        "post-root-package-install": [
-            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
-        ],
-        "post-create-project-cmd": [
-            "@php artisan key:generate --ansi"
-        ]
     },
     "extra": {
         "laravel": {
-            "dont-discover": []
+            "dont-discover": [],
+            "providers":[
+                "Abivia\\Ledger\\LedgerServiceProvider"
+            ]
         }
     },
     "config": {

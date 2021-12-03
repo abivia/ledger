@@ -1,21 +1,16 @@
 <?php /** @noinspection PhpParamsInspection */
 
-namespace Tests\Feature;
+namespace Abivia\Ledger\Tests\Feature;
 
-use App\Helpers\Merge;
-use App\Models\JournalDetail;
-use App\Models\JournalEntry;
-use App\Models\JournalReference;
-use App\Models\LedgerAccount;
-use App\Models\LedgerBalance;
-use App\Models\LedgerDomain;
-use App\Models\User;
+use Abivia\Ledger\Models\JournalDetail;
+use Abivia\Ledger\Models\JournalEntry;
+use Abivia\Ledger\Models\JournalReference;
+use Abivia\Ledger\Models\LedgerAccount;
+use Abivia\Ledger\Models\LedgerBalance;
+use Abivia\Ledger\Models\LedgerDomain;
+use Abivia\Ledger\Tests\TestCase;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Testing\TestResponse;
-use Laravel\Sanctum\Sanctum;
-use Tests\TestCase;
 
 /**
  * Test Ledger API calls that don't involve journal transactions.
@@ -48,7 +43,7 @@ class JournalEntryTest extends TestCase
             ]
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/add', $requestData
+            'post', 'api/ledger/account/add', $requestData
         );
 
         return $this->isSuccessful($response, 'account');
@@ -72,7 +67,7 @@ class JournalEntryTest extends TestCase
             ]
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/entry/add', $requestData
+            'post', 'api/ledger/entry/add', $requestData
         );
 
         return [$requestData, $response];
@@ -100,7 +95,7 @@ class JournalEntryTest extends TestCase
             ]
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/entry/add', $requestData
+            'post', 'api/ledger/entry/add', $requestData
         );
 
         return [$requestData, $response];
@@ -114,10 +109,6 @@ class JournalEntryTest extends TestCase
      */
     public function testCreate(): void
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
         $response = $this->createLedger(['template'], ['template' => 'common']);
 
         $this->isSuccessful($response, 'ledger');
@@ -127,11 +118,6 @@ class JournalEntryTest extends TestCase
 
     public function testAdd()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger
         $response = $this->createLedger(['template'], ['template' => 'common']);
 
@@ -173,11 +159,6 @@ class JournalEntryTest extends TestCase
 
     public function testAddSplit()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger
         $response = $this->createLedger(['template'], ['template' => 'common']);
 
@@ -222,11 +203,6 @@ class JournalEntryTest extends TestCase
 
     public function testAddSplitWithReference()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger
         $response = $this->createLedger(['template'], ['template' => 'common']);
 
@@ -262,7 +238,7 @@ class JournalEntryTest extends TestCase
             ]
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/entry/add', $requestData
+            'post', 'api/ledger/entry/add', $requestData
         );
 
         $actual = $this->isSuccessful($response);
@@ -278,11 +254,6 @@ class JournalEntryTest extends TestCase
 
     public function testDelete()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger and transaction
         $this->createLedger(['template'], ['template' => 'common']);
 
@@ -301,7 +272,7 @@ class JournalEntryTest extends TestCase
             'revision' => $actual->entry->revision,
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/entry/delete', $deleteData
+            'post', 'api/ledger/entry/delete', $deleteData
         );
         $this->isSuccessful($response, 'success');
 
@@ -323,11 +294,6 @@ class JournalEntryTest extends TestCase
 
     public function testGet()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger and transaction
         $this->createLedger(['template'], ['template' => 'common']);
 
@@ -339,7 +305,7 @@ class JournalEntryTest extends TestCase
             'id' => $addActual->entry->id
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/entry/get', $fetchData
+            'post', 'api/ledger/entry/get', $fetchData
         );
         $fetched = $this->isSuccessful($response);
         $this->hasRevisionElements($fetched->entry);
@@ -365,10 +331,6 @@ class JournalEntryTest extends TestCase
 
     public function testUpdate()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
         // First we need a ledger and transaction
         $this->createLedger(['template'], ['template' => 'common']);
 
@@ -381,7 +343,7 @@ class JournalEntryTest extends TestCase
         $requestData['description'] = 'Oops, that was a rental!';
         $requestData['details'][1]['accountCode'] = '4240';
         $response = $this->json(
-            'post', 'api/v1/ledger/entry/update', $requestData
+            'post', 'api/ledger/entry/update', $requestData
         );
         $result = $this->isSuccessful($response);
 

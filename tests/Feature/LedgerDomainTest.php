@@ -2,13 +2,11 @@
 /** @noinspection PhpParamsInspection */
 declare(strict_types=1);
 
-namespace Tests\Feature;
+namespace Abivia\Ledger\Tests\Feature;
 
-use App\Models\LedgerAccount;
-use App\Models\User;
+use Abivia\Ledger\Models\LedgerAccount;
+use Abivia\Ledger\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
-use Tests\TestCase;
 
 /**
  * Test Ledger Domain API calls.
@@ -39,30 +37,20 @@ class LedgerDomainTest extends TestCase
 
     public function testBadRequest()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         $response = $this->postJson(
-            'api/v1/ledger/domain/add', ['nonsense' => true]
+            'api/ledger/domain/add', ['nonsense' => true]
         );
         $this->isFailure($response);
     }
 
     public function testAdd()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         //Create a ledger
         $this->createLedger();
 
         // Add a domain
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/add', $this->baseRequest
+            'post', 'api/ledger/domain/add', $this->baseRequest
         );
         $actual = $this->isSuccessful($response);
         $this->hasRevisionElements($actual->domain);
@@ -73,38 +61,28 @@ class LedgerDomainTest extends TestCase
 
     public function testAddDuplicate()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger
         $this->createLedger();
 
         // Add SJ
         $this->json(
-            'post', 'api/v1/ledger/domain/add', $this->baseRequest
+            'post', 'api/ledger/domain/add', $this->baseRequest
         );
         // Add SJ again
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/add', $this->baseRequest
+            'post', 'api/ledger/domain/add', $this->baseRequest
         );
         $this->isFailure($response);
     }
 
     public function testDelete()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger and domain
         $this->createLedger();
 
         // Add a domain
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/add', $this->baseRequest
+            'post', 'api/ledger/domain/add', $this->baseRequest
         );
         $this->isSuccessful($response);
 
@@ -113,24 +91,19 @@ class LedgerDomainTest extends TestCase
             'code' => 'ENG',
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/delete', $requestData
+            'post', 'api/ledger/domain/delete', $requestData
         );
         $this->isSuccessful($response, 'success');
 
         // Confirm that a fetch fails
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/get', $requestData
+            'post', 'api/ledger/domain/get', $requestData
         );
         $this->isFailure($response);
     }
 
     public function testGet()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger
         $this->createLedger();
 
@@ -139,7 +112,7 @@ class LedgerDomainTest extends TestCase
             'code' => 'Corp',
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/get', $requestData
+            'post', 'api/ledger/domain/get', $requestData
         );
         $actual = $this->isSuccessful($response);
         $this->hasAttributes(
@@ -153,7 +126,7 @@ class LedgerDomainTest extends TestCase
         // Expect error with invalid code
         $requestData = ['code' => 'bob'];
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/get', $requestData
+            'post', 'api/ledger/domain/get', $requestData
         );
         $this->isFailure($response);
     }
@@ -163,11 +136,6 @@ class LedgerDomainTest extends TestCase
      */
     public function testUpdate()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger
         $this->createLedger();
 
@@ -181,13 +149,13 @@ class LedgerDomainTest extends TestCase
             'code' => 'Corp',
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/update', $requestData
+            'post', 'api/ledger/domain/update', $requestData
         );
         $this->isFailure($response);
 
         // Do a get so we have a valid revision
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/get', $requestData
+            'post', 'api/ledger/domain/get', $requestData
         );
         $actual = $this->isSuccessful($response);
 
@@ -198,7 +166,7 @@ class LedgerDomainTest extends TestCase
             'toCode' => 'Main'
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/update', $requestData
+            'post', 'api/ledger/domain/update', $requestData
         );
         $result = $this->isSuccessful($response);
         $this->assertEquals('MAIN', $result->domain->code);
@@ -206,7 +174,7 @@ class LedgerDomainTest extends TestCase
 
         // Attempt a retry with the same (now invalid) revision.
         $response = $this->json(
-            'post', 'api/v1/ledger/domain/update', $requestData
+            'post', 'api/ledger/domain/update', $requestData
         );
         $this->isFailure($response);
 

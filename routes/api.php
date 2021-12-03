@@ -1,14 +1,13 @@
 <?php
 
-use App\Http\Controllers\Api\JournalEntryApiController;
-use App\Http\Controllers\Api\JournalReferenceApiController;
-use App\Http\Controllers\Api\LedgerAccountApiController;
-use App\Http\Controllers\Api\LedgerCreateApiController;
-use App\Http\Controllers\Api\LedgerCurrencyApiController;
-use App\Http\Controllers\Api\LedgerDomainApiController;
-use App\Http\Controllers\Api\SubJournalApiController;
-use App\Http\Middleware\LedgerLogging;
-use Illuminate\Http\Request;
+use Abivia\Ledger\Http\Controllers\Api\JournalEntryApiController;
+use Abivia\Ledger\Http\Controllers\Api\JournalReferenceApiController;
+use Abivia\Ledger\Http\Controllers\Api\LedgerAccountApiController;
+use Abivia\Ledger\Http\Controllers\Api\LedgerCreateApiController;
+use Abivia\Ledger\Http\Controllers\Api\LedgerCurrencyApiController;
+use Abivia\Ledger\Http\Controllers\Api\LedgerDomainApiController;
+use Abivia\Ledger\Http\Controllers\Api\SubJournalApiController;
+use Abivia\Ledger\Http\Middleware\LedgerLogging;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -17,15 +16,12 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
-Route::middleware(['auth:sanctum', LedgerLogging::class])->group(function () {
-    Route::post('v1/ledger/account/{operation}', [LedgerAccountApiController::class, 'run']);
-    Route::post('v1/ledger/currency/{operation}', [LedgerCurrencyApiController::class, 'run']);
-    Route::post('v1/ledger/domain/{operation}', [LedgerDomainApiController::class, 'run']);
-    Route::post('v1/ledger/entry/{operation}', [JournalEntryApiController::class, 'run']);
-    Route::post('v1/ledger/journal/{operation}', [SubJournalApiController::class, 'run']);
-    Route::post('v1/ledger/reference/{operation}', [JournalReferenceApiController::class, 'run']);
-    Route::post('v1/ledger/root/create', [LedgerCreateApiController::class, 'run']);
+Route::middleware([LedgerLogging::class])->group(function () {
+    Route::post('account/{operation}', [LedgerAccountApiController::class, 'run']);
+    Route::post('currency/{operation}', [LedgerCurrencyApiController::class, 'run']);
+    Route::post('domain/{operation}', [LedgerDomainApiController::class, 'run']);
+    Route::post('entry/{operation}', [JournalEntryApiController::class, 'run']);
+    Route::post('journal/{operation}', [SubJournalApiController::class, 'run']);
+    Route::post('reference/{operation}', [JournalReferenceApiController::class, 'run']);
+    Route::post('root/create', [LedgerCreateApiController::class, 'run']);
 });

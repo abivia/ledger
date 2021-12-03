@@ -1,15 +1,9 @@
 <?php /** @noinspection PhpParamsInspection */
 
-namespace Tests\Feature;
+namespace Abivia\Ledger\Tests\Feature;
 
-use App\Models\LedgerAccount;
-use App\Models\User;
-use Exception;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Testing\TestResponse;
-use Laravel\Sanctum\Sanctum;
-use Tests\TestCase;
+use Abivia\Ledger\Tests\TestCase;
 
 /**
  * Test Ledger API calls that don't involve journal transactions.
@@ -28,11 +22,6 @@ class LedgerAccountQueryTest extends TestCase
 
     public function testGet()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger
         $this->createLedger(['template'], ['template' => 'common']);
 
@@ -44,7 +33,7 @@ class LedgerAccountQueryTest extends TestCase
         ];
         while (1) {
             $response = $this->json(
-                'post', 'api/v1/ledger/account/query', $requestData
+                'post', 'api/ledger/account/query', $requestData
             );
             $actual = $this->isSuccessful($response);
             $accounts = $actual->accounts;
@@ -57,7 +46,7 @@ class LedgerAccountQueryTest extends TestCase
         }
         $this->assertEquals(7, $pages);
         $this->assertEquals(139, $totalAccounts);
-        print_r($accounts[0]);
+        //print_r($accounts[0]);
     }
 
 }

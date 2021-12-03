@@ -3,7 +3,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature;
+namespace Abivia\Ledger\Tests\Feature;
 
 trait CreateLedgerTrait {
     protected array $createRequest = [
@@ -65,7 +65,7 @@ trait CreateLedgerTrait {
         }
         $create = array_merge_recursive($create, $with);
         $response = $this->postJson(
-            'api/v1/ledger/root/create', $create
+            'api/ledger/root/create', $create
         );
         $response->assertStatus(200);
         $this->assertTrue(isset($response['time']));

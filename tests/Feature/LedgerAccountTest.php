@@ -1,15 +1,11 @@
 <?php /** @noinspection PhpParamsInspection */
 
-namespace Tests\Feature;
+namespace Abivia\Ledger\Tests\Feature;
 
-use App\Models\LedgerAccount;
-use App\Models\User;
+use Abivia\Ledger\Models\LedgerAccount;
+use Abivia\Ledger\Tests\TestCase;
 use Exception;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Testing\TestResponse;
-use Laravel\Sanctum\Sanctum;
-use Tests\TestCase;
 
 /**
  * Test Ledger API calls that don't involve journal transactions.
@@ -42,7 +38,7 @@ class LedgerAccountTest extends TestCase
             ]
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/add', $requestData
+            'post', 'api/ledger/account/add', $requestData
         );
 
         return $this->isSuccessful($response);
@@ -50,13 +46,8 @@ class LedgerAccountTest extends TestCase
 
     public function testBadRequest()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         $response = $this->postJson(
-            'api/v1/ledger/root/create', ['nonsense' => true]
+            'api/ledger/root/create', ['nonsense' => true]
         );
         $this->isFailure($response);
     }
@@ -69,10 +60,6 @@ class LedgerAccountTest extends TestCase
      */
     public function testCreate(): void
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
         $response = $this->createLedger();
 
         $this->isSuccessful($response, 'ledger');
@@ -89,10 +76,6 @@ class LedgerAccountTest extends TestCase
      */
     public function testCreateCommon(): void
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
         $response = $this->createLedger(['template'], ['template' => 'common']);
 
         $this->isSuccessful($response, 'ledger');
@@ -117,10 +100,6 @@ class LedgerAccountTest extends TestCase
      */
     public function testCreateWithAccounts(): void
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
         $response = $this->createLedger(
             ['template'],
             [
@@ -160,14 +139,10 @@ class LedgerAccountTest extends TestCase
      */
     public function testCreateNoCurrency(): void
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
         $badRequest = $this->createRequest;
         unset($badRequest['currencies']);
         $response = $this->postJson(
-            'api/v1/ledger/root/create', $badRequest
+            'api/ledger/root/create', $badRequest
         );
 
         $this->isFailure($response);
@@ -185,10 +160,6 @@ class LedgerAccountTest extends TestCase
      */
     public function testCreateWithBalances(): void
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
         $balancePart = [
             'balances' => [
                 // Cash in bank
@@ -219,10 +190,6 @@ class LedgerAccountTest extends TestCase
      */
     public function testCreateWithBalances_bad(): void
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
         $balancePart = [
             'balances' => [
                 // Cash in bank
@@ -241,11 +208,6 @@ class LedgerAccountTest extends TestCase
 
     public function testAdd()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger
         $this->createLedger();
 
@@ -264,7 +226,7 @@ class LedgerAccountTest extends TestCase
             ]
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/add', $requestData
+            'post', 'api/ledger/account/add', $requestData
         );
         $actual = $this->isSuccessful($response);
         $this->hasRevisionElements($actual->account);
@@ -291,11 +253,6 @@ class LedgerAccountTest extends TestCase
 
     public function testAddBadCode()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger
         $this->createLedger();
 
@@ -313,21 +270,16 @@ class LedgerAccountTest extends TestCase
             ]
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/add', $requestData
+            'post', 'api/ledger/account/add', $requestData
         );
         $actual = $this->isFailure($response);
     }
 
     public function testAddDuplicate()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger
         $response = $this->postJson(
-            'api/v1/ledger/root/create', $this->createRequest
+            'api/ledger/root/create', $this->createRequest
         );
         $this->isSuccessful($response, 'ledger');
 
@@ -343,10 +295,10 @@ class LedgerAccountTest extends TestCase
             ]
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/add', $requestData
+            'post', 'api/ledger/account/add', $requestData
         );
         $response = $this->json(
-            'post', 'api/v1/ledger/account/add', $requestData
+            'post', 'api/ledger/account/add', $requestData
         );
         $actual = $this->isFailure($response);
         //print_r($actual);
@@ -354,11 +306,6 @@ class LedgerAccountTest extends TestCase
 
     public function testDelete()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger and an account
         $this->createLedger();
         $this->addAccount('1010', '1000');
@@ -368,7 +315,7 @@ class LedgerAccountTest extends TestCase
             'code' => '1010',
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/delete', $requestData
+            'post', 'api/ledger/account/delete', $requestData
         );
         $this->isSuccessful($response, 'success');
 
@@ -377,18 +324,13 @@ class LedgerAccountTest extends TestCase
             'code' => '1010',
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/get', $requestData
+            'post', 'api/ledger/account/get', $requestData
         );
         $actual = $this->isFailure($response, 'accounts');
     }
 
     public function testDeleteSubAccounts()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger
         $this->createLedger();
 
@@ -402,18 +344,13 @@ class LedgerAccountTest extends TestCase
             'code' => '1010',
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/delete', $requestData
+            'post', 'api/ledger/account/delete', $requestData
         );
         $this->isSuccessful($response, 'success');
     }
 
     public function testGet()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger and an account
         $this->createLedger();
         $this->addAccount('1010', '1000');
@@ -423,7 +360,7 @@ class LedgerAccountTest extends TestCase
             'code' => '1010',
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/get', $requestData
+            'post', 'api/ledger/account/get', $requestData
         );
         $actual = $this->isSuccessful($response);
         $this->hasAttributes(['uuid', 'code', 'names'], $actual->account);
@@ -441,7 +378,7 @@ class LedgerAccountTest extends TestCase
         $uuid = $actual->account->uuid;
         $requestData = ['uuid' => $uuid];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/get', $requestData
+            'post', 'api/ledger/account/get', $requestData
         );
         $this->isSuccessful($response);
 
@@ -449,7 +386,7 @@ class LedgerAccountTest extends TestCase
         $uuid = $actual->account->uuid;
         $requestData = ['code' => '1010', 'uuid' => $uuid];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/get', $requestData
+            'post', 'api/ledger/account/get', $requestData
         );
         $this->isSuccessful($response);
 
@@ -457,7 +394,7 @@ class LedgerAccountTest extends TestCase
         $uuid = $actual->account->uuid;
         $requestData = ['bogus' => '9999'];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/get', $requestData
+            'post', 'api/ledger/account/get', $requestData
         );
         $this->isFailure($response);
 
@@ -465,7 +402,7 @@ class LedgerAccountTest extends TestCase
         $uuid = $actual->account->uuid;
         $requestData = ['code' => '9999', 'uuid' => $uuid];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/get', $requestData
+            'post', 'api/ledger/account/get', $requestData
         );
         $this->isFailure($response);
 
@@ -473,7 +410,7 @@ class LedgerAccountTest extends TestCase
         $uuid = $actual->account->uuid;
         $requestData = ['uuid' => 'bob'];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/get', $requestData
+            'post', 'api/ledger/account/get', $requestData
         );
         $this->isFailure($response);
 
@@ -481,7 +418,7 @@ class LedgerAccountTest extends TestCase
         $uuid = $actual->account->uuid;
         $requestData = ['code' => '9999'];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/get', $requestData
+            'post', 'api/ledger/account/get', $requestData
         );
         $this->isFailure($response);
     }
@@ -498,11 +435,6 @@ class LedgerAccountTest extends TestCase
      */
     public function testUpdate()
     {
-        Sanctum::actingAs(
-            User::factory()->create(),
-            ['*']
-        );
-
         // First we need a ledger
         $this->createLedger();
 
@@ -516,28 +448,28 @@ class LedgerAccountTest extends TestCase
             'credit' => true
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/update', $requestData
+            'post', 'api/ledger/account/update', $requestData
         );
         $this->isFailure($response);
 
         // Now try with a valid revision
         $requestData['revision'] = $accountInfo->account->revision;
         $response = $this->json(
-            'post', 'api/v1/ledger/account/update', $requestData
+            'post', 'api/ledger/account/update', $requestData
         );
         $result = $this->isSuccessful($response);
 
         // Attempt a retry with the same (now invalid) revision.
         $requestData['revision'] = $accountInfo->account->revision;
         $response = $this->json(
-            'post', 'api/v1/ledger/account/update', $requestData
+            'post', 'api/ledger/account/update', $requestData
         );
         $this->isFailure($response);
 
         // Try again with a valid revision
         $requestData['revision'] = $result->account->revision;
         $response = $this->json(
-            'post', 'api/v1/ledger/account/update', $requestData
+            'post', 'api/ledger/account/update', $requestData
         );
         $result = $this->isSuccessful($response);
 
@@ -545,7 +477,7 @@ class LedgerAccountTest extends TestCase
         $requestData['debit'] = true;
         $requestData['revision'] = $result->account->revision;
         $response = $this->json(
-            'post', 'api/v1/ledger/account/update', $requestData
+            'post', 'api/ledger/account/update', $requestData
         );
         $this->isFailure($response);
 
@@ -556,7 +488,7 @@ class LedgerAccountTest extends TestCase
             ['name' => 'Additional Name', 'language' => 'en-ca'],
         ];
         $response = $this->json(
-            'post', 'api/v1/ledger/account/update', $requestData
+            'post', 'api/ledger/account/update', $requestData
         );
         $result = $this->isSuccessful($response);
         $this->assertCount(2, $result->account->names);
