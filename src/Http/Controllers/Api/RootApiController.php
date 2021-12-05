@@ -3,7 +3,7 @@
 namespace Abivia\Ledger\Http\Controllers\Api;
 
 use Abivia\Ledger\Exceptions\Breaker;
-use Abivia\Ledger\Http\Controllers\LedgerAccount\CreateController;
+use Abivia\Ledger\Http\Controllers\LedgerAccount\RootController;
 use Abivia\Ledger\Messages\Ledger\Create;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Traits\ControllerResultHandler;
@@ -12,25 +12,29 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
-class LedgerCreateApiController
+class RootApiController
 {
     use ControllerResultHandler;
 
-    public function run(Request $request): array
+    public function run(Request $request, string $operation): array
     {
         $response = [];
         $this->errors = [];
         try {
-            // The Ledger must be empty
-            CreateController::checkNoLedgerExists();
+            $controller = new RootController();
+            if ($operation === 'templates') {
+                $response['templates'] = array_values($controller->listTemplates());
+            } else {
+                // The Ledger must be empty
+                RootController::checkNoLedgerExists();
 
-            $message = Create::fromRequest($request->all(), Message::OP_ADD | Message::OP_CREATE);
-            $controller = new CreateController();
-            $ledgerAccount = $controller->create($message);
-            //$response['whatever'] = $ledgerAccount->toResponse();
+                $message = Create::fromRequest($request->all(), Message::OP_ADD | Message::OP_CREATE);
+                $ledgerAccount = $controller->create($message);
+                //$response['whatever'] = $ledgerAccount->toResponse();
 
-            // Add the ledger information to the response
-            $response['ledger'] = $ledgerAccount->toResponse();
+                // Add the ledger information to the response
+                $response['ledger'] = $ledgerAccount->toResponse();
+            }
             //$this->success($message);
         } catch (Breaker $exception) {
             $this->warning($exception);

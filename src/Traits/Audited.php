@@ -8,7 +8,8 @@ trait Audited
 {
     protected function auditLog(object $message)
     {
-        Log::channel(env('LEDGER_LOG_CHANNEL', 'stack'))
+        $foo = config('ledger.log');
+        Log::channel(config('ledger.log'))
             ->info(
                 self::class,
                 ['message' => json_encode($message)]

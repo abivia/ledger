@@ -76,7 +76,7 @@ class LedgerAccountTest extends TestCase
      */
     public function testCreateCommon(): void
     {
-        $response = $this->createLedger(['template'], ['template' => 'common']);
+        $response = $this->createLedger(['template'], ['template' => 'manufacturer']);
 
         $this->isSuccessful($response, 'ledger');
 
@@ -173,7 +173,7 @@ class LedgerAccountTest extends TestCase
                 // A/P
                 [ 'code' => '2120', 'amount' => '500', 'currency' => 'CAD'],
             ],
-            'template' => 'common'
+            'template' => 'manufacturer'
         ];
         $response = $this->createLedger(['template'], $balancePart);
 
@@ -199,7 +199,7 @@ class LedgerAccountTest extends TestCase
                 // A/R
                 [ 'code' => '1310', 'amount' => '-1500', 'currency' => 'CAD'],
             ],
-            'template' => 'common'
+            'template' => 'manufacturer'
         ];
         $response = $this->createLedger(['template'], $balancePart, true);
 

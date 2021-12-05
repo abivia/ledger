@@ -7,7 +7,7 @@ namespace Abivia\Ledger\Http\Controllers;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Http\Controllers\LedgerAccount\AddController;
-use Abivia\Ledger\Http\Controllers\LedgerAccount\CreateController;
+use Abivia\Ledger\Http\Controllers\LedgerAccount\RootController;
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Models\LedgerBalance;
 use Abivia\Ledger\Models\LedgerName;
@@ -52,7 +52,7 @@ class LedgerAccountController extends Controller
      */
     public function create(Create $message): LedgerAccount
     {
-        $controller = new CreateController();
+        $controller = new RootController();
         return $controller->create($message);
     }
 

@@ -106,7 +106,7 @@ class JournalEntryQueryReferenceTest extends TestCase
         // Create a ledger and a set of transactions.
         $this->createLedger(
             ['template', 'date'],
-            ['template' => 'common', 'date' => '2001-01-01']
+            ['template' => 'manufacturer', 'date' => '2001-01-01']
         );
         // Subtract one
         $this->addRandomTransactions(self::TRANS_COUNT - 1);

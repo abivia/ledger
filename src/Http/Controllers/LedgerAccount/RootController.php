@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Abivia\Ledger\Http\Controllers\LedgerAccount;
 
 use Abivia\Ledger\Exceptions\Breaker;
+use Abivia\Ledger\Helpers\Package;
 use Abivia\Ledger\Http\Controllers\LedgerAccountController;
 use Abivia\Ledger\Models\JournalDetail;
 use Abivia\Ledger\Models\JournalEntry;
@@ -23,8 +24,9 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use stdClass;
+use function pathinfo;
 
-class CreateController extends LedgerAccountController
+class RootController extends LedgerAccountController
 {
     use Audited;
 
@@ -382,6 +384,30 @@ class CreateController extends LedgerAccountController
                 LedgerName::createFromMessage($name);
             }
         }
+    }
+
+    /**
+     * Get a list of the names and title of the predefined templates.
+     * @return array
+     */
+    public function listTemplates(): array
+    {
+        $list = [];
+        $chartDir = Package::chartPath();
+        foreach (scandir($chartDir) as $file) {
+            $parts = pathinfo($file);
+            if ($parts['extension'] === 'json') {
+                $chart = @json_decode(file_get_contents("$chartDir/$file"));
+                if ($chart !== null) {
+                    $list[$parts['filename']] = [
+                        'name' => $parts['filename'],
+                        'title' => $chart->title,
+                    ];
+                }
+            }
+        }
+
+        return $list;
     }
 
     /**

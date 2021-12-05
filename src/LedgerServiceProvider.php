@@ -2,6 +2,7 @@
 
 namespace Abivia\Ledger;
 
+use Abivia\Ledger\Console\InstallLedger;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -11,6 +12,16 @@ class LedgerServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         $this->registerRoutes();
+
+        if ($this->app->runningInConsole()) {
+            $this->publishes(
+                [__DIR__ . '/../config/config.php' => config_path('ledger.php')],
+                'config'
+            );
+            $this->commands([
+                InstallLedger::class,
+            ]);
+        }
     }
 
     public function register()

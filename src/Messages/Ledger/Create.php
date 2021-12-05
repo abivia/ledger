@@ -4,6 +4,7 @@ namespace Abivia\Ledger\Messages\Ledger;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Merge;
+use Abivia\Ledger\Helpers\Package;
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Messages\Message;
 use Carbon\Carbon;
@@ -236,8 +237,7 @@ class Create extends Message
             $this->templatePath = resource_path(
                 "ledger/charts/{$this->template}.json"
             );
-            $this->templatePath = Str::finish(config('ledger.chartPath'), '/')
-                . "{$this->template}.json";
+            $this->templatePath = Package::chartPath("{$this->template}.json");
             if (!file_exists($this->templatePath)) {
                 throw Breaker::withCode(
                     Breaker::BAD_REQUEST, [__('Specified template not found in ledger/charts.')]

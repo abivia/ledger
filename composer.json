@@ -41,7 +41,6 @@
     },
     "extra": {
         "laravel": {
-            "dont-discover": [],
             "providers":[
                 "Abivia\\Ledger\\LedgerServiceProvider"
             ]

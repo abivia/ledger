@@ -3,7 +3,7 @@
 use Abivia\Ledger\Http\Controllers\Api\JournalEntryApiController;
 use Abivia\Ledger\Http\Controllers\Api\JournalReferenceApiController;
 use Abivia\Ledger\Http\Controllers\Api\LedgerAccountApiController;
-use Abivia\Ledger\Http\Controllers\Api\LedgerCreateApiController;
+use Abivia\Ledger\Http\Controllers\Api\RootApiController;
 use Abivia\Ledger\Http\Controllers\Api\LedgerCurrencyApiController;
 use Abivia\Ledger\Http\Controllers\Api\LedgerDomainApiController;
 use Abivia\Ledger\Http\Controllers\Api\SubJournalApiController;
@@ -23,5 +23,5 @@ Route::middleware([LedgerLogging::class])->group(function () {
     Route::post('entry/{operation}', [JournalEntryApiController::class, 'run']);
     Route::post('journal/{operation}', [SubJournalApiController::class, 'run']);
     Route::post('reference/{operation}', [JournalReferenceApiController::class, 'run']);
-    Route::post('root/create', [LedgerCreateApiController::class, 'run']);
+    Route::post('root/{operation}', [RootApiController::class, 'run']);
 });
