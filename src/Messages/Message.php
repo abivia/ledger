@@ -17,8 +17,12 @@ abstract class Message
      */
     public const F_VALIDATE = 2**29;
 
-    // Operation flags from bit 0 up.
+    /**
+     * Bitmask for all the OP_ constants.
+     */
     public const ALL_OPS = 0b111111;
+
+    // Operation flags from bit 0 up.
     public const OP_ADD = 1;
     public const OP_CREATE = 2;
     public const OP_DELETE = 2**2;
@@ -43,6 +47,13 @@ abstract class Message
         'validate' => self::F_VALIDATE,
     ];
 
+    /**
+     * Selectively copy information from a data array.
+     *
+     * @param array $data
+     * @param int $opFlags
+     * @return $this
+     */
     public function copy(array $data, int $opFlags): self
     {
         foreach (static::$copyable as $info) {
@@ -95,7 +106,7 @@ abstract class Message
         }
         if (!($options['allowZero'] ?? false) && $opFlags === 0) {
             throw Breaker::withCode(
-                Breaker::INVALID_OPERATION,
+                Breaker::RULE_VIOLATION,
                 [':operation is not a valid function.', ['operation' => $method]]
             );
         }

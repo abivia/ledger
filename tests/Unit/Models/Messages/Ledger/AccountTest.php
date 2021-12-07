@@ -31,29 +31,10 @@ class AccountTest extends TestCase
         unset($base['parent']);
         $base['debit'] = true;
         $account = Account::fromRequest(
-            $base, Message::OP_ADD | Message::F_VALIDATE
+            $base, Message::OP_ADD
         );
         $this->assertEquals('1010', $account->code);
         $this->assertCount(2, $account->names);
-    }
-
-    public function testFromRequestAdd_no_code()
-    {
-        $base = $this->base;
-        unset($base['code']);
-        unset($base['uuid']);
-        unset($base['parent']);
-        $this->expectException(Breaker::class);
-        Account::fromRequest($base, Message::OP_ADD | Message::F_VALIDATE);
-    }
-
-    public function testFromRequestAdd_by_uuid()
-    {
-        $base = $this->base;
-        unset($base['code']);
-        unset($base['parent']);
-        $this->expectException(Breaker::class);
-        Account::fromRequest($base, Message::OP_ADD | Message::F_VALIDATE);
     }
 
     public function testFromRequestAdd_no_names()
@@ -73,7 +54,7 @@ class AccountTest extends TestCase
         $base['revision'] = 'this-is-a-rev-code';
         $base['toCode'] = '1020';
         $account = Account::fromRequest(
-            $base, Message::OP_UPDATE | Message::F_VALIDATE
+            $base, Message::OP_UPDATE
         );
         $this->assertEquals('1010', $account->code);
         $this->assertEquals('1020', $account->toCode);

@@ -5,13 +5,38 @@ namespace Abivia\Ledger\Messages\Ledger;
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Messages\Message;
+use Abivia\Ledger\Models\LedgerName;
+use Illuminate\Database\Eloquent\Model;
 
 class Name extends Message
 {
     public string $language;
     public string $name;
     public string $ownerUuid;
-    //public ?string $revision;
+
+    /**
+     * Add, update, or delete this name from/to a model
+     * @param Model $owner
+     * @return void
+     */
+    public function applyTo(Model $owner)
+    {
+        /** @noinspection PhpPossiblePolymorphicInvocationInspection */
+        $ledgerName = $owner->names->firstWhere('language', $this->language);
+        if ($this->name === '') {
+            if ($ledgerName !== null) {
+                $ledgerName->delete();
+            }
+        } else {
+            if ($ledgerName === null) {
+                $ledgerName = new LedgerName();
+                $ledgerName->ownerUuid = $owner->getKey();
+                $ledgerName->language = $this->language;
+            }
+            $ledgerName->name = $this->name;
+            $ledgerName->save();
+        }
+    }
 
     /**
      * @inheritdoc
@@ -19,9 +44,7 @@ class Name extends Message
     public static function fromRequest(array $data, int $opFlags): self
     {
         $name = new static();
-        if (isset($data['name'])) {
-            $name->name = $data['name'];
-        }
+        $name->name = $data['name'] ?? '';
         if (isset($data['language'])) {
             $name->language = $data['language'];
         }
@@ -63,12 +86,27 @@ class Name extends Message
      */
     public function validate(int $opFlags): self
     {
-        if (!isset($this->name)) {
+        if ($this->name === '' && !($opFlags & self::OP_UPDATE)) {
             throw Breaker::withCode(
-                Breaker::BAD_REQUEST, [__("must include name property")]
+                Breaker::RULE_VIOLATION, [__("Must include name property.")]
             );
         }
         $this->language ??= LedgerAccount::rules()->language->default;
+        if ($this->language === '') {
+            throw Breaker::withCode(
+                Breaker::RULE_VIOLATION, [__("Language cannot be empty.")]
+            );
+        }
+        // If the name is empty here, then this is an update.
+        if (
+            $this->name === ''
+            && $this->language === LedgerAccount::rules()->language->default
+        ) {
+            throw Breaker::withCode(
+                Breaker::RULE_VIOLATION,
+                [__("Cannot delete name in default language.")]
+            );
+        }
 
         return $this;
     }

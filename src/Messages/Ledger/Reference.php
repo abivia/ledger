@@ -10,13 +10,20 @@ use Exception;
 
 class Reference extends Message
 {
-    public ?string $code;
+    public string $code;
+    protected static array $copyable = [
+        'code', 'extra',
+        ['toCode', self::OP_UPDATE],
+        'uuid',
+    ];
+
+
     /**
      * @var mixed
      */
     public $extra;
-    public ?string $journalReferenceUuid;
-    public ?string $toCode;
+    public string $journalReferenceUuid;
+    public string $toCode;
 
     /**
      * @inheritdoc
@@ -24,19 +31,9 @@ class Reference extends Message
     public static function fromRequest(array $data, int $opFlags): self
     {
         $reference = new static();
-        if (isset($data['code'])) {
-            $reference->code = $data['code'];
-        }
-        if (isset($data['extra'])) {
-            $reference->extra = $data['extra'];
-        }
+        $reference->copy($data, $opFlags);
         if (isset($data['uuid'])) {
             $reference->journalReferenceUuid = $data['uuid'];
-        }
-        if ($opFlags & self::OP_UPDATE) {
-            if (isset($data['toCode'])) {
-                $reference->toCode = $data['toCode'];
-            }
         }
         if ($opFlags & self::F_VALIDATE) {
             $reference->validate($opFlags);

@@ -3,16 +3,32 @@ declare(strict_types=1);
 
 namespace Abivia\Ledger\Helpers;
 
-use Exception;
 use stdClass;
 
+/**
+ * Utility class for merging arrays ans sdtClass objects.
+ */
 class Merge
 {
+    /**
+     * Merge source array into target array.
+     *
+     * @param array $target
+     * @param array $source
+     * @return void
+     */
     public static function arrays(array &$target, array $source)
     {
         $target = array_merge_recursive($target, $source);
     }
 
+    /**
+     * Merge source array into an object.
+     *
+     * @param stdClass $target
+     * @param array $source
+     * @return void
+     */
     public static function arrayToObject(stdClass $target, array $source)
     {
         foreach ($source as $property => $value) {
@@ -38,6 +54,13 @@ class Merge
         }
     }
 
+    /**
+     * Merge source object into target object.
+     *
+     * @param stdClass $target
+     * @param stdClass $source
+     * @return void
+     */
     public static function objects(stdClass $target, stdClass $source)
     {
         foreach ($source as $property => $value) {

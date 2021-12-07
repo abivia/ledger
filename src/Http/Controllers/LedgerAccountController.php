@@ -28,6 +28,9 @@ class LedgerAccountController extends Controller
     use Audited;
     use ControllerResultHandler;
 
+    /**
+     * @var stdClass Rules from the ledger root.
+     */
     protected stdClass $rules;
 
     /**
@@ -44,7 +47,7 @@ class LedgerAccountController extends Controller
     }
 
     /**
-     * Adding an account to the ledger.
+     * Create a new ledger root.
      *
      * @param Create $message
      * @return LedgerAccount
@@ -57,6 +60,8 @@ class LedgerAccountController extends Controller
     }
 
     /**
+     * Fire a bad request exception.
+     *
      * @param array $messages
      * @throws Breaker
      */
@@ -65,7 +70,7 @@ class LedgerAccountController extends Controller
         $this->errors[] = __(
             "Errors in request: " . implode(', ', $messages) . "."
         );
-        throw Breaker::withCode(Breaker::BAD_REQUEST);
+        throw Breaker::withCode(Breaker::BAD_REQUEST, $this->errors);
     }
 
     /**
@@ -95,7 +100,7 @@ class LedgerAccountController extends Controller
                 ->count();
             if ($subCats !== 0) {
                 throw Breaker::withCode(
-                    Breaker::INVALID_OPERATION,
+                    Breaker::RULE_VIOLATION,
                     [__("Can't delete: account or sub-accounts have transactions.")]
                 );
             }
@@ -122,6 +127,8 @@ class LedgerAccountController extends Controller
     }
 
     /**
+     * Fetch an account and validate it matches all request elements.
+     *
      * @param Account $message
      * @return LedgerAccount
      * @throws Breaker
@@ -162,7 +169,7 @@ class LedgerAccountController extends Controller
     }
 
     /**
-     * Fetch a single account
+     * Get a single account
      *
      * @param Account $message
      * @return LedgerAccount
@@ -187,6 +194,8 @@ class LedgerAccountController extends Controller
     }
 
     /**
+     * Return accounts matching a Query.
+     *
      * @param AccountQuery $message
      * @param int $opFlags
      * @return Collection
@@ -210,11 +219,11 @@ class LedgerAccountController extends Controller
     }
 
     /**
-     * Perform a currency operation.
+     * Perform an account operation.
      *
-     * @param Account $message
-     * @param int $opFlags
-     * @return LedgerAccount|null
+     * @param Account $message Account details.
+     * @param int $opFlags The requested operation. See the {@see Message} constants.
+     * @return LedgerAccount|null The related account, if any.
      * @throws Breaker
      */
     public function run(Account $message, int $opFlags): ?LedgerAccount
@@ -229,15 +238,15 @@ class LedgerAccountController extends Controller
             case Message::OP_UPDATE:
                 return $this->update($message);
             default:
-                throw Breaker::withCode(Breaker::INVALID_OPERATION);
+                throw Breaker::withCode(Breaker::RULE_VIOLATION);
         }
     }
 
     /**
      * Update an account.
      *
-     * @param Account $message
-     * @return LedgerAccount
+     * @param Account $message The update request details.
+     * @return LedgerAccount The updated account with new values.
      * @throws Breaker
      */
     public function update(Account $message): LedgerAccount
@@ -251,7 +260,7 @@ class LedgerAccountController extends Controller
 
             DB::beginTransaction();
             $inTransaction = true;
-            if ($message->code !== null) {
+            if (!isset($message->code)) {
                 $ledgerAccount->code = $message->code;
             }
 
@@ -259,12 +268,13 @@ class LedgerAccountController extends Controller
             $ledgerParent = $this->updateParent($ledgerAccount, $message);
 
             // Apply a category flag
-            if ($ledgerAccount->category !== $message->category) {
-                if ($message->category) {
+            $isCategory = $message->category ?? false;
+            if ($ledgerAccount->category !== $isCategory) {
+                if ($isCategory) {
                     // Verify that the parent is a category or root
                     if (!$ledgerParent->category) {
                         throw Breaker::withCode(
-                            Breaker::INVALID_OPERATION,
+                            Breaker::RULE_VIOLATION,
                             [__(
                                 "Account can't be a category because parent is not a category."
                             )]
@@ -277,7 +287,7 @@ class LedgerAccountController extends Controller
                         ->count();
                     if ($subCats !== 0) {
                         throw Breaker::withCode(
-                            Breaker::INVALID_OPERATION,
+                            Breaker::RULE_VIOLATION,
                             [__(
                                 "Can't make account a non-category because at least"
                                 . " one sub-account is a category."
@@ -309,6 +319,8 @@ class LedgerAccountController extends Controller
     }
 
     /**
+     * Update an account's flags.
+     *
      * @param LedgerAccount $ledgerAccount
      * @param Account $message
      * @throws Breaker
@@ -316,17 +328,17 @@ class LedgerAccountController extends Controller
     protected function updateFlags(LedgerAccount $ledgerAccount, Account $message)
     {
         // Set debit/credit, then check
-        if ($message->credit !== null && $ledgerAccount->credit != $message->credit) {
+        if (isset($message->credit) && $ledgerAccount->credit != $message->credit) {
             $ledgerAccount->credit = $message->credit;
             $ledgerAccount->debit = !$ledgerAccount->credit;
         }
-        if ($message->debit !== null && $ledgerAccount->debit != $message->debit) {
+        if (isset($message->debit) && $ledgerAccount->debit != $message->debit) {
             $ledgerAccount->debit = $message->debit;
             $ledgerAccount->credit = !$ledgerAccount->debit;
         }
         if ($ledgerAccount->credit && $ledgerAccount->debit) {
             throw Breaker::withCode(
-                Breaker::INVALID_OPERATION,
+                Breaker::RULE_VIOLATION,
                 [__(
                     "Account can not have both debit and credit flags set."
                 )]
@@ -335,7 +347,7 @@ class LedgerAccountController extends Controller
         if (!$ledgerAccount->category) {
             if ($ledgerAccount->debit === $ledgerAccount->credit) {
                 throw Breaker::withCode(
-                    Breaker::INVALID_OPERATION,
+                    Breaker::RULE_VIOLATION,
                     [__(
                         "Non-category accounts must be either debit or credit accounts."
                     )]
@@ -348,7 +360,7 @@ class LedgerAccountController extends Controller
             foreach ($subAccounts as $subAccount) {
                 if ($subAccount->category) {
                     throw Breaker::withCode(
-                        Breaker::INVALID_OPERATION,
+                        Breaker::RULE_VIOLATION,
                         [__(
                             "Can't make account a non-category because it has category sub-accounts."
                         )]
@@ -356,7 +368,7 @@ class LedgerAccountController extends Controller
                 }
             }
         }
-        if ($message->closed) {
+        if ($message->closed ?? false) {
             // We need to check balances before closing the account
             // Is it possible to have sub-accounts still open?
             // Does closing a parent account just mean you can't post to it?
@@ -369,6 +381,13 @@ class LedgerAccountController extends Controller
         }
     }
 
+    /**
+     * Update the names associated with an account.
+     *
+     * @param LedgerAccount $ledgerAccount
+     * @param Account $message
+     * @return void
+     */
     protected function updateNames(LedgerAccount $ledgerAccount, Account $message)
     {
         foreach ($message->names as $name) {
@@ -386,6 +405,8 @@ class LedgerAccountController extends Controller
     }
 
     /**
+     * Update an account's parent.
+     *
      * @param LedgerAccount $ledgerAccount
      * @param Account $message
      * @return LedgerAccount
@@ -394,7 +415,7 @@ class LedgerAccountController extends Controller
      */
     protected function updateParent(LedgerAccount $ledgerAccount, Account $message): LedgerAccount
     {
-        if ($message->parent !== null) {
+        if (isset($message->parent)) {
             // Get the new parent record
             /** @var LedgerAccount $ledgerParent */
             $ledgerParent = LedgerAccount::findWith($message->parent)->first();

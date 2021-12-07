@@ -6,13 +6,13 @@ use Exception;
 use Throwable;
 
 /**
- * Intended as an internal multi-level break.
+ * Application exception with some canned codes and multiple error message capability.
  */
 class Breaker extends Exception
 {
     public const BAD_REQUEST = 1;
     public const BAD_ACCOUNT = 2;
-    public const INVALID_OPERATION = 3;
+    public const RULE_VIOLATION = 3;
     public const NOT_IMPLEMENTED = 4;
     public const BAD_REVISION = 5;
     public const INVALID_DATA = 6;
@@ -27,20 +27,39 @@ class Breaker extends Exception
         self::BAD_REVISION => 'Outdated or invalid revision token.',
         self::INTEGRITY_ERROR => 'Ledger data is inconsistent.',
         self::INVALID_DATA => 'Error in data source.',
-        self::INVALID_OPERATION => 'Request violates business rule.',
-        self::NOT_IMPLEMENTED => 'Feature is not implemented.',
+        self::NOT_IMPLEMENTED => 'Feature is not yet implemented.',
+        self::RULE_VIOLATION => 'Request violates business rule.',
     ];
 
+    /**
+     * Add a new message to the error list.
+     *
+     * @param string $error
+     * @return void
+     */
     public function addError(string $error)
     {
         $this->errors[] = $error;
     }
 
+    /**
+     * Add several messages to the error list.
+     *
+     * @param string[] $errors
+     * @return void
+     */
     public function mergeErrors(array $errors = [])
     {
         $this->errors = array_merge($this->errors, $errors);
     }
 
+    /**
+     * Get the error list, optionally with the exception message.
+     *
+     * @param bool $withMessage If true, the exception main message is added to the start
+     * of the list.
+     * @return array
+     */
     public function getErrors(bool $withMessage = false): array
     {
         $result = $this->errors;
@@ -50,6 +69,12 @@ class Breaker extends Exception
         return $result;
     }
 
+    /**
+     * Replace the error list with a new list.
+     *
+     * @param string[] $errors
+     * @return void
+     */
     public function setErrors(array $errors)
     {
         $this->errors = $errors;

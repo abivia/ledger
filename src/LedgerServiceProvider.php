@@ -11,7 +11,9 @@ class LedgerServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
-        $this->registerRoutes();
+        if (config('ledger.api', true)) {
+            $this->registerRoutes();
+        }
 
         if ($this->app->runningInConsole()) {
             $this->publishes(

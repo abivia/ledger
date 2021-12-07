@@ -3,12 +3,19 @@
 namespace Abivia\Ledger\Messages\Ledger;
 
 use Abivia\Ledger\Exceptions\Breaker;
-use Abivia\Ledger\Helpers\Merge;
 use Abivia\Ledger\Messages\Message;
 
 class SubJournal extends Message
 {
     public string $code;
+
+    protected static array $copyable = [
+        'code', 'extra',
+        ['revision', self::OP_UPDATE],
+        ['toCode', self::OP_UPDATE],
+        'uuid',
+    ];
+
     /**
      * @var mixed
      */
@@ -23,9 +30,7 @@ class SubJournal extends Message
     public static function fromRequest(array $data, int $opFlags): self
     {
         $subJournal = new static();
-        if (isset($data['code'])) {
-            $subJournal->code = $data['code'];
-        }
+        $subJournal->copy($data, $opFlags);
         if ($opFlags & (self::OP_ADD | self::OP_UPDATE)) {
             $nameList = $data['names'] ?? [];
             if (isset($data['name'])) {
@@ -34,17 +39,6 @@ class SubJournal extends Message
             $subJournal->names = Name::fromRequestList(
                 $nameList, $opFlags, ($opFlags & self::OP_ADD) ? 1 : 0
             );
-        }
-        if (isset($data['extra'])) {
-            $subJournal->extra = $data['extra'];
-        }
-        if ($opFlags & self::OP_UPDATE) {
-            if (isset($data['revision'])) {
-                $subJournal->revision = $data['revision'];
-            }
-            if (isset($data['toCode'])) {
-                $subJournal->toCode = strtoupper($data['toCode']);
-            }
         }
         if ($opFlags & self::F_VALIDATE) {
             $subJournal->validate($opFlags);

@@ -41,9 +41,9 @@ class NameTest extends TestCase
             [
                 'name' => 'In English',
             ],
-            Message::OP_ADD | Message::F_VALIDATE
+            Message::OP_ADD
         );
-        $this->assertEquals('en', $name->language);
+        $this->assertFalse(isset($name->language));
         $this->assertEquals('In English', $name->name);
     }
 

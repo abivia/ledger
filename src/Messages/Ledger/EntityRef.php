@@ -11,7 +11,7 @@ class EntityRef extends Message
     /**
      * @var ?string The entity code (unique in context, may be empty)
      */
-    public ?string $code = null;
+    public string $code;
 
     protected static array $copyable = [
         'code', 'uuid',
@@ -20,7 +20,7 @@ class EntityRef extends Message
     /**
      * @var ?string The UUID of the entity (can be null)
      */
-    public ?string $uuid = null;
+    public string $uuid;
 
     /**
      * @param string|null $code
@@ -28,17 +28,21 @@ class EntityRef extends Message
      */
     public function __construct(string $code = null, string $uuid = null)
     {
-        $this->code = $code;
-        $this->uuid = $uuid;
+        if ($code !== null) {
+            $this->code = $code;
+        }
+        if ($uuid !== null) {
+            $this->uuid = $uuid;
+        }
     }
 
     public function __toString(): string
     {
         $parts = [];
-        if ($this->code !== null) {
+        if (isset($this->code)) {
             $parts[] = 'code:' . $this->code;
         }
-        if ($this->uuid !== null) {
+        if (isset($this->uuid)) {
             $parts[] = 'UUID:' . $this->uuid;
         }
         return '{' . implode(' / ', $parts) . '}';
@@ -71,10 +75,10 @@ class EntityRef extends Message
     public function validate(int $opFlags, string $codeFormat = ''): self
     {
         $errors = [];
-        if ($this->code === null && $this->uuid === null) {
+        if (!isset($this->code) && !isset($this->uuid)) {
             $errors[] = 'parent must include at least one of code or uuid';
         }
-        if ($this->code !== null && $codeFormat !== '') {
+        if (isset($this->code) && $codeFormat !== '') {
             if (!preg_match($codeFormat, $this->code)) {
                 $errors[] = "account code must match the form $codeFormat";
             }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Abivia\Ledger\Http\Controllers;
 
 use Abivia\Ledger\Exceptions\Breaker;
+use Abivia\Ledger\Messages\Ledger\Name;
 use Abivia\Ledger\Models\JournalEntry;
 use Abivia\Ledger\Models\LedgerName;
 use Abivia\Ledger\Messages\Ledger\SubJournal;
@@ -13,6 +14,9 @@ use Abivia\Ledger\Traits\Audited;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Manage sub-journals
+ */
 class SubJournalController extends Controller
 {
     use Audited;
@@ -33,7 +37,7 @@ class SubJournalController extends Controller
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
         if (LedgerSubJournal::where('code', $message->code)->first() !== null) {
             throw Breaker::withCode(
-                Breaker::INVALID_OPERATION,
+                Breaker::RULE_VIOLATION,
                 [__("SubJournal :code already exists.", ['code' => $message->code])]
             );
         }
@@ -84,7 +88,7 @@ class SubJournalController extends Controller
             );
         }
         if (count($errors)) {
-            throw Breaker::withCode(Breaker::INVALID_OPERATION, $errors);
+            throw Breaker::withCode(Breaker::RULE_VIOLATION, $errors);
         }
         $inTransaction = false;
         try {
@@ -107,6 +111,8 @@ class SubJournalController extends Controller
     }
 
     /**
+     * Fetch a sub-journal by code.
+     *
      * @param string $subJournalCode
      * @return LedgerSubJournal
      * @throws Breaker
@@ -117,8 +123,8 @@ class SubJournalController extends Controller
         $ledgerSubJournal = LedgerSubJournal::where('code', $subJournalCode)->first();
         if ($ledgerSubJournal === null) {
             throw Breaker::withCode(
-                Breaker::INVALID_OPERATION,
-                [__('domain :code does not exist', ['code' => $subJournalCode])]
+                Breaker::RULE_VIOLATION,
+                [__('Journal :code does not exist', ['code' => $subJournalCode])]
             );
         }
 
@@ -126,7 +132,7 @@ class SubJournalController extends Controller
     }
 
     /**
-     * Fetch a domain.
+     * Fetch a sub-journal.
      *
      * @param SubJournal $message
      * @return LedgerSubJournal
@@ -158,12 +164,12 @@ class SubJournalController extends Controller
             case Message::OP_UPDATE:
                 return $this->update($message);
             default:
-                throw Breaker::withCode(Breaker::INVALID_OPERATION);
+                throw Breaker::withCode(Breaker::RULE_VIOLATION);
         }
     }
 
     /**
-     * Update a domain.
+     * Update a sub-journal.
      *
      * @param SubJournal $message
      * @return LedgerSubJournal
@@ -177,7 +183,7 @@ class SubJournalController extends Controller
             $ledgerSubJournal = $this->fetch($message->code);
             $ledgerSubJournal->checkRevision($message->revision ?? null);
 
-            $codeChange = $message->toCode !== null
+            $codeChange = isset($message->toCode)
                 && $ledgerSubJournal->code !== $message->toCode;
             if ($codeChange) {
                 $ledgerSubJournal->code = $message->toCode;
@@ -204,19 +210,18 @@ class SubJournalController extends Controller
         return $ledgerSubJournal;
     }
 
+    /**
+     * Update the names associated with this sub-journal.
+     *
+     * @param LedgerSubJournal $ledgerSubJournal
+     * @param SubJournal $message
+     * @return void
+     */
     protected function updateNames(LedgerSubJournal $ledgerSubJournal, SubJournal $message)
     {
+        /** @var Name $name */
         foreach ($message->names as $name) {
-            /** @var LedgerName $ledgerName */
-            /** @noinspection PhpUndefinedMethodInspection */
-            $ledgerName = $ledgerSubJournal->names->firstWhere('language', $name->language);
-            if ($ledgerName === null) {
-                $ledgerName = new LedgerName();
-                $ledgerName->ownerUuid = $ledgerSubJournal->subJournalUuid;
-                $ledgerName->language = $name->language;
-            }
-            $ledgerName->name = $name->name;
-            $ledgerName->save();
+            $name->applyTo($ledgerSubJournal);
         }
     }
 

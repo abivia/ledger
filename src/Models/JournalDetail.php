@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class JournalDetail extends Model
 {
     use HasFactory;
+
     protected $primaryKey = 'journalDetailId';
 
     public $timestamps = false;

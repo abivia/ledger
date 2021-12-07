@@ -4,7 +4,11 @@ namespace Abivia\Ledger\Helpers;
 
 use Abivia\Ledger\Models\LedgerAccount;
 use Carbon\Carbon;
+use Exception;
 
+/**
+ * Support for revision signatures on API calls.
+ */
 class Revision
 {
     /**
@@ -16,14 +20,12 @@ class Revision
      * @param Carbon $fallback The Laravel maintained timestamp.
      *
      * @return string
+     * @throws Exception
      */
     public static function create(?Carbon $revision, Carbon $fallback): string
     {
         $use = $revision ?? $fallback;
-        return hash(
-            'ripemd256',
-            LedgerAccount::root()->flex->salt . $use->toJSON()
-        );
+        return hash('ripemd256', LedgerAccount::root()->flex->salt . $use->toJSON());
     }
 
 

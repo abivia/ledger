@@ -5,15 +5,12 @@ namespace Abivia\Ledger\Messages\Ledger;
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Merge;
 use Abivia\Ledger\Helpers\Package;
-use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Messages\Message;
 use Carbon\Carbon;
-use Illuminate\Support\Str;
 use TypeError;
 
 class Create extends Message
 {
-    // TODO: add opening balance capability (account code, currency, balance)
     /**
      * @var Account[]
      */
@@ -40,8 +37,8 @@ class Create extends Message
      */
     public array $names = [];
     public array $rules = [];
-    public ?string $template = null;
-    public ?string $templatePath = null;
+    public string $template;
+    public string $templatePath;
     public Carbon $transDate;
 
     private function extractAccounts(array $data): array
@@ -185,7 +182,7 @@ class Create extends Message
             Merge::arrays($errors, $create->extractBalances($data));
             Merge::arrays($errors, $create->extractNames($data));
 
-            Merge::arrays($errors, $create->extractDomains($data, true));
+            Merge::arrays($errors, $create->extractDomains($data));
             Merge::arrays($errors, $create->extractCurrencies($data));
             if (count($create->currencies) === 0) {
                 $errors[] = __('At least one currency is required.');
@@ -194,9 +191,6 @@ class Create extends Message
             Merge::arrays($errors, $create->extractJournals($data));
             if ($data['template'] ?? false) {
                 $create->template = $data['template'];
-            } else {
-                $create->template = null;
-                $create->templatePath = null;
             }
             if (isset($data['date'])) {
                 $create->transDate = new Carbon($data['date']);
@@ -233,11 +227,11 @@ class Create extends Message
     public function validate(int $opFlags): self
     {
         $this->transDate ??= Carbon::now();
-        if ($this->template !== null) {
+        if (isset($this->template)) {
             $this->templatePath = resource_path(
-                "ledger/charts/{$this->template}.json"
+                "ledger/charts/$this->template.json"
             );
-            $this->templatePath = Package::chartPath("{$this->template}.json");
+            $this->templatePath = Package::chartPath("$this->template.json");
             if (!file_exists($this->templatePath)) {
                 throw Breaker::withCode(
                     Breaker::BAD_REQUEST, [__('Specified template not found in ledger/charts.')]

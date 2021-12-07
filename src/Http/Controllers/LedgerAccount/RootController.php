@@ -26,30 +26,42 @@ use Illuminate\Support\Facades\DB;
 use stdClass;
 use function pathinfo;
 
+/**
+ * Functions associated with creating and querying the Ledger root account.
+ */
 class RootController extends LedgerAccountController
 {
     use Audited;
 
     /**
-     * @var LedgerAccount[]
+     * @var LedgerAccount[] List of the created accounts.
      */
     private array $accounts;
+
     /**
      * @var LedgerCurrency[] Supported currencies.
      */
     private array $currencies = [];
+
     /**
-     * @var LedgerDomain[]
+     * @var LedgerDomain[] List of the created domains.
      */
     private array $domains;
 
-    private string $firstCurrency;
     /**
-     * @var Create|null Data associated with initial ledger creation.
+     * @var string The first currency referenced by the ledger. This will be used as a default
+     * if a domain doesn't supply an alternate.
+     */
+    private string $firstCurrency;
+
+    /**
+     * @var Create|null Data associated with initial ledger create request.
      */
     private ?Create $initData = null;
 
     /**
+     * Verify that the Ledger has not been created already.
+     *
      * @throws Breaker
      */
     public static function checkNoLedgerExists()
@@ -57,14 +69,13 @@ class RootController extends LedgerAccountController
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
         if (LedgerAccount::count() !== 0) {
             throw Breaker::withCode(
-                Breaker::INVALID_OPERATION, [__('Ledger is not empty.')]
+                Breaker::RULE_VIOLATION, [__('Ledger is not empty.')]
             );
         }
     }
 
     /**
-     * Initialize a new Ledger
-     * TODO: Add initial balance creation.
+     * Initialize a new Ledger.
      *
      * @param Create $message
      * @return LedgerAccount
@@ -118,6 +129,8 @@ class RootController extends LedgerAccountController
     }
 
     /**
+     * Create the root account.
+     *
      * @throws Exception
      */
     private function createRoot(): LedgerAccount
@@ -148,6 +161,9 @@ class RootController extends LedgerAccountController
     }
 
     /**
+     * Merge any Chart of Accounts template with any accounts in the Create request, create
+     * the accounts, and check for integrity.
+     *
      * @throws Exception
      */
     private function initializeAccounts()
@@ -180,7 +196,7 @@ class RootController extends LedgerAccountController
                     $parent = $this->accounts[$parentCode];
                     $account->parent->uuid = $parent->ledgerUuid;
                     $create = true;
-                    if ($account->category === true && $parent->category !== true) {
+                    if (($account->category ?? false) === true && $parent->category !== true) {
                         $errors[] = __(
                             "Account :code can't be a category because :parent is not a category.",
                             ['code' => $code, 'parent' => $parentCode]
@@ -208,11 +224,13 @@ class RootController extends LedgerAccountController
             );
         }
         if (count($errors)) {
-            throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);
+            throw Breaker::withCode(Breaker::RULE_VIOLATION, $errors);
         }
     }
 
     /**
+     * Generate a compound journal entry for the Ledger's opening balances.
+     *
      * @throws Breaker
      */
     private function initializeBalances()
@@ -268,18 +286,18 @@ class RootController extends LedgerAccountController
              */
             foreach ($byCurrency as $currencyCode => $balances) {
                 // The opening balance is special as it can have any number of debits and credits.
-                $journalEntry = new JournalEntry();
-                $journalEntry->currency = $currencyCode;
-                $journalEntry->description = 'Opening Balance';
-                $journalEntry->domainUuid = $ledgerDomain->domainUuid;
-                $journalEntry->arguments = [];
-                $journalEntry->language = $language;
-                $journalEntry->opening = true;
-                $journalEntry->posted = true;
-                $journalEntry->reviewed = true;
-                $journalEntry->transDate = $transDate;
-                $journalEntry->save();
-                $journalEntry->refresh();
+                /** @noinspection PhpDynamicAsStaticMethodCallInspection */
+                $journalEntry = JournalEntry::create([
+                    'currency'=> $currencyCode,
+                    'description'=> 'Opening Balance',
+                    'domainUuid'=> $ledgerDomain->domainUuid,
+                    'arguments'=> [],
+                    'language'=> $language,
+                    'opening'=> true,
+                    'posted'=> true,
+                    'reviewed'=> true,
+                    'transDate'=> $transDate,
+                ]);
 
                 foreach ($balances as $detail) {
                     $ledgerAccount = $this->accounts[$detail->account->code] ?? null;
@@ -313,10 +331,15 @@ class RootController extends LedgerAccountController
             }
         }
         if (count($errors) !== 0) {
-            throw Breaker::withCode(Breaker::INVALID_DATA, $errors);
+            throw Breaker::withCode(Breaker::RULE_VIOLATION, $errors);
         }
     }
 
+    /**
+     * Create the Ledger's currencies.
+     *
+     * @return void
+     */
     private function initializeCurrencies(): void
     {
         $this->currencies = [];
@@ -331,12 +354,15 @@ class RootController extends LedgerAccountController
     }
 
     /**
+     * Create the Ledger's domains. If no domains are specified, create the default domain.
+     *
      * @throws Breaker
      */
     private function initializeDomains(): void
     {
         $this->domains = [];
         foreach ($this->initData->domains as $domain) {
+            $domain->validate(Message::OP_ADD | Message::OP_CREATE);
             $domainCode = $domain->code;
             $domain->currencyDefault = $domain->currencyDefault ?? $this->firstCurrency;
             if (!($this->currencies[$domain->currencyDefault] ?? false)) {
@@ -373,6 +399,11 @@ class RootController extends LedgerAccountController
         }
     }
 
+    /**
+     * Create the Ledger's sub-journals.
+     *
+     * @return void
+     */
     private function initializeJournals()
     {
         foreach ($this->initData->journals as $journal) {
@@ -388,6 +419,7 @@ class RootController extends LedgerAccountController
 
     /**
      * Get a list of the names and title of the predefined templates.
+     *
      * @return array
      */
     public function listTemplates(): array
@@ -411,7 +443,9 @@ class RootController extends LedgerAccountController
     }
 
     /**
-     * @return array
+     * Load a Chart of Accounts template.
+     *
+     * @return Account[]
      * @throws Breaker
      */
     private function loadTemplate(): array

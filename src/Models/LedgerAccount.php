@@ -155,7 +155,7 @@ class LedgerAccount extends Model
     public function matchesEntity(EntityRef $ref): bool
     {
         $match = true;
-        if ($ref->uuid !== null && $ref->uuid !== $this->ledgerUuid) {
+        if (isset($ref->uuid) && $ref->uuid !== $this->ledgerUuid) {
             $match = false;
         }
         if ($ref->code !== null && $ref->code !== $this->code) {
@@ -211,7 +211,7 @@ class LedgerAccount extends Model
             }
             if ($lookFor !== null && $ledgerAccount->matchesEntity($lookFor)) {
                 throw Breaker::withCode(
-                    Breaker::INVALID_OPERATION,
+                    Breaker::RULE_VIOLATION,
                     [__(
                         "Adding :start to :ref would cause a circular reference.",
                         ['start' =>$start, 'ref' => $lookFor]
@@ -230,7 +230,7 @@ class LedgerAccount extends Model
             if ($ledgerAccount->parentUuid === null) {
                 break;
             }
-            $next->code = null;
+            unset($next->code);
             $next->uuid = $ledgerAccount->parentUuid;
         }
 

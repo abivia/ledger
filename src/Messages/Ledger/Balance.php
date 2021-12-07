@@ -22,9 +22,18 @@ class Balance extends Message
 
     public string $language;
 
-    public function addAmountTo(string &$amount, int $decimals)
+    /**
+     * Add this balance amount to the passed amount.
+     *
+     * @param string $amount Passed by reference.
+     * @param int $decimals Number of decimals to keep.
+     * @return string The updated amount.
+     */
+    public function addAmountTo(string &$amount, int $decimals): string
     {
         $amount = bcadd($amount, $this->amount, $decimals);
+
+        return $amount;
     }
 
     /**
@@ -34,7 +43,7 @@ class Balance extends Message
     {
         if (!($opFlags & self::OP_GET | Message::OP_CREATE)) {
             throw Breaker::withCode(
-                Breaker::INVALID_OPERATION,
+                Breaker::RULE_VIOLATION,
                 [__('Only create and get requests are allowed.')]
             );
         }
@@ -87,7 +96,7 @@ class Balance extends Message
             }
         } elseif ($opFlags & self::OP_GET) {
             if (
-                $this->account === null
+                !isset($this->account)
                 || ($this->account->uuid === null && $this->account->code === null)
             ) {
                 $errors[] = __("Request requires an account code or uuid.");

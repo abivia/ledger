@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Abivia\Ledger\Http\Controllers;
 
 use Abivia\Ledger\Exceptions\Breaker;
+use Abivia\Ledger\Messages\Ledger\Name;
 use Abivia\Ledger\Models\JournalEntry;
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Models\LedgerBalance;
@@ -15,6 +16,9 @@ use Abivia\Ledger\Traits\Audited;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Manage domains within the ledger.
+ */
 class LedgerDomainController extends Controller
 {
     use Audited;
@@ -35,7 +39,7 @@ class LedgerDomainController extends Controller
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
         if (LedgerDomain::where('code', $message->code)->first() !== null) {
             throw Breaker::withCode(
-                Breaker::INVALID_OPERATION,
+                Breaker::RULE_VIOLATION,
                 [
                     __(
                         "Domain :code already exists.",
@@ -71,6 +75,7 @@ class LedgerDomainController extends Controller
      * Delete a domain. The domain must be unused.
      *
      * @param Domain $message
+     * @return null
      * @throws Breaker
      * @throws Exception
      */
@@ -106,7 +111,7 @@ class LedgerDomainController extends Controller
             );
         }
         if (count($errors)) {
-            throw Breaker::withCode(Breaker::INVALID_OPERATION, $errors);
+            throw Breaker::withCode(Breaker::RULE_VIOLATION, $errors);
         }
         $inTransaction = false;
         try {
@@ -139,7 +144,7 @@ class LedgerDomainController extends Controller
         $ledgerDomain = LedgerDomain::where('code', $domainCode)->first();
         if ($ledgerDomain === null) {
             throw Breaker::withCode(
-                Breaker::INVALID_OPERATION,
+                Breaker::RULE_VIOLATION,
                 [__('domain :code does not exist', ['code' => $domainCode])]
             );
         }
@@ -180,7 +185,7 @@ class LedgerDomainController extends Controller
             case Message::OP_UPDATE:
                 return $this->update($message);
             default:
-                throw Breaker::withCode(Breaker::INVALID_OPERATION);
+                throw Breaker::withCode(Breaker::RULE_VIOLATION);
         }
     }
 
@@ -199,7 +204,7 @@ class LedgerDomainController extends Controller
             $ledgerDomain = $this->fetch($message->code);
             $ledgerDomain->checkRevision($message->revision ?? null);
 
-            $codeChange = $message->toCode !== null
+            $codeChange = isset($message->toCode)
                 && $ledgerDomain->code !== $message->toCode;
             if ($codeChange) {
                 $ledgerDomain->code = $message->toCode;
@@ -233,19 +238,18 @@ class LedgerDomainController extends Controller
         return $ledgerDomain;
     }
 
+    /**
+     * Update the names associated with this domain.
+     *
+     * @param LedgerDomain $ledgerDomain
+     * @param Domain $message
+     * @return void
+     */
     protected function updateNames(LedgerDomain $ledgerDomain, Domain $message)
     {
+        /** @var Name $name */
         foreach ($message->names as $name) {
-            /** @var LedgerName $ledgerName */
-            /** @noinspection PhpUndefinedMethodInspection */
-            $ledgerName = $ledgerDomain->names->firstWhere('language', $name->language);
-            if ($ledgerName === null) {
-                $ledgerName = new LedgerName();
-                $ledgerName->ownerUuid = $ledgerDomain->domainUuid;
-                $ledgerName->language = $name->language;
-            }
-            $ledgerName->name = $name->name;
-            $ledgerName->save();
+            $name->applyTo($ledgerDomain);
         }
     }
 

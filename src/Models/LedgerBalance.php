@@ -22,5 +22,8 @@ use Illuminate\Database\Eloquent\Model;
 class LedgerBalance extends Model
 {
     use HasFactory;
+
     protected $dateFormat = 'Y-m-d H:i:s.u';
+
+    protected $fillable = ['balance', 'currency', 'domainUuid', 'ledgerUuid'];
 }

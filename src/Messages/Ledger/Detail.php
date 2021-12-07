@@ -7,6 +7,7 @@ use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Merge;
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Messages\Message;
+use Exception;
 
 class Detail extends Message
 {
@@ -34,8 +35,14 @@ class Detail extends Message
      */
     private ?LedgerAccount $ledgerAccount = null;
 
-    public ?Reference $reference = null;
+    public Reference $reference;
 
+    /**
+     * Detail constructor.
+     *
+     * @param EntityRef|null $account
+     * @param string|null $amount
+     */
     public function __construct(?EntityRef $account = null, ?string $amount = null) {
         if ($account !== null) {
             $this->account = $account;
@@ -45,6 +52,11 @@ class Detail extends Message
         }
     }
 
+    /**
+     * Find the ledger account associated with this detail record.
+     *
+     * @throws Exception
+     */
     public function findAccount(): ?LedgerAccount
     {
         if ($this->ledgerAccount === null) {
@@ -80,9 +92,15 @@ class Detail extends Message
         return $detail;
     }
 
-    public function normalizeAmount(int $digits)
+    /**
+     * Make the amount have the requested number of decimal places.
+     *
+     * @param int $decimals
+     * @return string
+     */
+    public function normalizeAmount(int $decimals): string
     {
-        $this->amount = bcadd('0', $this->amount, $digits);
+        $this->amount = bcadd('0', $this->amount, $decimals);
 
         return $this->amount;
     }

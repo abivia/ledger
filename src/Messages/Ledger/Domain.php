@@ -9,13 +9,21 @@ use Abivia\Ledger\Messages\Message;
 class Domain extends Message
 {
     public string $code;
+    protected static array $copyable = [
+        'code',
+        'extra',
+        ['revision', self::OP_UPDATE],
+        ['toCode', self::OP_UPDATE],
+        'uuid',
+    ];
+
     public string $currencyDefault;
     /**
      * @var mixed
      */
     public $extra;
     public array $names = [];
-    public ?string $revision = null;
+    public string $revision;
     public bool $subJournals;
     public string $toCode;
 
@@ -25,9 +33,7 @@ class Domain extends Message
     public static function fromRequest(array $data, int $opFlags): self
     {
         $domain = new static();
-        if ($data['code'] ?? false) {
-            $domain->code = $data['code'];
-        }
+        $domain->copy($data, $opFlags);
         if (isset($data['names'])) {
             $nameList = $data['names'] ?? [];
             if (isset($data['name'])) {
@@ -37,18 +43,7 @@ class Domain extends Message
         }
         $domain->subJournals = $data['subJournals'] ?? false;
         if (isset($data['currency'])) {
-            $domain->currencyDefault = strtoupper($data['currency']);
-        }
-        if (isset($data['extra'])) {
-            $domain->extra = $data['extra'];
-        }
-        if ($opFlags & self::OP_UPDATE) {
-            if (isset($data['revision'])) {
-                $domain->revision = $data['revision'];
-            }
-            if (isset($data['toCode'])) {
-                $domain->toCode = strtoupper($data['toCode']);
-            }
+            $domain->currencyDefault = $data['currency'];
         }
         if ($opFlags & self::F_VALIDATE) {
             $domain->validate($opFlags);
@@ -63,14 +58,26 @@ class Domain extends Message
     public function validate(int $opFlags): self
     {
         $errors = [];
-        if (!isset($this->code)) {
+        if (isset($this->code)) {
+            $this->code = strtoupper($this->code);
+        } else {
             $errors[] = 'the code property is required';
+        }
+        if (isset($this->currencyDefault)) {
+            if ($this->currencyDefault === '') {
+                $errors[] = 'Currency code cannot be empty';
+            } else {
+                $this->currencyDefault = strtoupper($this->currencyDefault);
+            }
         }
         if ($opFlags & self::OP_ADD && count($this->names) === 0) {
             $errors[] = 'A non-empty names property is required';
         }
         if ($opFlags & self::OP_UPDATE && !isset($this->revision)) {
             $errors[] = 'A revision code is required';
+        }
+        if (isset($this->toCode)) {
+            $this->toCode = strtoupper($this->toCode);
         }
         try {
             foreach ($this->names as $name) {

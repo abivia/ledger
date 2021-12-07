@@ -13,14 +13,17 @@ use Abivia\Ledger\Messages\Message;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Container for the adding an account to the ledger.
+ */
 class AddController extends LedgerAccountController
 {
 
     /**
-     * Adding an account to the ledger.
+     * Add an account to the ledger.
      *
-     * @param Account $message
-     * @return LedgerAccount
+     * @param Account $message Details of the add request.
+     * @return LedgerAccount The new account.
      * @throws Breaker
      */
     public function add(Account $message): LedgerAccount
@@ -34,14 +37,8 @@ class AddController extends LedgerAccountController
             /** @noinspection PhpDynamicAsStaticMethodCallInspection */
             if (LedgerAccount::where('code', $message->code)->first() !== null) {
                 throw Breaker::withCode(
-                    Breaker::INVALID_OPERATION,
-                    [
-                        __(
-                            "Account :code already exists.",
-                            ['code' => $message->code]
-                        )
-                    ]
-                );
+                    Breaker::RULE_VIOLATION,
+                    [__("Account :code already exists.", ['code' => $message->code])]);
             }
 
             DB::beginTransaction();
@@ -66,6 +63,8 @@ class AddController extends LedgerAccountController
     }
 
     /**
+     * Check that the request satisfies all the business rules.
+     *
      * @param Account $message
      * @return void
      * @throws Breaker
@@ -91,13 +90,13 @@ class AddController extends LedgerAccountController
         $message->parent->uuid = $ledgerParent->ledgerUuid;
 
         // Validate and inherit flags
-        if ($message->category && !$ledgerParent->category) {
+        if (($message->category ?? false) && !$ledgerParent->category) {
             throw Breaker::withCode(
-                Breaker::INVALID_OPERATION,
+                Breaker::RULE_VIOLATION,
                 [__("Can't create a category under a parent that is not a category.")]
             );
         }
-        if (!($message->credit || $message->debit)) {
+        if (!(($message->credit ?? false) || ($message->debit ?? false))) {
             $found = false;
             foreach ($parents as $ancestor) {
                 if (($ancestor->credit || $ancestor->debit)) {
@@ -107,9 +106,9 @@ class AddController extends LedgerAccountController
                     break;
                 }
             }
-            if (!$found && !$message->category) {
+            if (!$found && !($message->category ?? false)) {
                 throw Breaker::withCode(
-                    Breaker::INVALID_OPERATION,
+                    Breaker::RULE_VIOLATION,
                     [__("Unable to inherit debit/credit status from parents.")]
                 );
             }

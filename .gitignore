@@ -12,5 +12,7 @@ Homestead.yaml
 npm-debug.log
 yarn-error.log
 /.idea
+/.phpdoc
 /.vscode
 /tests/testbase.sqlite-journal
+/local/

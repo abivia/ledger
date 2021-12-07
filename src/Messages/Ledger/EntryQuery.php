@@ -9,6 +9,7 @@ use Abivia\Ledger\Models\LedgerCurrency;
 use Abivia\Ledger\Models\LedgerDomain;
 use Abivia\Ledger\Messages\Message;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Builder;
 
 class EntryQuery extends Message {
@@ -17,6 +18,7 @@ class EntryQuery extends Message {
      * @var int For pagination, ID of first record after this position
      */
     public int $after;
+
     /**
      * @var Carbon For pagination, date of first record after this position
      */
@@ -31,18 +33,25 @@ class EntryQuery extends Message {
     public string $currency;
     public Carbon $date;
     public Carbon $dateEnding;
+
     /**
      * @var EntityRef[]
      */
     public array $entities = [];
+
     /**
      * @var ?EntityRef Ledger domain. If not provided the default is used.
      */
     public ?EntityRef $domain;
+
     /**
      * @var Message[] Message objects that limit query results
      */
     public array $filters = [];
+
+    /**
+     * @var int The maximum number of entries to return.
+     */
     public int $limit;
     public Reference $reference;
 
@@ -76,6 +85,13 @@ class EntryQuery extends Message {
         return $query;
     }
 
+    /**
+     * Generate a query to retrieve the requested entries.
+     *
+     * @return Builder
+     * @throws Breaker
+     * @throws Exception
+     */
     public function query(): Builder
     {
         /** @var LedgerDomain $ledgerDomain */
@@ -101,8 +117,16 @@ class EntryQuery extends Message {
         return $query;
     }
 
+    /**
+     * Add the amount criteria to the query.
+     *
+     * @param Builder $query
+     * @return void
+     * @throws Breaker
+     */
     private function queryAmount(Builder $query)
     {
+        /** @noinspection PhpDynamicAsStaticMethodCallInspection */
         $ledgerCurrency = LedgerCurrency::find($this->currency);
         if ($ledgerCurrency === null) {
             throw Breaker::withCode(
@@ -149,6 +173,12 @@ class EntryQuery extends Message {
         }
     }
 
+    /**
+     * Add the date criteria to the query.
+     *
+     * @param Builder $query
+     * @return void
+     */
     private function queryDate(Builder $query)
     {
         // Apply the date range
@@ -165,12 +195,25 @@ class EntryQuery extends Message {
         }
     }
 
+    /**
+     * Add the domain criteria to the query.
+     *
+     * @param Builder $query
+     * @return void
+     */
     private function queryDomain(Builder $query)
     {
         // Apply the domain
         $query->where('domainUuid', '=', $this->domain->uuid);
     }
 
+    /**
+     * Add the pagination criteria to the query.
+     *
+     * @param Builder $query
+     * @return void
+     * @throws Breaker
+     */
     private function queryPagination(Builder $query)
     {
         // Add pagination
@@ -187,7 +230,13 @@ class EntryQuery extends Message {
         }
     }
 
-    private function queryReference($query)
+    /**
+     * Add the external reference criteria to the query.
+     *
+     * @param Builder $query
+     * @return void
+     */
+    private function queryReference(Builder $query)
     {
         // If there's a reference qualify the results with it
         if (isset($this->reference)) {

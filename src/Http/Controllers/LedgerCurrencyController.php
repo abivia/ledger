@@ -14,6 +14,9 @@ use Abivia\Ledger\Traits\Audited;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Manage the currencies supported by the ledger.
+ */
 class LedgerCurrencyController extends Controller
 {
     use Audited;
@@ -32,7 +35,7 @@ class LedgerCurrencyController extends Controller
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
         if (LedgerCurrency::where('code', $message->code)->first() !== null) {
             throw Breaker::withCode(
-                Breaker::INVALID_OPERATION,
+                Breaker::RULE_VIOLATION,
                 [
                     __(
                         "Currency :code already exists.",
@@ -56,6 +59,7 @@ class LedgerCurrencyController extends Controller
      * Delete a currency. The currency must be unused.
      *
      * @param Currency $message
+     * @return null
      * @throws Breaker
      */
     public function delete(Currency $message)
@@ -66,11 +70,8 @@ class LedgerCurrencyController extends Controller
         $ledgerCurrency = LedgerCurrency::find($message->code);
         if ($ledgerCurrency === null) {
             throw Breaker::withCode(
-                Breaker::INVALID_OPERATION,
-                [__(
-                    'currency :code does not exist',
-                    ['code' => $message->code]
-                )]
+                Breaker::RULE_VIOLATION,
+                [__('currency :code does not exist', ['code' => $message->code])]
             );
         }
         // Ensure there are no journal entries that use this currency
@@ -101,7 +102,7 @@ class LedgerCurrencyController extends Controller
             );
         }
         if (count($errors)) {
-            throw Breaker::withCode(Breaker::INVALID_OPERATION, $errors);
+            throw Breaker::withCode(Breaker::RULE_VIOLATION, $errors);
         }
         $ledgerCurrency->delete();
         $this->auditLog($message);
@@ -110,6 +111,8 @@ class LedgerCurrencyController extends Controller
     }
 
     /**
+     * Fetch a currency based on currency code.
+     *
      * @param string $currencyCode
      * @return LedgerCurrency
      * @throws Breaker
@@ -120,7 +123,7 @@ class LedgerCurrencyController extends Controller
         $ledgerCurrency = LedgerCurrency::find($currencyCode);
         if ($ledgerCurrency === null) {
             throw Breaker::withCode(
-                Breaker::INVALID_OPERATION,
+                Breaker::RULE_VIOLATION,
                 [__('currency :code does not exist', ['code' => $currencyCode])]
             );
         }
@@ -129,7 +132,7 @@ class LedgerCurrencyController extends Controller
     }
 
     /**
-     * Fetch a currency.
+     * Get a currency.
      *
      * @param Currency $message
      * @return LedgerCurrency
@@ -146,7 +149,7 @@ class LedgerCurrencyController extends Controller
      *
      * @param Currency $message
      * @param int $opFlag
-     * @return LedgerCurrency
+     * @return LedgerCurrency|null
      * @throws Breaker
      */
     public function run(Currency $message, int $opFlag): ?LedgerCurrency
@@ -161,7 +164,7 @@ class LedgerCurrencyController extends Controller
             case Message::OP_UPDATE:
                 return $this->update($message);
             default:
-                throw Breaker::withCode(Breaker::INVALID_OPERATION);
+                throw Breaker::withCode(Breaker::RULE_VIOLATION);
         }
     }
 
@@ -186,7 +189,7 @@ class LedgerCurrencyController extends Controller
                     $used = JournalEntry::where('currency', $ledgerCurrency->code)->count();
                     if ($used !== 0) {
                         throw Breaker::withCode(
-                            Breaker::INVALID_OPERATION,
+                            Breaker::RULE_VIOLATION,
                             [__("Can't decrease the decimal size of a currency in use.")]
                         );
                     }
@@ -206,11 +209,11 @@ class LedgerCurrencyController extends Controller
                 /** @noinspection PhpDynamicAsStaticMethodCallInspection */
                 JournalEntry::where('currency', $message->code)
                     ->update(['currency' => $message->toCode]);
-                // Update all balances
+                // Update all balances with the new code.
                 /** @noinspection PhpDynamicAsStaticMethodCallInspection */
                 LedgerBalance::where('currency', $message->code)
                     ->update(['currency' => $message->toCode]);
-                // Update all domains
+                // Update all domains with the new code.
                 /** @noinspection PhpDynamicAsStaticMethodCallInspection */
                 LedgerDomain::where('currencyDefault', $message->code)
                     ->update(['currencyDefault' => $message->toCode]);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Abivia\Ledger\Tests\Feature;
 
 use Abivia\Ledger\Models\LedgerAccount;
+use Abivia\Ledger\Models\LedgerName;
 use Abivia\Ledger\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -23,7 +24,15 @@ class LedgerDomainTest extends TestCase
             [
                 'name' => 'Engineering',
                 'language' => 'en'
-            ]
+            ],
+            [
+                'name' => 'Nerds',
+                'language' => 'en-JOCK'
+            ],
+            [
+                'name' => 'la machination',
+                'language' => 'fr'
+            ],
         ],
         'currency' => 'CAD'
     ];
@@ -120,7 +129,7 @@ class LedgerDomainTest extends TestCase
             $actual->domain
         );
         $this->hasRevisionElements($actual->domain);
-        $this->assertEquals('Corp', $actual->domain->code);
+        $this->assertEquals('CORP', $actual->domain->code);
         $this->assertEquals('CAD', $actual->domain->currency);
 
         // Expect error with invalid code
@@ -141,7 +150,7 @@ class LedgerDomainTest extends TestCase
 
         // Verify the default domain is as expected
         $rules = LedgerAccount::rules();
-        $this->assertEquals('Corp', $rules->domain->default);
+        $this->assertEquals('CORP', $rules->domain->default);
 
         // Try an update with bogus data
         $requestData = [
@@ -181,6 +190,108 @@ class LedgerDomainTest extends TestCase
         // Make sure the default domain has been updated
         $rules = LedgerAccount::rules();
         $this->assertEquals('MAIN', $rules->domain->default);
+    }
+
+    public function testUpdateNameDelete()
+    {
+        // First we need a ledger
+        $this->createLedger();
+
+        // Do a get so we have a valid revision
+        $requestData = [
+            'code' => 'Corp',
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/domain/get', $requestData
+        );
+        $actual = $this->isSuccessful($response);
+
+        // Remove the en-JOCK translation
+        $requestData = [
+            'revision' => $actual->domain->revision,
+            'code' => 'Corp',
+            'names' => [
+                [
+                    'language' => 'en-JOCK'
+                ],
+            ],
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/domain/update', $requestData
+        );
+        $result = $this->isSuccessful($response);
+        // Check the database
+        $name = LedgerName::where('ownerUuid', $result->domain->uuid)
+            ->where('language', 'en-JOCK')->first();
+        $this->assertNull($name);
+
+    }
+
+    public function testUpdateNameDeleteDefault()
+    {
+        // First we need a ledger
+        $this->createLedger();
+
+        // Do a get so we have a valid revision
+        $requestData = [
+            'code' => 'Corp',
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/domain/get', $requestData
+        );
+        $actual = $this->isSuccessful($response);
+
+        // Attempt to remove the default name.
+        $requestData = [
+            'revision' => $actual->domain->revision,
+            'code' => 'Corp',
+            'names' => [
+                [
+                    'language' => 'en'
+                ],
+            ],
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/domain/update', $requestData
+        );
+        $result = $this->isFailure($response);
+
+    }
+
+    public function testUpdateNameEdit()
+    {
+        // First we need a ledger
+        $this->createLedger();
+
+        // Do a get so we have a valid revision
+        $requestData = [
+            'code' => 'Corp',
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/domain/get', $requestData
+        );
+        $actual = $this->isSuccessful($response);
+
+        // Fix the French translation
+        $requestData = [
+            'revision' => $actual->domain->revision,
+            'code' => 'Corp',
+            'names' => [
+                [
+                    'name' => 'ingénierie',
+                    'language' => 'fr'
+                ],
+            ],
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/domain/update', $requestData
+        );
+        $result = $this->isSuccessful($response);
+        // Check the database
+        $name = LedgerName::where('ownerUuid', $result->domain->uuid)
+            ->where('language', 'fr')->first();
+        $this->assertEquals('ingénierie', $name->name);
+
     }
 
 }

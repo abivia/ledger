@@ -8,6 +8,7 @@ use Abivia\Ledger\Messages\Ledger\Entry;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Traits\HasRevisions;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -57,8 +58,8 @@ class JournalEntry extends Model
     protected $dateFormat = 'Y-m-d H:i:s.u';
 
     protected $fillable = [
-        'arguments', 'createdBy', 'currency', 'description', 'extra',
-        'language', 'posted', 'reviewed', 'transDate', 'updatedBy'
+        'arguments', 'createdBy', 'currency', 'description', 'domainUuid', 'extra',
+        'language', 'opening', 'posted', 'reviewed', 'transDate', 'updatedBy'
     ];
     protected $keyType = 'int';
     protected $primaryKey = 'journalEntryId';
@@ -104,6 +105,11 @@ class JournalEntry extends Model
         );
     }
 
+    /**
+     * Generate an array suitable for a JSON response.
+     *
+     * @throws Exception
+     */
     public function toResponse(int $opFlags): array
     {
         $response = [];
@@ -111,6 +117,7 @@ class JournalEntry extends Model
         $response['date'] = $this->transDate->format($this->dateFormat);
         if ($opFlags & Message::OP_GET) {
             if (isset($this->subJournalUuid)) {
+                /** @noinspection PhpDynamicAsStaticMethodCallInspection */
                 $subJournal = SubJournal::find($this->subJournalUuid);
                 $response['journal'] = $subJournal->code;
                 $response['journalUuid'] = $this->subJournalUuid;
@@ -129,6 +136,7 @@ class JournalEntry extends Model
             $response['currency'] = $this->currency;
             $response['details'] = [];
             /** @var JournalDetail $detail */
+            /** @noinspection PhpUndefinedFieldInspection */
             foreach ($this->details as $detail) {
                 $response['details'][] = $detail->toResponse();
             }

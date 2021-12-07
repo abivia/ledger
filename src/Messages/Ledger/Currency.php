@@ -9,8 +9,8 @@ class Currency extends Message
 {
     public string $code;
     public int $decimals;
-    public ?string $revision;
-    public ?string $toCode = null;
+    public string $revision;
+    public string $toCode;
 
     /**
      * @inheritdoc
@@ -36,7 +36,7 @@ class Currency extends Message
                 $result->revision = $data['revision'];
             }
             if (isset($data['toCode'])) {
-                $result->toCode = strtoupper($data['toCode']);
+                $result->toCode = $data['toCode'];
             }
         }
         if ($opFlags & self::F_VALIDATE) {
@@ -54,6 +54,11 @@ class Currency extends Message
         $errors = [];
         if (!isset($this->code)) {
             $errors[] = __('the code property is required');
+        } else {
+            $this->code = strtoupper($this->code);
+        }
+        if (isset($this->toCode)) {
+            $this->toCode = strtoupper($this->toCode);
         }
 
         if (!($opFlags & (self::OP_DELETE | self::OP_GET))) {

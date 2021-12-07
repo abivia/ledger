@@ -52,4 +52,30 @@ class RootApiController
 
         return $response;
     }
+
+    public function templates(): array
+    {
+        $response = [];
+        $this->errors = [];
+        try {
+            $controller = new RootController();
+            $response['templates'] = array_values($controller->listTemplates());
+            //$this->success($message);
+        } catch (Breaker $exception) {
+            $this->warning($exception);
+        } catch (QueryException $exception) {
+            $this->dbException($exception);
+        } catch (Exception $exception) {
+            $this->unexpectedException($exception);
+        }
+
+        if (count($this->errors)) {
+            $response['errors'] = $this->errors;
+        }
+        $response['time'] = new Carbon();
+
+
+        return $response;
+    }
+
 }

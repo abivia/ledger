@@ -32,9 +32,9 @@ class Entry extends Message
     ];
 
     /**
-     * @var string|null Currency code. If not provided, the domain's default is used.
+     * @var string Currency code. If not provided, the domain's default is used.
      */
-    public ?string $currency;
+    public string $currency;
 
     /**
      * @var string Transaction description. Required on add.
@@ -47,9 +47,9 @@ class Entry extends Message
     public array $details = [];
 
     /**
-     * @var ?EntityRef Ledger domain. If not provided the default is used.
+     * @var EntityRef Ledger domain. If not provided the default is used.
      */
-    public ?EntityRef $domain;
+    public EntityRef $domain;
 
     /**
      * @var mixed
@@ -59,17 +59,17 @@ class Entry extends Message
     /**
      * @var int|null The transaction ID, only used on update.
      */
-    public ?int $id = null;
+    public int $id;
 
     /**
-     * @var ?EntityRef Sub-journal reference. Only relevant when adding an entry.
+     * @var EntityRef Sub-journal reference. Only relevant when adding an entry.
      */
-    public ?EntityRef $journal;
+    public EntityRef $journal;
 
     /**
      * @var string|null Language used for the description. If missing, ledger default used.
      */
-    public ?string $language = null;
+    public string $language;
 
     /**
      * @var bool Posted flag. Only set on add/update.
@@ -84,7 +84,7 @@ class Entry extends Message
     /**
      * @var string|null Revision signature. Required for update.
      */
-    public ?string $revision = null;
+    public string $revision;
 
     /**
      * @var Carbon Transaction date. Required on add, optional on update.
@@ -155,12 +155,12 @@ class Entry extends Message
             }
         }
         if ($opFlags & (self::OP_DELETE | self::OP_GET | self::OP_UPDATE)) {
-            if ($this->id === null) {
+            if (!isset($this->id)) {
                 $errors[] = __('Entry ID required.');
             }
         }
         if ($opFlags & (self::OP_DELETE | self::OP_UPDATE)) {
-            if ($this->revision === null) {
+            if (!isset($this->revision)) {
                 $errors[] = __('Entry revision code required for update.');
             }
         }

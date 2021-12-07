@@ -12,6 +12,9 @@ use Abivia\Ledger\Traits\Audited;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Manage links to external resources.
+ */
 class JournalReferenceController extends Controller
 {
     use Audited;
@@ -32,7 +35,7 @@ class JournalReferenceController extends Controller
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
         if (JournalReference::where('code', $message->code)->first() !== null) {
             throw Breaker::withCode(
-                Breaker::INVALID_OPERATION,
+                Breaker::RULE_VIOLATION,
                 [
                     __(
                         "Reference :code already exists.",
@@ -63,8 +66,8 @@ class JournalReferenceController extends Controller
      * Delete a reference. The reference must be unused.
      *
      * @param Reference $message
+     * @return null
      * @throws Breaker
-     * @throws Exception
      */
     public function delete(Reference $message)
     {
@@ -78,7 +81,7 @@ class JournalReferenceController extends Controller
             ->count();
         if ($used !== 0) {
             throw Breaker::withCode(
-                Breaker::INVALID_OPERATION,
+                Breaker::RULE_VIOLATION,
                 [__(
                     "Can't delete: transactions use the :code reference.",
                     ['code' => $message->code]
@@ -93,6 +96,8 @@ class JournalReferenceController extends Controller
     }
 
     /**
+     * Retrieve a reference by code.
+     *
      * @param string $referenceCode
      * @return JournalReference
      * @throws Breaker
@@ -103,7 +108,7 @@ class JournalReferenceController extends Controller
         $ledgerReference = JournalReference::where('code', $referenceCode)->first();
         if ($ledgerReference === null) {
             throw Breaker::withCode(
-                Breaker::INVALID_OPERATION,
+                Breaker::RULE_VIOLATION,
                 [__('domain :code does not exist', ['code' => $referenceCode])]
             );
         }
@@ -144,7 +149,7 @@ class JournalReferenceController extends Controller
             case Message::OP_UPDATE:
                 return $this->update($message);
             default:
-                throw Breaker::withCode(Breaker::INVALID_OPERATION);
+                throw Breaker::withCode(Breaker::RULE_VIOLATION);
         }
     }
 

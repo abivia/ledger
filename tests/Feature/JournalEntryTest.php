@@ -137,7 +137,7 @@ class JournalEntryTest extends TestCase
         $this->assertEquals($requestData['description'], $journalEntry->description);
         $ledgerDomain = LedgerDomain::find($journalEntry->domainUuid);
         $this->assertNotNull($ledgerDomain);
-        $this->assertEquals('Corp', $ledgerDomain->code);
+        $this->assertEquals('CORP', $ledgerDomain->code);
 
         /** @var JournalDetail $detail */
         foreach ($journalEntry->details as $detail) {
@@ -179,7 +179,7 @@ class JournalEntryTest extends TestCase
         $this->assertEquals($requestData['description'], $journalEntry->description);
         $ledgerDomain = LedgerDomain::find($journalEntry->domainUuid);
         $this->assertNotNull($ledgerDomain);
-        $this->assertEquals('Corp', $ledgerDomain->code);
+        $this->assertEquals('CORP', $ledgerDomain->code);
 
         $expectByCode = [
             '1310' => '-520.00',
@@ -279,6 +279,12 @@ class JournalEntryTest extends TestCase
         // Confirm that records are deleted and balances corrected.
         $journalEntryDeleted = JournalEntry::find($actual->entry->id);
         $this->assertNull($journalEntryDeleted);
+        // Check journal detail records deleted
+        $this->assertEquals(
+            0,
+            JournalDetail::where('journalEntryId', $actual->entry->id)
+                ->count()
+        );
         foreach ($details as $detail) {
             $ledgerAccount = LedgerAccount::find($detail->ledgerUuid);
             $this->assertNotNull($ledgerAccount);
@@ -357,7 +363,7 @@ class JournalEntryTest extends TestCase
         $this->assertEquals($requestData['description'], $journalEntry->description);
         $ledgerDomain = LedgerDomain::find($journalEntry->domainUuid);
         $this->assertNotNull($ledgerDomain);
-        $this->assertEquals('Corp', $ledgerDomain->code);
+        $this->assertEquals('CORP', $ledgerDomain->code);
 
         $expectByCode = [
             '1310' => '-520.00',

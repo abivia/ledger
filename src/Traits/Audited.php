@@ -2,18 +2,18 @@
 
 namespace Abivia\Ledger\Traits;
 
+
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 trait Audited
 {
     protected function auditLog(object $message)
     {
-        $foo = config('ledger.log');
+        /** @noinspection PhpPossiblePolymorphicInvocationInspection */
         Log::channel(config('ledger.log'))
-            ->info(
-                self::class,
-                ['message' => json_encode($message)]
-            );
+            ->withContext(['user' => Auth::user()])
+            ->info(self::class, ['message' => json_encode($message)]);
     }
 
 }
