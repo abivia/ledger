@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Abivia\Ledger\Messages\Ledger;
+namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Models\JournalReference;
@@ -13,6 +13,7 @@ class Reference extends Message
     public string $code;
     protected static array $copyable = [
         'code', 'extra',
+        ['revision', self::OP_DELETE | self::OP_UPDATE],
         ['toCode', self::OP_UPDATE],
         'uuid',
     ];
@@ -23,6 +24,11 @@ class Reference extends Message
      */
     public $extra;
     public string $journalReferenceUuid;
+    /**
+     * @var string Revision signature. Required for update.
+     */
+    public string $revision;
+
     public string $toCode;
 
     /**

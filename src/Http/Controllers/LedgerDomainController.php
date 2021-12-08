@@ -4,13 +4,13 @@ declare(strict_types=1);
 namespace Abivia\Ledger\Http\Controllers;
 
 use Abivia\Ledger\Exceptions\Breaker;
-use Abivia\Ledger\Messages\Ledger\Name;
+use Abivia\Ledger\Messages\Name;
 use Abivia\Ledger\Models\JournalEntry;
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Models\LedgerBalance;
 use Abivia\Ledger\Models\LedgerDomain;
 use Abivia\Ledger\Models\LedgerName;
-use Abivia\Ledger\Messages\Ledger\Domain;
+use Abivia\Ledger\Messages\Domain;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Traits\Audited;
 use Exception;

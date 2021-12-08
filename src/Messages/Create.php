@@ -1,6 +1,6 @@
 <?php
 
-namespace Abivia\Ledger\Messages\Ledger;
+namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Merge;
@@ -9,6 +9,11 @@ use Abivia\Ledger\Messages\Message;
 use Carbon\Carbon;
 use TypeError;
 
+/**
+ * Ledger Creation request message
+ *
+ * @property-read $templatePath
+ */
 class Create extends Message
 {
     /**
@@ -38,8 +43,20 @@ class Create extends Message
     public array $names = [];
     public array $rules = [];
     public string $template;
-    public string $templatePath;
+    protected string $templatePath;
     public Carbon $transDate;
+
+    /**
+     * @param $name
+     * @return string|null
+     */
+    public function __get($name)
+    {
+        if ($name === 'templatePath') {
+            return $this->templatePath;
+        }
+        return null;
+    }
 
     private function extractAccounts(array $data): array
     {

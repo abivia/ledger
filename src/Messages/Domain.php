@@ -1,6 +1,6 @@
 <?php
 
-namespace Abivia\Ledger\Messages\Ledger;
+namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Merge;
@@ -18,10 +18,10 @@ class Domain extends Message
     ];
 
     public string $currencyDefault;
+    public string $extra;
     /**
-     * @var mixed
+     * @var Name[]
      */
-    public $extra;
     public array $names = [];
     public string $revision;
     public bool $subJournals;

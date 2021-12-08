@@ -1,6 +1,6 @@
 <?php
 
-namespace Abivia\Ledger\Messages\Ledger;
+namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Messages\Message;

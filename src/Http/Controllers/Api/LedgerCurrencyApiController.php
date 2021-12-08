@@ -4,7 +4,7 @@ namespace Abivia\Ledger\Http\Controllers\Api;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Http\Controllers\LedgerCurrencyController;
-use Abivia\Ledger\Messages\Ledger\Currency;
+use Abivia\Ledger\Messages\Currency;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Traits\ControllerResultHandler;
 use Exception;

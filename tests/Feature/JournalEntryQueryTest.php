@@ -8,10 +8,10 @@ use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Http\Controllers\JournalEntryController;
 use Abivia\Ledger\Models\JournalEntry;
 use Abivia\Ledger\Models\LedgerAccount;
-use Abivia\Ledger\Messages\Ledger\Detail;
-use Abivia\Ledger\Messages\Ledger\EntityRef;
-use Abivia\Ledger\Messages\Ledger\Entry;
-use Abivia\Ledger\Messages\Ledger\EntryQuery;
+use Abivia\Ledger\Messages\Detail;
+use Abivia\Ledger\Messages\EntityRef;
+use Abivia\Ledger\Messages\Entry;
+use Abivia\Ledger\Messages\EntryQuery;
 use Abivia\Ledger\Messages\Message;
 use Carbon\Carbon;
 use Exception;
@@ -219,6 +219,59 @@ class JournalEntryQueryTest extends TestCase
                 $this->fail();
             }
         }
+    }
+
+    public function testQueryPosted()
+    {
+        // Get a record and update it to not posted.
+        $entry = JournalEntry::find(10);
+        $entry->posted = false;
+        $entry->save();
+
+        // Query for everything, unpaginated
+        $query = new EntryQuery();
+        $controller = new JournalEntryController();
+        $entries = $controller->query($query, Message::OP_QUERY);
+
+        // Expect one record less than we have
+        $this->assertCount(106, $entries);
+
+        // Query again, including not posted records.
+        $query->postedOnly = false;
+        $entries = $controller->query($query, Message::OP_QUERY);
+
+        // Expect the full set
+        $this->assertCount(107, $entries);
+    }
+
+    public function testQueryReviewed()
+    {
+        // Get a record and update it to "reviewed".
+        $entry = JournalEntry::find(10);
+        $entry->reviewed = true;
+        $entry->save();
+
+        // Query for everything, unpaginated
+        $query = new EntryQuery();
+        $controller = new JournalEntryController();
+        $entries = $controller->query($query, Message::OP_QUERY);
+
+        // Expect all records
+        $this->assertCount(107, $entries);
+
+        // Query again, including reviewed records.
+        $query->reviewed = true;
+        $entries = $controller->query($query, Message::OP_QUERY);
+
+        // Expect two records: the opening and the one we set
+        $this->assertCount(2, $entries);
+
+        // Query again, now for not reviewed records.
+        $query->reviewed = false;
+        $entries = $controller->query($query, Message::OP_QUERY);
+
+        // Expect the remaining records
+        $this->assertCount(105, $entries);
     }
 
 }

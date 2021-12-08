@@ -6,7 +6,7 @@ namespace Abivia\Ledger\Http\Controllers;
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Models\JournalEntry;
 use Abivia\Ledger\Models\JournalReference;
-use Abivia\Ledger\Messages\Ledger\Reference;
+use Abivia\Ledger\Messages\Reference;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Traits\Audited;
 use Exception;
@@ -73,6 +73,7 @@ class JournalReferenceController extends Controller
     {
         $message->validate(Message::OP_DELETE);
         $journalReference = $this->fetch($message->code);
+        $journalReference->checkRevision($message->revision ?? null);
         // Ensure there are no journal entries that use this reference
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
         $used = JournalEntry::where(
@@ -166,8 +167,9 @@ class JournalReferenceController extends Controller
         $inTransaction = false;
         try {
             $journalReference = $this->fetch($message->code);
+            $journalReference->checkRevision($message->revision ?? null);
 
-            $codeChange = $message->toCode !== null
+            $codeChange = isset($message->toCode)
                 && $journalReference->code !== $message->toCode;
             if ($codeChange) {
                 $journalReference->code = $message->toCode;

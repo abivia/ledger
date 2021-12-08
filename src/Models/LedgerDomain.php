@@ -3,8 +3,8 @@
 namespace Abivia\Ledger\Models;
 
 use Abivia\Ledger\Helpers\Revision;
-use Abivia\Ledger\Messages\Ledger\Domain;
-use Abivia\Ledger\Messages\Ledger\EntityRef;
+use Abivia\Ledger\Messages\Domain;
+use Abivia\Ledger\Messages\EntityRef;
 use Abivia\Ledger\Traits\HasRevisions;
 use Abivia\Ledger\Traits\UuidPrimaryKey;
 use Carbon\Carbon;

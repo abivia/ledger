@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Abivia\Ledger\Models;
 
 use Abivia\Ledger\Helpers\Revision;
-use Abivia\Ledger\Messages\Ledger\Entry;
+use Abivia\Ledger\Messages\Entry;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Traits\HasRevisions;
 use Carbon\Carbon;
@@ -31,6 +31,7 @@ use Illuminate\Support\Collection;
  * @property string $language The language this description is written in.
  * @property bool $opening Set if this is the opening balance entry.
  * @property bool $posted Set when the transaction has been posted to the ledgers.
+ * @property string $journalReferenceUuid Optional reference to an associated entity.
  * @property bool $reviewed Set when the transaction has been reviewed.
  * @property Carbon $revision Revision timestamp to detect race condition on update.
  * @property string $subJournalUuid UUID of the sub-journal (if any)
@@ -59,7 +60,8 @@ class JournalEntry extends Model
 
     protected $fillable = [
         'arguments', 'createdBy', 'currency', 'description', 'domainUuid', 'extra',
-        'language', 'opening', 'posted', 'reviewed', 'transDate', 'updatedBy'
+        'journalReferenceUuid', 'language', 'opening', 'posted', 'reviewed',
+        'transDate', 'updatedBy'
     ];
     protected $keyType = 'int';
     protected $primaryKey = 'journalEntryId';
@@ -82,6 +84,9 @@ class JournalEntry extends Model
             if (isset($message->{$property})) {
                 $this->{$property} = $message->{$property};
             }
+        }
+        if (isset($message->reference)) {
+            $this->journalReferenceUuid = $message->reference->journalReferenceUuid;
         }
         if ($message->domain->uuid ?? false) {
             $this->domainUuid = $message->domain->uuid;
@@ -132,6 +137,9 @@ class JournalEntry extends Model
             }
             $response['opening'] = $this->opening;
             $response['posted'] = $this->posted;
+            if ($this->journalReferenceUuid !== null) {
+                $response['reference'] = $this->journalReferenceUuid;
+            }
             $response['reviewed'] = $this->reviewed;
             $response['currency'] = $this->currency;
             $response['details'] = [];

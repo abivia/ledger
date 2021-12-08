@@ -1,13 +1,12 @@
 <?php
 
-namespace Abivia\Ledger\Messages\Ledger;
+namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Models\JournalEntry;
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Models\LedgerCurrency;
 use Abivia\Ledger\Models\LedgerDomain;
-use Abivia\Ledger\Messages\Message;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
@@ -28,7 +27,7 @@ class EntryQuery extends Message {
     public string $amountMax;
 
     protected static array $copyable = [
-        'after', 'limit'
+        'after', 'limit', 'postedOnly'
     ];
     public string $currency;
     public Carbon $date;
@@ -53,7 +52,12 @@ class EntryQuery extends Message {
      * @var int The maximum number of entries to return.
      */
     public int $limit;
+
+    public bool $postedOnly = true;
+
     public Reference $reference;
+
+    public ?bool $reviewed;
 
     /**
      * @inheritDoc
@@ -108,6 +112,12 @@ class EntryQuery extends Message {
         }
 
         $query = JournalEntry::query();
+        if ($this->postedOnly) {
+            $query = $query->where('posted', true);
+        }
+        if (isset($this->reviewed)) {
+            $query = $query->where('reviewed', '=', $this->reviewed);
+        }
         $this->queryAmount($query);
         $this->queryDate($query);
         $this->queryDomain($query);

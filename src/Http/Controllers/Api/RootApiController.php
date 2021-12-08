@@ -4,7 +4,7 @@ namespace Abivia\Ledger\Http\Controllers\Api;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Http\Controllers\LedgerAccount\RootController;
-use Abivia\Ledger\Messages\Ledger\Create;
+use Abivia\Ledger\Messages\Create;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Traits\ControllerResultHandler;
 use Exception;

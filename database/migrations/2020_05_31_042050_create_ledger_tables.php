@@ -71,6 +71,8 @@ class CreateLedgerTables extends Migration
             // Language this description is in.
             $table->string('language', 8);
             $table->longText('extra')->nullable();
+            // Reference to an external entity.
+            $table->uuid('journalReferenceUuid')->nullable();
             $table->string('createdBy')->nullable();
             $table->string('updatedBy')->nullable();
             // The update timestamp (server-side)
@@ -84,6 +86,9 @@ class CreateLedgerTables extends Migration
             $table->uuid('journalReferenceUuid')->primary();
             $table->string('code')->unique();
             $table->longText('extra')->nullable();
+            // The update timestamp (server-side)
+            $table->timestamp('revision', 6)
+                ->useCurrentOnUpdate()->nullable();
             $table->timestamps(6);
         });
 

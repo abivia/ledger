@@ -5,8 +5,8 @@ namespace Abivia\Ledger\Http\Controllers\Api;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Http\Controllers\JournalEntryController;
-use Abivia\Ledger\Messages\Ledger\Entry;
-use Abivia\Ledger\Messages\Ledger\EntryQuery;
+use Abivia\Ledger\Messages\Entry;
+use Abivia\Ledger\Messages\EntryQuery;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Traits\ControllerResultHandler;
 use Exception;

@@ -4,7 +4,7 @@ namespace Abivia\Ledger\Models;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Revision;
-use Abivia\Ledger\Messages\Ledger\Currency;
+use Abivia\Ledger\Messages\Currency;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

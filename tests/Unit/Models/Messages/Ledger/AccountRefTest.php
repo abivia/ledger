@@ -3,7 +3,7 @@
 
 namespace Abivia\Ledger\Tests\Unit\Models\Messages\Ledger;
 
-use Abivia\Ledger\Messages\Ledger\EntityRef;
+use Abivia\Ledger\Messages\EntityRef;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Tests\TestCase;
 

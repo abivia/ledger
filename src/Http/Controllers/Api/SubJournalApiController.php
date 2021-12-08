@@ -5,7 +5,7 @@ namespace Abivia\Ledger\Http\Controllers\Api;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Http\Controllers\SubJournalController;
-use Abivia\Ledger\Messages\Ledger\SubJournal;
+use Abivia\Ledger\Messages\SubJournal;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Traits\ControllerResultHandler;
 use Exception;

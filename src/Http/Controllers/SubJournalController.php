@@ -4,10 +4,10 @@ declare(strict_types=1);
 namespace Abivia\Ledger\Http\Controllers;
 
 use Abivia\Ledger\Exceptions\Breaker;
-use Abivia\Ledger\Messages\Ledger\Name;
+use Abivia\Ledger\Messages\Name;
 use Abivia\Ledger\Models\JournalEntry;
 use Abivia\Ledger\Models\LedgerName;
-use Abivia\Ledger\Messages\Ledger\SubJournal;
+use Abivia\Ledger\Messages\SubJournal;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Models\SubJournal as LedgerSubJournal;
 use Abivia\Ledger\Traits\Audited;

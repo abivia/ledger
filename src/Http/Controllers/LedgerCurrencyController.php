@@ -8,7 +8,7 @@ use Abivia\Ledger\Models\JournalEntry;
 use Abivia\Ledger\Models\LedgerBalance;
 use Abivia\Ledger\Models\LedgerCurrency;
 use Abivia\Ledger\Models\LedgerDomain;
-use Abivia\Ledger\Messages\Ledger\Currency;
+use Abivia\Ledger\Messages\Currency;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Traits\Audited;
 use Exception;

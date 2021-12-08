@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Abivia\Ledger\Messages\Ledger;
+namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Merge;
@@ -74,7 +74,9 @@ class Entry extends Message
     /**
      * @var bool Posted flag. Only set on add/update.
      */
-    public bool $posted = false;
+    public bool $posted = true;
+
+    public Reference $reference;
 
     /**
      * @var bool Reviewed flag. If absent, set to the ledger default.
@@ -82,7 +84,7 @@ class Entry extends Message
     public bool $reviewed = false;
 
     /**
-     * @var string|null Revision signature. Required for update.
+     * @var string Revision signature. Required for update.
      */
     public string $revision;
 
@@ -105,6 +107,9 @@ class Entry extends Message
             }
         }
         if ($opFlags & (self::OP_ADD | self::OP_UPDATE)) {
+            if (isset($data['reference'])) {
+                $entry->reference = Reference::fromRequest($data['reference'], $opFlags);
+            }
             if (isset($data['date'])) {
                 $entry->transDate = new Carbon($data['date']);
             }

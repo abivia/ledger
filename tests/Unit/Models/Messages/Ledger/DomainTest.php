@@ -4,7 +4,7 @@
 namespace Abivia\Ledger\Tests\Unit\Models\Messages\Ledger;
 
 use Abivia\Ledger\Exceptions\Breaker;
-use Abivia\Ledger\Messages\Ledger\Domain;
+use Abivia\Ledger\Messages\Domain;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Tests\TestCase;
 

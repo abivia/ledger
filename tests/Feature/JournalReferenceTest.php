@@ -79,11 +79,12 @@ class JournalReferenceTest extends TestCase
         $response = $this->json(
             'post', 'api/ledger/reference/add', $this->baseRequest
         );
-        $this->isSuccessful($response);
+        $actual = $this->isSuccessful($response);
 
         // Now delete it
         $requestData = [
             'code' => 'Customer 25',
+            'revision' => $actual->reference->revision,
         ];
         $response = $this->json(
             'post', 'api/ledger/reference/delete', $requestData
@@ -136,9 +137,11 @@ class JournalReferenceTest extends TestCase
         $this->createLedger();
 
         // Add a reference
-        $this->json(
+        $response = $this->json(
             'post', 'api/ledger/reference/add', $this->baseRequest
         );
+        $actual = $this->isSuccessful($response);
+
         // Try an update on nonexistent record
         $requestData = [
             'code' => 'nobody-here',
@@ -152,6 +155,7 @@ class JournalReferenceTest extends TestCase
         $requestData = [
             'code' => 'Customer 25',
             'toCode' => 'Customer 25B',
+            'revision' => $actual->reference->revision,
             'extra' => json_encode([
                 'customerId' => 25,
                 'name' => 'Testco (rev B) Inc.'

@@ -5,8 +5,8 @@ namespace Abivia\Ledger\Http\Controllers\Api;
 use Abivia\Ledger\Exceptions\Breaker;
 
 use Abivia\Ledger\Http\Controllers\LedgerAccountController;
-use Abivia\Ledger\Messages\Ledger\Account;
-use Abivia\Ledger\Messages\Ledger\AccountQuery;
+use Abivia\Ledger\Messages\Account;
+use Abivia\Ledger\Messages\AccountQuery;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Traits\ControllerResultHandler;
 use Exception;
