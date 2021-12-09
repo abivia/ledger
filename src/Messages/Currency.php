@@ -15,8 +15,8 @@ class Currency extends Message
     /**
      * @inheritdoc
      */
-    public static function fromRequest(array $data, int $opFlags)
-    : Currency {
+    public static function fromRequest(array $data, int $opFlags) : self
+    {
         $errors = [];
         $result = new static();
 

@@ -62,7 +62,7 @@ class EntryQuery extends Message {
     /**
      * @inheritDoc
      */
-    public static function fromRequest(array $data, int $opFlags): Message
+    public static function fromRequest(array $data, int $opFlags): self
     {
         $query = new self();
         $query->copy($data, $opFlags);
@@ -261,7 +261,7 @@ class EntryQuery extends Message {
     /**
      * @inheritDoc
      */
-    public function validate(int $opFlags): Message
+    public function validate(int $opFlags): self
     {
         // Limit results on API calls
         if ($opFlags & self::F_API) {

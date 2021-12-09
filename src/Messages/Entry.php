@@ -101,6 +101,10 @@ class Entry extends Message
         $entry = new static();
         $entry->copy($data, $opFlags);
         if ($opFlags & self::OP_ADD) {
+            if (isset($data['domain'])) {
+                $entry->domain = new EntityRef();
+                $entry->domain->code = $data['domain'];
+            }
             if (isset($data['journal'])) {
                 $entry->journal = new EntityRef();
                 $entry->journal->code = $data['journal'];

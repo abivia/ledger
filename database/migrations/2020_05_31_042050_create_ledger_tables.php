@@ -161,6 +161,20 @@ class CreateLedgerTables extends Migration
             $table->unique(['ownerUuid', 'language']);
         });
 
+        // Cached financial reports
+        Schema::create('ledger_reports', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('name')->index();
+            $table->foreignUuid('domainUuid');
+            $table->string('currency', LedgerCurrency::CODE_SIZE);
+            $table->date('fromDate')->nullable();
+            $table->date('toDate')->index();
+            // The last journal entry when the report was generated.
+            $table->bigInteger('journalEntryId');
+            $table->longText('reportData');
+
+        });
+
         Schema::create('sub_journals', function (Blueprint $table) {
             $table->uuid('subJournalUuid')->primary();
             $table->string('code', LedgerAccount::CODE_SIZE);

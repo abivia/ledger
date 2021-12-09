@@ -39,7 +39,7 @@ class Account extends Message
     /**
      * @inheritdoc
      */
-    public static function fromRequest(array $data, int $opFlags): Account
+    public static function fromRequest(array $data, int $opFlags): self
     {
         $errors = [];
         $account = new static();
