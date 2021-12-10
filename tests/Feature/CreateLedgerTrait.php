@@ -5,6 +5,15 @@ declare(strict_types=1);
 
 namespace Abivia\Ledger\Tests\Feature;
 
+use Abivia\Ledger\Exceptions\Breaker;
+use Abivia\Ledger\Http\Controllers\JournalEntryController;
+use Abivia\Ledger\Messages\Detail;
+use Abivia\Ledger\Messages\EntityRef;
+use Abivia\Ledger\Messages\Entry;
+use Abivia\Ledger\Models\LedgerAccount;
+use Carbon\Carbon;
+use Exception;
+
 trait CreateLedgerTrait {
     protected array $createRequest = [
         'language' => 'en-CA',
@@ -53,6 +62,52 @@ trait CreateLedgerTrait {
         'extra' => 'arbitrary JSON',
         'template' => 'sections'
     ];
+
+    /**
+     * @throws Exception
+     */
+    protected function addRandomTransactions(int $count) {
+        // Get a list of accounts in the ledger
+        $codes = [];
+        foreach (LedgerAccount::all() as $account) {
+            $codes[] = $account->code;
+        }
+        // Get rid of the root
+        array_shift($codes);
+        $forDate = new Carbon('2001-01-02');
+        $transId = 0;
+        $shuffled = [];
+        shuffle($shuffled);
+        $controller = new JournalEntryController();
+        try {
+            while ($transId++ < $count) {
+                if (count($shuffled) < 2) {
+                    $shuffled = $codes;
+                    shuffle($shuffled);
+                }
+                $entry = new Entry();
+                $entry->currency = 'CAD';
+                $entry->description = "Random entry $transId";
+                $entry->transDate = clone $forDate;
+                $entry->transDate->addDays(random_int(0, $count));
+                $amount = (float)random_int(-99999, 99999);
+                $entry->details = [
+                    new Detail(
+                        new EntityRef(array_pop($shuffled)),
+                        (string)($amount / 100)
+                    ),
+                    new Detail(
+                        new EntityRef(array_pop($shuffled)),
+                        (string)(-$amount / 100)
+                    ),
+                ];
+                $controller->add($entry);
+            }
+        } catch (Breaker $exception) {
+            echo $exception->getMessage() . "\n"
+                . implode("\n", $exception->getErrors());
+        }
+    }
 
     protected function createLedger(
         array $without = [],

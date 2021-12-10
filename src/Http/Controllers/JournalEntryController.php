@@ -56,7 +56,7 @@ class JournalEntryController extends Controller
             $journalEntry->save();
             $journalEntry->refresh();
             // Create the detail records
-            $this->addDetails($journalEntry->journalEntryId, $message);
+            $this->addDetails($journalEntry, $message);
             DB::commit();
             $inTransaction = false;
             $this->auditLog($message);
@@ -73,45 +73,47 @@ class JournalEntryController extends Controller
     /**
      * Write the journal detail records and update balances.
      *
-     * @param int $journalEntryId
+     * @param JournalEntry $journalEntry
      * @param Entry $message
      * @return void
      */
-    private function addDetails(int $journalEntryId, Entry $message)
+    private function addDetails(JournalEntry $journalEntry, Entry $message)
     {
         foreach ($message->details as $detail) {
             $journalDetail = new JournalDetail();
-            $journalDetail->journalEntryId = $journalEntryId;
+            $journalDetail->journalEntryId = $journalEntry->journalEntryId;
             $journalDetail->ledgerUuid = $detail->account->uuid;
             $journalDetail->amount = $detail->amount;
             if (isset($detail->reference)) {
                 $journalDetail->journalReferenceUuid = $detail->reference->journalReferenceUuid;
             }
             $journalDetail->save();
-            // Create/adjust the ledger balances
-            /** @noinspection PhpDynamicAsStaticMethodCallInspection */
-            $ledgerBalance = LedgerBalance::where([
-                    ['ledgerUuid', '=', $journalDetail->ledgerUuid],
-                    ['domainUuid', '=', $this->ledgerDomain->domainUuid],
-                    ['currency', '=', $this->ledgerCurrency->code],
-                ])
-                ->first();
-
-            if ($ledgerBalance === null) {
+            if ($journalEntry->posted) {
+                // Create/adjust the ledger balances
                 /** @noinspection PhpDynamicAsStaticMethodCallInspection */
-                LedgerBalance::create([
-                    'ledgerUuid' => $journalDetail->ledgerUuid,
-                    'domainUuid' => $this->ledgerDomain->domainUuid,
-                    'currency' => $this->ledgerCurrency->code,
-                    'balance' => $journalDetail->amount,
-                ]);
-            } else {
-                $ledgerBalance->balance = bcadd(
-                    $ledgerBalance->balance,
-                    $journalDetail->amount,
-                    $this->ledgerCurrency->decimals
-                );
-                $ledgerBalance->save();
+                $ledgerBalance = LedgerBalance::where([
+                        ['ledgerUuid', '=', $journalDetail->ledgerUuid],
+                        ['domainUuid', '=', $this->ledgerDomain->domainUuid],
+                        ['currency', '=', $this->ledgerCurrency->code],
+                    ])
+                    ->first();
+
+                if ($ledgerBalance === null) {
+                    /** @noinspection PhpDynamicAsStaticMethodCallInspection */
+                    LedgerBalance::create([
+                        'ledgerUuid' => $journalDetail->ledgerUuid,
+                        'domainUuid' => $this->ledgerDomain->domainUuid,
+                        'currency' => $this->ledgerCurrency->code,
+                        'balance' => $journalDetail->amount,
+                    ]);
+                } else {
+                    $ledgerBalance->balance = bcadd(
+                        $ledgerBalance->balance,
+                        $journalDetail->amount,
+                        $this->ledgerCurrency->decimals
+                    );
+                    $ledgerBalance->save();
+                }
             }
         }
     }
@@ -260,6 +262,7 @@ class JournalEntryController extends Controller
      */
     public function run(Entry $message, int $opFlag): ?JournalEntry
     {
+        // TODO: add POST operation!
         switch ($opFlag & Message::ALL_OPS) {
             case Message::OP_ADD:
                 return $this->add($message);
@@ -319,7 +322,7 @@ class JournalEntryController extends Controller
     {
         // Remove existing details, undoing balance changes
         $this->deleteDetails($journalEntry);
-        $this->addDetails($journalEntry->journalEntryId, $message);
+        $this->addDetails($journalEntry, $message);
     }
 
     /**

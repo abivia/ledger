@@ -6,6 +6,7 @@ use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Revision;
 use Abivia\Ledger\Messages\Currency;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,6 +20,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon $revision Revision timestamp to detect race condition on update.
  * @property Carbon $updated_at When the record was updated.
  * @mixin Builder
+ * @mixin \Illuminate\Database\Query\Builder
  */
 class LedgerCurrency extends Model
 {
@@ -44,6 +46,7 @@ class LedgerCurrency extends Model
     /**
      * @param ?string $revision
      * @throws Breaker
+     * @throws Exception
      */
     public function checkRevision(?string $revision)
     {
@@ -67,8 +70,34 @@ class LedgerCurrency extends Model
     }
 
     /**
+     * Look for a currency. If not found throw a Breaker.
+     * @param string $currency Currency code.
+     * @param int|null $errorCode Breaker code (default to bad request).
+     * @return LedgerCurrency
+     * @throws Breaker
+     */
+    public static function findOrBreaker(
+        string $currency, int $errorCode = Breaker::BAD_REQUEST
+    ): LedgerCurrency
+    {
+        /** @noinspection PhpDynamicAsStaticMethodCallInspection */
+        $ledgerCurrency = LedgerCurrency::find($currency);
+        if ($ledgerCurrency === null) {
+            throw Breaker::withCode(
+                $errorCode,
+                [__('Currency :code not found.', ['code' => $currency])]
+            );
+        }
+
+        return $ledgerCurrency;
+    }
+
+    /**
+     * Convert to a response array.
+     *
      * @param array $options
      * @return array
+     * @throws Exception
      */
     public function toResponse(array $options = []): array
     {

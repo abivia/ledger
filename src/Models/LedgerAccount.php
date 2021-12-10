@@ -35,6 +35,7 @@ use stdClass;
  * @property Carbon $revision Revision timestamp to detect race condition on update.
  * @property Carbon $updated_at When the record was updated.
  * @mixin Builder
+ * @mixin \Illuminate\Database\Query\Builder
  */
 class LedgerAccount extends Model
 {

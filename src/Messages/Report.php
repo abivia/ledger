@@ -75,6 +75,7 @@ class Report extends Message
             $this->domain = new EntityRef();
             $this->domain->code = $rules->domain->default;
         }
+        $this->domain->validate(0);
         if (!isset($this->toDate)) {
             throw Breaker::withCode(
                 Breaker::BAD_REQUEST,

@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $journalReferenceUuid Optional reference to an associated entity.
  * @property string $ledgerUuid The ledger account this applies to.
  * @mixin Builder
+ * @mixin \Illuminate\Database\Query\Builder
  */
 class JournalDetail extends Model
 {

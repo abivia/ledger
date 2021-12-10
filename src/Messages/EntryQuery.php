@@ -136,14 +136,7 @@ class EntryQuery extends Message {
      */
     private function queryAmount(Builder $query)
     {
-        /** @noinspection PhpDynamicAsStaticMethodCallInspection */
-        $ledgerCurrency = LedgerCurrency::find($this->currency);
-        if ($ledgerCurrency === null) {
-            throw Breaker::withCode(
-                Breaker::BAD_REQUEST,
-                [__('Currency :code not found.', ['code' => $this->currency])]
-            );
-        }
+        $ledgerCurrency = LedgerCurrency::findOrBreaker($this->currency);
         $query->where('currency', $this->currency);
         if (!isset($this->amountMax) && !isset($this->amount)) {
             return;

@@ -8,15 +8,29 @@ use Abivia\Ledger\Models\LedgerReport;
 
 class ReportController extends Controller
 {
+    private function cache(Report $message, $reportData)
+    {
+        LedgerReport::create(
+            [
+                'currency' => $message->currency,
+                'domainUuid' =>$message->domain->uuid,
+                'fromDate' => $message->fromDate,
+                'journalEntryId' => $reportData->journalEntryId,
+                'name' => $message->name,
+                'reportData' => serialize($reportData),
+                'toDate' => $message->toDate,
+            ]
+        );
+    }
+
     public function generate(Report $message)
     {
         $message->validate(0);
-        $report = $this->getCached($message);
-        if ($report === null) {
-            $method = 'report' . ucfirst($message->name);
-            $report = $this->$method($message);
-            $this->cache($message, $report);
-        }
+        $className = 'Abivia\\Ledger\\Reports\\' . ucfirst($message->name) . 'Report';
+        $reporter = new $className();
+        $reportData = $this->getCached($message) ?? $reporter->collect($message);
+        $this->cache($message, $reportData);
+        $report = $reporter->prepare($message, $reportData);
 
         return $report;
     }
