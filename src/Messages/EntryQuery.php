@@ -27,7 +27,7 @@ class EntryQuery extends Message {
     public string $amountMax;
 
     protected static array $copyable = [
-        'after', 'limit', 'postedOnly'
+        'after', 'limit',
     ];
     public string $currency;
     public Carbon $date;
@@ -53,8 +53,6 @@ class EntryQuery extends Message {
      */
     public int $limit;
 
-    public bool $postedOnly = true;
-
     public Reference $reference;
 
     public ?bool $reviewed;
@@ -62,7 +60,7 @@ class EntryQuery extends Message {
     /**
      * @inheritDoc
      */
-    public static function fromRequest(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags): self
     {
         $query = new self();
         $query->copy($data, $opFlags);
@@ -112,9 +110,6 @@ class EntryQuery extends Message {
         }
 
         $query = JournalEntry::query();
-        if ($this->postedOnly) {
-            $query = $query->where('posted', true);
-        }
         if (isset($this->reviewed)) {
             $query = $query->where('reviewed', '=', $this->reviewed);
         }

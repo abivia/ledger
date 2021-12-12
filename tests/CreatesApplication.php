@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests;
+namespace Abivia\Tests;
 
 use Illuminate\Contracts\Console\Kernel;
 

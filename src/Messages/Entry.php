@@ -25,7 +25,6 @@ class Entry extends Message
         ['id', self::OP_DELETE | self::OP_GET | self::OP_UPDATE],
         //['journal', self::OP_ADD],
         ['language', self::OP_UPDATE],
-        ['posted', self::OP_ADD | self::OP_UPDATE],
         ['reviewed', self::OP_ADD | self::OP_UPDATE],
         ['revision', self::OP_DELETE | self::OP_UPDATE],
         //[['date', 'transDate'], self::OP_ADD | self::OP_UPDATE],
@@ -71,11 +70,6 @@ class Entry extends Message
      */
     public string $language;
 
-    /**
-     * @var bool Posted flag. Only set on add/update.
-     */
-    public bool $posted = true;
-
     public Reference $reference;
 
     /**
@@ -96,7 +90,7 @@ class Entry extends Message
     /**
      * @inheritdoc
      */
-    public static function fromRequest(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags): self
     {
         $entry = new static();
         $entry->copy($data, $opFlags);
@@ -112,14 +106,14 @@ class Entry extends Message
         }
         if ($opFlags & (self::OP_ADD | self::OP_UPDATE)) {
             if (isset($data['reference'])) {
-                $entry->reference = Reference::fromRequest($data['reference'], $opFlags);
+                $entry->reference = Reference::fromArray($data['reference'], $opFlags);
             }
             if (isset($data['date'])) {
                 $entry->transDate = new Carbon($data['date']);
             }
             $entry->details = [];
             foreach ($data['details'] ?? [] as $detail) {
-                $entry->details[] = Detail::fromRequest($detail, $opFlags);
+                $entry->details[] = Detail::fromArray($detail, $opFlags);
             }
         }
         if ($opFlags & self::F_VALIDATE) {

@@ -27,6 +27,10 @@ class JournalReference extends Model
 {
     use HasFactory, HasRevisions, UuidPrimaryKey;
 
+    protected $casts = [
+        'revision' => 'datetime',
+    ];
+    protected $dateFormat = 'Y-m-d H:i:s.u';
     protected $fillable = ['code', 'extra'];
     public $incrementing = false;
     protected $keyType = 'string';

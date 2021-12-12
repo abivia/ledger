@@ -41,10 +41,11 @@ class JournalEntryQueryReferenceTest extends TestCase
         // Get a list of accounts in the ledger
         $codes = [];
         foreach (LedgerAccount::all() as $account) {
-            $codes[] = $account->code;
+            // Get rid of the root
+            if ($account->code != '') {
+                $codes[] = $account->code;
+            }
         }
-        // Get rid of the root
-        array_shift($codes);
 
         // Create some random references
         $refs = self::TRANS_COUNT / 2;

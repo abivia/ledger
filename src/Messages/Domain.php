@@ -30,7 +30,7 @@ class Domain extends Message
     /**
      * @inheritdoc
      */
-    public static function fromRequest(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags): self
     {
         $domain = new static();
         $domain->copy($data, $opFlags);

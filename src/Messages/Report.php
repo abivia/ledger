@@ -32,7 +32,7 @@ class Report extends Message
     /**
      * @inheritDoc
      */
-    public static function fromRequest(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags): self
     {
         $report = new static();
         $report->copy($data, $opFlags);
@@ -82,6 +82,14 @@ class Report extends Message
                 __('Report to date (toDate) is required.')
             );
         }
+        if (isset($this->options['language'])) {
+            if (!is_array($this->options['language'])) {
+                $this->options['language'] = [$this->options['language']];
+            }
+        } else {
+            $this->options['language'] = [];
+        }
+        $this->options['language'][] = LedgerAccount::rules()->language->default;
 
         return $this;
     }

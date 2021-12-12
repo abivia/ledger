@@ -31,12 +31,12 @@ class AccountQuery extends Message {
     /**
      * @inheritDoc
      */
-    public static function fromRequest(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags): self
     {
         $query = new AccountQuery();
         $query->copy($data, $opFlags);
         if (isset($data['after'])) {
-            $query->after = EntityRef::fromRequest($data['after'], $opFlags);
+            $query->after = EntityRef::fromArray($data['after'], $opFlags);
         }
 
         return $query;

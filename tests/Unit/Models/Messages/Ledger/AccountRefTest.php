@@ -17,7 +17,7 @@ class AccountRefTest extends TestCase
 
     public function testFromRequest()
     {
-        $parentRef = EntityRef::fromRequest(
+        $parentRef = EntityRef::fromArray(
             $this->base, Message::OP_ADD
         );
         $this->assertEquals('1010', $parentRef->code);

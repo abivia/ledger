@@ -68,7 +68,7 @@ class LedgerAccount extends Model
         'closed' => 'boolean',
         'credit' => 'boolean',
         'debit' => 'boolean',
-        'revision' => 'timestamp',
+        'revision' => 'datetime',
     ];
 
     /**

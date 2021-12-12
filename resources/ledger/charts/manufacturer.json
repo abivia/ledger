@@ -9,7 +9,8 @@
                 }
             ],
             "code": 1000,
-            "category": true
+            "category": true,
+            "debit": true
         },
         {
             "names": [
@@ -36,7 +37,8 @@
             "parent": {
                 "code": 1100
             },
-            "category": true
+            "category": true,
+            "debit": true
         },
         {
             "names": [
@@ -145,7 +147,8 @@
             "parent": {
                 "code": 1000
             },
-            "category": true
+            "category": true,
+            "debit": true
         },
         {
             "names": [
@@ -264,7 +267,8 @@
             "parent": {
                 "code": 1000
             },
-            "category": true
+            "category": true,
+            "debit": true
         },
         {
             "names": [
@@ -290,7 +294,8 @@
             "parent": {
                 "code": 1000
             },
-            "category": true
+            "category": true,
+            "debit": true
         },
         {
             "names": [
@@ -445,7 +450,8 @@
             "parent": {
                 "code": 2000
             },
-            "category": true
+            "category": true,
+            "credit": true
         },
         {
             "names": [
@@ -484,7 +490,8 @@
             "parent": {
                 "code": 2000
             },
-            "category": true
+            "category": true,
+            "credit": true
         },
         {
             "names": [
@@ -601,7 +608,8 @@
             "parent": {
                 "code": 2000
             },
-            "category": true
+            "category": true,
+            "credit": true
         },
         {
             "names": [
@@ -637,7 +645,8 @@
                 }
             ],
             "code": 3000,
-            "category": true
+            "category": true,
+            "credit": true
         },
         {
             "names": [
@@ -673,7 +682,8 @@
                 }
             ],
             "code": 4000,
-            "category": true
+            "category": true,
+            "credit": true
         },
         {
             "names": [
@@ -686,7 +696,8 @@
             "parent": {
                 "code": 4000
             },
-            "category": true
+            "category": true,
+            "credit": true
         },
         {
             "names": [
@@ -725,7 +736,8 @@
             "parent": {
                 "code": 4000
             },
-            "category": true
+            "category": true,
+            "credit": true
         },
         {
             "names": [
@@ -787,7 +799,8 @@
                 }
             ],
             "code": 5000,
-            "category": true
+            "category": true,
+            "debit": true
         },
         {
             "names": [
@@ -914,7 +927,8 @@
                 }
             ],
             "code": 6000,
-            "category": true
+            "category": true,
+            "debit": true
         },
         {
             "names": [
@@ -940,7 +954,8 @@
             "parent": {
                 "code": 6000
             },
-            "category": true
+            "category": true,
+            "debit": true
         },
         {
             "names": [
@@ -1018,7 +1033,8 @@
             "parent": {
                 "code": 6000
             },
-            "category": true
+            "category": true,
+            "debit": true
         },
         {
             "names": [
@@ -1655,7 +1671,8 @@
             "parent": {
                 "code": 6000
             },
-            "category": true
+            "category": true,
+            "debit": true
         },
         {
             "names": [
@@ -1720,7 +1737,8 @@
             "parent": {
                 "code": 6000
             },
-            "category": true
+            "category": true,
+            "debit": true
         },
         {
             "names": [

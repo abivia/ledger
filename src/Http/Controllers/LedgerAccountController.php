@@ -336,23 +336,15 @@ class LedgerAccountController extends Controller
             $ledgerAccount->debit = $message->debit;
             $ledgerAccount->credit = !$ledgerAccount->debit;
         }
-        if ($ledgerAccount->credit && $ledgerAccount->debit) {
+        if ($ledgerAccount->debit === $ledgerAccount->credit) {
             throw Breaker::withCode(
                 Breaker::RULE_VIOLATION,
                 [__(
-                    "Account can not have both debit and credit flags set."
+                    "Accounts must be either debit or credit accounts."
                 )]
             );
         }
         if (!$ledgerAccount->category) {
-            if ($ledgerAccount->debit === $ledgerAccount->credit) {
-                throw Breaker::withCode(
-                    Breaker::RULE_VIOLATION,
-                    [__(
-                        "Non-category accounts must be either debit or credit accounts."
-                    )]
-                );
-            }
             // Must ensure that no sub-accounts are category accounts
             $subAccounts = LedgerAccount::where('ledgerUuid', $ledgerAccount->ledgerUuid)
                 ->get();

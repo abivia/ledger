@@ -34,6 +34,7 @@ class LedgerCurrency extends Model
      */
     protected $casts = [
         'decimals' => 'int',
+        'revision' => 'datetime',
     ];
 
     protected $dateFormat = 'Y-m-d H:i:s.u';

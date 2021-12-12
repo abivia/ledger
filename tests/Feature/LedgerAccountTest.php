@@ -22,7 +22,7 @@ class LedgerAccountTest extends TestCase
         self::$expectContent = 'account';
     }
 
-    protected function addAccount(string $code, string $parentCode)
+    protected function addAccount(string $code, string $parentCode, bool $debit)
     {
         // Add an account
         $requestData = [
@@ -37,6 +37,7 @@ class LedgerAccountTest extends TestCase
                 ]
             ]
         ];
+        $requestData[$debit ? 'debit' : 'credit'] = true;
         $response = $this->json(
             'post', 'api/ledger/account/add', $requestData
         );
@@ -223,7 +224,8 @@ class LedgerAccountTest extends TestCase
                     'name' => 'Cash Stash',
                     'language' => 'en-YO',
                 ]
-            ]
+            ],
+            "debit" => true,
         ];
         $response = $this->json(
             'post', 'api/ledger/account/add', $requestData
@@ -308,7 +310,7 @@ class LedgerAccountTest extends TestCase
     {
         // First we need a ledger and an account
         $this->createLedger();
-        $this->addAccount('1010', '1000');
+        $this->addAccount('1010', '1000', true);
 
         // Now delete the account
         $requestData = [
@@ -320,9 +322,6 @@ class LedgerAccountTest extends TestCase
         $this->isSuccessful($response, 'success');
 
         // Confirm that a fetch fails
-        $requestData = [
-            'code' => '1010',
-        ];
         $response = $this->json(
             'post', 'api/ledger/account/get', $requestData
         );
@@ -335,9 +334,9 @@ class LedgerAccountTest extends TestCase
         $this->createLedger();
 
         // Add an account and a few sub-accounts
-        $this->addAccount('1010', '1000');
-        $this->addAccount('1011', '1010');
-        $this->addAccount('1012', '1010');
+        $this->addAccount('1010', '1000', true);
+        $this->addAccount('1011', '1010', true);
+        $this->addAccount('1012', '1010', true);
 
         // Now delete the parent account
         $requestData = [
@@ -353,7 +352,7 @@ class LedgerAccountTest extends TestCase
     {
         // First we need a ledger and an account
         $this->createLedger();
-        $this->addAccount('1010', '1000');
+        $this->addAccount('1010', '1000', true);
 
         // Now fetch the account
         $requestData = [
@@ -439,7 +438,7 @@ class LedgerAccountTest extends TestCase
         $this->createLedger();
 
         // Add an account
-        $accountInfo = $this->addAccount('1010', '1000');
+        $accountInfo = $this->addAccount('1010', '1000', true);
 
         // Try an update with bogus data
         $requestData = [

@@ -39,7 +39,7 @@ class Account extends Message
     /**
      * @inheritdoc
      */
-    public static function fromRequest(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags): self
     {
         $errors = [];
         $account = new static();
@@ -58,7 +58,7 @@ class Account extends Message
             }
             if (isset($data['parent'])) {
                 try {
-                    $account->parent = EntityRef::fromRequest($data['parent'], $opFlags);
+                    $account->parent = EntityRef::fromArray($data['parent'], $opFlags);
                 } catch (Breaker $exception) {
                     Merge::arrays($errors, $exception->getErrors());
                 }
@@ -94,6 +94,12 @@ class Account extends Message
             if (isset($this->uuid)) {
                 $errors[] = __("UUID not valid on account create.");
             }
+            if (($this->credit ?? false) == ($this->debit ?? false)) {
+                $errors[] = __(
+                    "account :code must be either debit or credit",
+                    ['code' => $this->code]
+                );
+            }
         } else {
             if (!isset($this->uuid) && !isset($this->code)) {
                 $errors[] = __("Request requires either code or uuid.");
@@ -110,6 +116,12 @@ class Account extends Message
                     }
                 }
             }
+            if (($this->credit ?? false) && ($this->debit ?? false)) {
+                $errors[] = __(
+                    "account :code can't be both debit and credit",
+                    ['code' => $this->code]
+                );
+            }
         }
         if ($opFlags & (self::OP_ADD | self::OP_UPDATE)) {
             try {
@@ -125,9 +137,6 @@ class Account extends Message
                 } catch (Breaker $exception) {
                     Merge::arrays($errors, $exception->getErrors());
                 }
-            }
-            if (($this->credit ?? false) && ($this->debit ?? false)) {
-                $errors[] = "account cannot be both debit and credit";
             }
         }
         if (

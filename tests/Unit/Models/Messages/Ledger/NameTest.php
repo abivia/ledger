@@ -14,7 +14,7 @@ class NameTest extends TestCase
 
     public function testFromRequestAdd()
     {
-        $name = Name::fromRequest(
+        $name = Name::fromArray(
             [
                 'name' => 'In English', 'language' => 'en',
             ],
@@ -27,7 +27,7 @@ class NameTest extends TestCase
     public function testFromRequestAdd_bad1()
     {
         $this->expectException(Breaker::class);
-        Name::fromRequest(
+        Name::fromArray(
             [
                 'language' => 'en',
             ],
@@ -37,7 +37,7 @@ class NameTest extends TestCase
 
     public function testFromRequestAdd_default_language()
     {
-        $name = Name::fromRequest(
+        $name = Name::fromArray(
             [
                 'name' => 'In English',
             ],

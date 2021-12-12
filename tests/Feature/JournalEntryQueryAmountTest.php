@@ -53,10 +53,11 @@ class JournalEntryQueryAmountTest extends TestCase
         // Get a list of accounts in the ledger
         $codes = [];
         foreach (LedgerAccount::all() as $account) {
-            $codes[] = $account->code;
+            // Get rid of the root
+            if ($account->code != '') {
+                $codes[] = $account->code;
+            }
         }
-        // Get rid of the root
-        array_shift($codes);
 
         $forDate = new Carbon('2001-01-02');
         $transId = 0;

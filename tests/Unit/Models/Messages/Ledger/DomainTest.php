@@ -22,7 +22,7 @@ class DomainTest extends TestCase
 
     public function testFromRequestAdd()
     {
-        $domain = Domain::fromRequest(
+        $domain = Domain::fromArray(
             $this->base, Message::OP_ADD | Message::F_VALIDATE
         );
         $this->assertEquals('GL', $domain->code);
@@ -35,7 +35,7 @@ class DomainTest extends TestCase
         $base = $this->base;
         unset($base['names']);
         $this->expectException(Breaker::class);
-        Domain::fromRequest(
+        Domain::fromArray(
             $base, Message::OP_ADD | Message::F_VALIDATE
         );
     }
@@ -45,7 +45,7 @@ class DomainTest extends TestCase
         $base = $this->base;
         unset($base['names']);
         $base['revision'] = 'revision-code';
-        $domain = Domain::fromRequest(
+        $domain = Domain::fromArray(
             $base, Message::OP_DELETE | Message::F_VALIDATE
         );
         $this->assertEquals('GL', $domain->code);
@@ -56,7 +56,7 @@ class DomainTest extends TestCase
     {
         $base = $this->base;
         unset($base['names']);
-        $domain = Domain::fromRequest(
+        $domain = Domain::fromArray(
             $base, Message::OP_DELETE | Message::F_VALIDATE
         );
         $this->assertEquals('GL', $domain->code);
@@ -65,7 +65,7 @@ class DomainTest extends TestCase
 
     public function testFromRequestGet()
     {
-        $domain = Domain::fromRequest(
+        $domain = Domain::fromArray(
             $this->base, Message::OP_ADD | Message::F_VALIDATE
         );
         $this->assertEquals('GL', $domain->code);
@@ -75,7 +75,7 @@ class DomainTest extends TestCase
 
     public function testFromRequestUpdate()
     {
-        $domain = Domain::fromRequest(
+        $domain = Domain::fromArray(
             $this->base, Message::OP_ADD | Message::F_VALIDATE
         );
         $this->assertEquals('GL', $domain->code);

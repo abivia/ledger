@@ -28,7 +28,7 @@ class RootApiController
                 // The Ledger must be empty
                 RootController::checkNoLedgerExists();
 
-                $message = Create::fromRequest($request->all(), Message::OP_ADD | Message::OP_CREATE);
+                $message = Create::fromArray($request->all(), Message::OP_ADD | Message::OP_CREATE);
                 $ledgerAccount = $controller->create($message);
                 //$response['whatever'] = $ledgerAccount->toResponse();
 

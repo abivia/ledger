@@ -356,6 +356,7 @@ class JournalEntryTest extends TestCase
         // Check that we really did do everything that was supposed to be done.
         $journalEntry = JournalEntry::find($addActual->entry->id);
         $this->assertNotNull($journalEntry);
+        $bob = $journalEntry->transDate;
         $this->assertTrue(
             $journalEntry->transDate->equalTo(new Carbon($requestData['date']))
         );

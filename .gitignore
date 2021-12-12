@@ -16,3 +16,4 @@ yarn-error.log
 /.vscode
 /tests/testbase.sqlite-journal
 /local/
+/phpunit.mysql.xml

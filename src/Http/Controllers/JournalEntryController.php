@@ -88,32 +88,30 @@ class JournalEntryController extends Controller
                 $journalDetail->journalReferenceUuid = $detail->reference->journalReferenceUuid;
             }
             $journalDetail->save();
-            if ($journalEntry->posted) {
-                // Create/adjust the ledger balances
-                /** @noinspection PhpDynamicAsStaticMethodCallInspection */
-                $ledgerBalance = LedgerBalance::where([
-                        ['ledgerUuid', '=', $journalDetail->ledgerUuid],
-                        ['domainUuid', '=', $this->ledgerDomain->domainUuid],
-                        ['currency', '=', $this->ledgerCurrency->code],
-                    ])
-                    ->first();
+            // Create/adjust the ledger balances
+            /** @noinspection PhpDynamicAsStaticMethodCallInspection */
+            $ledgerBalance = LedgerBalance::where([
+                    ['ledgerUuid', '=', $journalDetail->ledgerUuid],
+                    ['domainUuid', '=', $this->ledgerDomain->domainUuid],
+                    ['currency', '=', $this->ledgerCurrency->code],
+                ])
+                ->first();
 
-                if ($ledgerBalance === null) {
-                    /** @noinspection PhpDynamicAsStaticMethodCallInspection */
-                    LedgerBalance::create([
-                        'ledgerUuid' => $journalDetail->ledgerUuid,
-                        'domainUuid' => $this->ledgerDomain->domainUuid,
-                        'currency' => $this->ledgerCurrency->code,
-                        'balance' => $journalDetail->amount,
-                    ]);
-                } else {
-                    $ledgerBalance->balance = bcadd(
-                        $ledgerBalance->balance,
-                        $journalDetail->amount,
-                        $this->ledgerCurrency->decimals
-                    );
-                    $ledgerBalance->save();
-                }
+            if ($ledgerBalance === null) {
+                /** @noinspection PhpDynamicAsStaticMethodCallInspection */
+                LedgerBalance::create([
+                    'ledgerUuid' => $journalDetail->ledgerUuid,
+                    'domainUuid' => $this->ledgerDomain->domainUuid,
+                    'currency' => $this->ledgerCurrency->code,
+                    'balance' => $journalDetail->amount,
+                ]);
+            } else {
+                $ledgerBalance->balance = bcadd(
+                    $ledgerBalance->balance,
+                    $journalDetail->amount,
+                    $this->ledgerCurrency->decimals
+                );
+                $ledgerBalance->save();
             }
         }
     }

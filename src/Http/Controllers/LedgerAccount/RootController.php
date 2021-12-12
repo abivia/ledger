@@ -285,6 +285,9 @@ class RootController extends LedgerAccountController
              * @var Balance[] $balances
              */
             foreach ($byCurrency as $currencyCode => $balances) {
+                if (count($balances) === 0) {
+                    continue;
+                }
                 // The opening balance is special as it can have any number of debits and credits.
                 /** @noinspection PhpDynamicAsStaticMethodCallInspection */
                 $journalEntry = JournalEntry::create([
@@ -294,7 +297,6 @@ class RootController extends LedgerAccountController
                     'arguments'=> [],
                     'language'=> $language,
                     'opening'=> true,
-                    'posted'=> true,
                     'reviewed'=> true,
                     'transDate'=> $transDate,
                 ]);
@@ -463,7 +465,7 @@ class RootController extends LedgerAccountController
         }
         foreach ($template['accounts'] as $account) {
             try {
-                $message = Account::fromRequest(
+                $message = Account::fromArray(
                     $account, Message::OP_ADD | Message::F_VALIDATE
                 );
             } catch (Breaker $exception) {

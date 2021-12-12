@@ -71,7 +71,7 @@ class Detail extends Message
     /**
      * @inheritdoc
      */
-    public static function fromRequest(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags): self
     {
         $detail = new static();
         $detail->copy($data, $opFlags);
@@ -84,7 +84,7 @@ class Detail extends Message
             $detail->account->code = $data['accountUuid'];
         }
         if (isset($data['reference'])) {
-            $detail->reference = Reference::fromRequest($data['reference'], $opFlags);
+            $detail->reference = Reference::fromArray($data['reference'], $opFlags);
         }
         if ($opFlags & self::F_VALIDATE) {
             $detail->validate($opFlags);

@@ -17,15 +17,16 @@ class CreateLedgerTables extends Migration
      */
     public function down()
     {
-        Schema::drop('ledger_account_names');
-        Schema::drop('ledger_domains');
-        Schema::drop('ledger_currencies');
-        Schema::drop('ledger_balances');
-        Schema::drop('ledger_account_names');
-        Schema::drop('ledger_accounts');
+        Schema::drop('journal_details');
         Schema::drop('journal_entries');
         Schema::drop('journal_references');
-        Schema::drop('journal_details');
+        Schema::drop('ledger_accounts');
+        Schema::drop('ledger_balances');
+        Schema::drop('ledger_currencies');
+        Schema::drop('ledger_domains');
+        Schema::drop('ledger_names');
+        Schema::drop('ledger_reports');
+        Schema::drop('sub_journals');
     }
 
     /**
@@ -62,7 +63,6 @@ class CreateLedgerTables extends Migration
             $table->uuid('subJournalUuid')->nullable();
             $table->string('currency', LedgerCurrency::CODE_SIZE);
             $table->tinyInteger('opening');
-            $table->tinyInteger('posted');
             $table->tinyInteger('reviewed');
             // Description
             $table->string('description');

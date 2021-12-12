@@ -64,7 +64,7 @@ class Create extends Message
         $this->accounts = [];
         foreach ($data['accounts'] ?? [] as $index => $accountData) {
             try {
-                $message = Account::fromRequest(
+                $message = Account::fromArray(
                     $accountData, self::OP_ADD| self::OP_CREATE
                 );
                 $this->accounts[$message->code] = $message;
@@ -86,7 +86,7 @@ class Create extends Message
         $this->balances = [];
         foreach ($data['balances'] ?? [] as $index => $balanceData) {
             try {
-                $message = Balance::fromRequest(
+                $message = Balance::fromArray(
                     $balanceData, self::OP_ADD | self::OP_CREATE
                 );
                 $this->balances[] = $message;
@@ -108,7 +108,7 @@ class Create extends Message
         $this->currencies = [];
         foreach ($data['currencies'] ?? [] as $index => $currency) {
             try {
-                $message = Currency::fromRequest($currency, self::OP_ADD | self::OP_CREATE);
+                $message = Currency::fromArray($currency, self::OP_ADD | self::OP_CREATE);
                 $this->currencies[$message->code] = $message;
             } catch (Breaker $exception) {
                 $errors[] = __(
@@ -127,7 +127,7 @@ class Create extends Message
         $this->domains = [];
         foreach ($data['domains'] ?? [] as $index => $domain) {
             try {
-                $domain = Domain::fromRequest($domain, self::OP_ADD | self::OP_CREATE);
+                $domain = Domain::fromArray($domain, self::OP_ADD | self::OP_CREATE);
                 $this->domains[] = $domain;
             } catch (Breaker $exception) {
                 $errors[] = __(
@@ -146,7 +146,7 @@ class Create extends Message
         $this->journals = [];
         foreach ($data['journals'] ?? [] as $index => $journal) {
             try {
-                $journal = SubJournal::fromRequest(
+                $journal = SubJournal::fromArray(
                     $journal, self::OP_ADD | self::OP_CREATE
                 );
                 $this->journals[$journal->code] = $journal;
@@ -171,7 +171,7 @@ class Create extends Message
         }
         foreach ($nameList as $index => $name) {
             try {
-                $message = Name::fromRequest($name, self::OP_ADD | self::OP_CREATE);
+                $message = Name::fromArray($name, self::OP_ADD | self::OP_CREATE);
                 $this->names[$message->language] = $message;
             } catch (Breaker $exception) {
                 $errors[] = __(
@@ -190,7 +190,7 @@ class Create extends Message
     /**
      * @inheritdoc
      */
-    public static function fromRequest(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags): self
     {
         $errors = [];
         $create = new Create();
@@ -263,7 +263,7 @@ class Create extends Message
         }
         if (count($this->domains) === 0) {
             // Create a default domain
-            $this->domains['MAIN'] = domain::fromRequest(
+            $this->domains['MAIN'] = domain::fromArray(
                 [
                     'code' => 'MAIN',
                     'names' => [

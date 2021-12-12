@@ -41,7 +41,7 @@ class Name extends Message
     /**
      * @inheritdoc
      */
-    public static function fromRequest(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags): self
     {
         $name = new static();
         $name->name = $data['name'] ?? '';
@@ -68,7 +68,7 @@ class Name extends Message
     {
         $names = [];
         foreach ($data as $nameData) {
-            $message = self::fromRequest($nameData, $opFlag);
+            $message = self::fromArray($nameData, $opFlag);
             $names[$message->language ?? ''] = $message;
         }
         if (count($names) < $minimum) {

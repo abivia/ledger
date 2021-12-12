@@ -33,6 +33,9 @@ class LedgerDomain extends Model
 {
     use HasFactory, HasRevisions, UuidPrimaryKey;
 
+    protected $casts = [
+        'revision' => 'datetime',
+    ];
     protected $dateFormat = 'Y-m-d H:i:s.u';
     protected $fillable = [
         'code', 'currencyDefault', 'extra', 'subJournals'

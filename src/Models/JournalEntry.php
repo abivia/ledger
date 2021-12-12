@@ -30,7 +30,6 @@ use Illuminate\Support\Collection;
  * @property int $journalEntryId Primary key.
  * @property string $language The language this description is written in.
  * @property bool $opening Set if this is the opening balance entry.
- * @property bool $posted Set when the transaction has been posted to the ledgers.
  * @property string $journalReferenceUuid Optional reference to an associated entity.
  * @property bool $reviewed Set when the transaction has been reviewed.
  * @property Carbon $revision Revision timestamp to detect race condition on update.
@@ -46,21 +45,20 @@ class JournalEntry extends Model
 
     protected $attributes = [
         'opening' => false,
-        'posted' => true,
     ];
 
     protected $casts = [
         'arguments' => 'array',
         'opening' => 'boolean',
-        'posted' => 'boolean',
         'reviewed' => 'boolean',
+        'revision' => 'datetime',
         'transDate' => 'datetime',
     ];
     protected $dateFormat = 'Y-m-d H:i:s.u';
 
     protected $fillable = [
         'arguments', 'createdBy', 'currency', 'description', 'domainUuid', 'extra',
-        'journalReferenceUuid', 'language', 'opening', 'posted', 'reviewed',
+        'journalReferenceUuid', 'language', 'opening', 'reviewed',
         'transDate', 'updatedBy'
     ];
     protected $keyType = 'int';
@@ -136,7 +134,6 @@ class JournalEntry extends Model
                 $response['extra'] = $this->extra;
             }
             $response['opening'] = $this->opening;
-            $response['posted'] = $this->posted;
             if ($this->journalReferenceUuid !== null) {
                 $response['reference'] = $this->journalReferenceUuid;
             }

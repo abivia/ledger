@@ -48,8 +48,7 @@ class ReportController extends Controller
         foreach ($candidates as $candidate) {
             // Look for any transactions made in the report period
             // made after this report was generated
-            $entryQuery = JournalEntry::where('posted', true)
-                ->where('domainUuid', $message->domain->uuid)
+            $entryQuery = JournalEntry::where('domainUuid', $message->domain->uuid)
                 ->where('currency', $message->currency)
                 ->where('journalEntryId', '>', $candidate->journalEntryId)
                 ->where('transDate', '<=', $message->toDate);

@@ -40,7 +40,7 @@ class JournalEntryQueryTest extends TestCase
             ['template' => 'manufacturer', 'date' => '2001-01-01']
         );
         // Subtract one
-        $this->addRandomTransactions(self::TRANS_COUNT - 1);
+        $this->addRandomTransactions(self::TRANS_COUNT);
 
     }
 
@@ -175,33 +175,10 @@ class JournalEntryQueryTest extends TestCase
         }
     }
 
-    public function testQueryPosted()
-    {
-        // Get a record and update it to not posted.
-        $entry = JournalEntry::find(10);
-        $entry->posted = false;
-        $entry->save();
-
-        // Query for everything, unpaginated
-        $query = new EntryQuery();
-        $controller = new JournalEntryController();
-        $entries = $controller->query($query, Message::OP_QUERY);
-
-        // Expect one record less than we have
-        $this->assertCount(106, $entries);
-
-        // Query again, including not posted records.
-        $query->postedOnly = false;
-        $entries = $controller->query($query, Message::OP_QUERY);
-
-        // Expect the full set
-        $this->assertCount(107, $entries);
-    }
-
     public function testQueryReviewed()
     {
         // Get a record and update it to "reviewed".
-        $entry = JournalEntry::find(10);
+        $entry = JournalEntry::skip(10)->first();
         $entry->reviewed = true;
         $entry->save();
 
@@ -217,15 +194,15 @@ class JournalEntryQueryTest extends TestCase
         $query->reviewed = true;
         $entries = $controller->query($query, Message::OP_QUERY);
 
-        // Expect two records: the opening and the one we set
-        $this->assertCount(2, $entries);
+        // Expect one record
+        $this->assertCount(1, $entries);
 
         // Query again, now for not reviewed records.
         $query->reviewed = false;
         $entries = $controller->query($query, Message::OP_QUERY);
 
         // Expect the remaining records
-        $this->assertCount(105, $entries);
+        $this->assertCount(106, $entries);
     }
 
 }
