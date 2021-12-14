@@ -95,6 +95,7 @@ class LedgerAccount extends Model
         self::$bootRules = new stdClass();
 
         self::$bootRules->account = new stdClass();
+        self::$bootRules->account->postToCategory = false;
         self::$bootRules->domain = new stdClass();
         // Default is to leave transactions as not reviewed
         self::$bootRules->entry = new stdClass();

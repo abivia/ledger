@@ -359,6 +359,7 @@ class JournalEntryController extends Controller
         }
 
         // Normalize the amounts and check for balance
+        $postToCategory = LedgerAccount::rules()->account->postToCategory;
         $balance = '0';
         $unique = [];
         $precision = $this->ledgerCurrency->decimals;
@@ -367,6 +368,12 @@ class JournalEntryController extends Controller
             $ledgerAccount = $detail->findAccount();
             if ($ledgerAccount === null) {
                 $errors[] = __('Detail line :line has an invalid account.', compact('line'));
+            }
+            if (!$postToCategory && $ledgerAccount->category) {
+                $errors[] = __(
+                    "Can't post to category account :code",
+                    ['code' => $ledgerAccount->code]
+                );
             }
             // Check that each account only appears once.
             if (isset($unique[$ledgerAccount->ledgerUuid])) {

@@ -33,7 +33,8 @@ abstract class Message
     /**
      * @var array Each element is either a property name or array of
      * [property name, operation mask]. If a mask is provided it must
-     * match the current operation flags.
+     * match the current operation flags. The property name can also
+     * be an array of [object property, source property].
      */
     protected static array $copyable = [];
 

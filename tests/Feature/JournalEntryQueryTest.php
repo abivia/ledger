@@ -17,6 +17,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Abivia\Ledger\Tests\TestCase;
+use Illuminate\Support\Facades\DB;
 use function array_shift;
 
 /**
@@ -51,6 +52,8 @@ class JournalEntryQueryTest extends TestCase
         $controller = new JournalEntryController();
         $entries = $controller->query($query, Message::OP_QUERY);
         $this->assertCount(107, $entries);
+        // Crude table export for testing.
+        //$this->exportSnapshot(__DIR__ . '/../Seeders/tqa.sql');
     }
 
     public function testQueryApiAll()

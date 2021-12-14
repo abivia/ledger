@@ -3,8 +3,8 @@
 namespace Abivia\Ledger\Tests\Feature\Reports;
 
 use Abivia\Ledger\Messages\Report;
-use Abivia\Ledger\Messages\ReportAccount;
-use Abivia\Ledger\Models\LedgerAccount;
+use Abivia\Ledger\Models\ReportAccount;
+use Abivia\Ledger\Models\ReportData;
 use Abivia\Ledger\Reports\TrialBalanceReport;
 use Abivia\Ledger\Tests\Feature\CommonChecks;
 use Abivia\Ledger\Tests\Feature\CreateLedgerTrait;
@@ -19,13 +19,17 @@ class TrialBalanceReportTest extends TestCase
     use CreateLedgerTrait;
     use RefreshDatabase;
 
-    public function setUp(): void
+    private function getRequest(): Report
     {
-        parent::setUp();
-        self::$expectContent = 'TBD';
+        $request = new Report();
+        $request->name = 'trialBalance';
+        $request->currency = 'CAD';
+        $request->toDate = new Carbon('2001-02-28');
+
+        return $request;
     }
 
-    public function testCollect()
+    private function loadRandomBaseline()
     {
         // Create a ledger and a known set of transactions.
         $sql = file_get_contents(
@@ -34,31 +38,51 @@ class TrialBalanceReportTest extends TestCase
         foreach (explode('-- Table', $sql) as $statement) {
             DB::statement(trim($statement));
         }
-
-        $request = new Report();
-        $request->name = 'trialBalance';
-        $request->currency = 'CAD';
-        $request->toDate = new Carbon('2001-02-28');
-        $request->validate(0);
-        $report = new TrialBalanceReport();
-        $reportData = $report->collect($request);
-        $output = $report->prepare($request, $reportData);
-        $lines = [];
-        /** @var ReportAccount $account */
-        foreach ($output as $account) {
-            if ($account->depth > 3) {
-                continue;
-            }
-            echo implode(
-                ',',
-                [$account->name, $account->debitTotal, $account->creditTotal, $account->depth]
-                ) . "\n";
-        }
-        $this->assertTrue(true);
     }
 
-    public function testPrepare()
+    public function setUp(): void
     {
+        parent::setUp();
+        self::$expectContent = 'TBD';
+    }
+
+    public function testCollect()
+    {
+        $this->loadRandomBaseline();
+
+        $request = $this->getRequest();
+        $report = new TrialBalanceReport();
+        $reportData = $report->collect($request);
+        $this->assertCount(139, $reportData->accounts);
+        return $reportData;
+    }
+
+    /**
+     * @depends testCollect
+     * @return void
+     */
+    public function testPrepare(ReportData $reportData)
+    {
+        $this->loadRandomBaseline();
+        $report = new TrialBalanceReport();
+        $prepared = $report->prepare($reportData);
+        $this->assertCount(138, $prepared);
+        $lines = [];
+        /** @var ReportAccount $account */
+        foreach ($prepared as $account) {
+            $line = [$account->total, $account->balance, $account->creditBalance, $account->debitBalance];
+            $line[] = '"' . $account->name . '"';
+            $line[] = $account->code;
+
+            $lines[] = implode(',', array_reverse($line)) . "\n";
+        }
+        // See if we can/should log this
+        $exportPath = __DIR__ . '/../../../local';
+        if (is_dir($exportPath)) {
+            $exportPath = realpath("$exportPath/trial.csv");
+            file_put_contents($exportPath, implode($lines));
+        }
+        $this->assertTrue(true);
 
     }
 }

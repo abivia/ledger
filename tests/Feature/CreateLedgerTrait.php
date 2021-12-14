@@ -70,8 +70,8 @@ trait CreateLedgerTrait {
         // Get a list of accounts in the ledger
         $codes = [];
         foreach (LedgerAccount::all() as $account) {
-            // Get rid of the root
-            if ($account->code != '') {
+            // Get rid of the root and any category accounts
+            if ($account->code != '' && !$account->category) {
                 $codes[] = $account->code;
             }
         }

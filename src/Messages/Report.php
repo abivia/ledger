@@ -10,7 +10,7 @@ use Carbon\Carbon;
 class Report extends Message
 {
     protected static array $copyable = [
-        'currency', 'date', 'name'
+        'currency', 'name'
     ];
     public string $currency;
     public Carbon $fromDate;

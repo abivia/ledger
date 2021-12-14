@@ -1,16 +1,18 @@
 <?php
 
-namespace Abivia\Ledger\Messages;
+namespace Abivia\Ledger\Models;
 
-use Abivia\Ledger\Exceptions\Breaker;
 
-class ReportAccount extends Message
+/**
+ * A Ledger account formatted for reporting purposes.
+ */
+class ReportAccount extends NoDatabase
 {
     public string $balance;
     public bool $category;
     public string $code;
     public bool $credit;
-    public string $creditTotal;
+    public string $creditBalance;
     public string $currency;
     protected static array $copyable = [
         'balance', 'category', 'code', 'credit', 'currency',
@@ -19,8 +21,11 @@ class ReportAccount extends Message
     ];
     public bool $debit;
     public int $depth;
-    public string $debitTotal;
+    public string $debitBalance;
     public string $extra;
+    /**
+     * @var mixed
+     */
     public $flex;
     public string $ledgerUuid;
     public string $name;
@@ -33,19 +38,19 @@ class ReportAccount extends Message
     public static function fromArray(array $data, int $opFlags): self
     {
         $account = new static();
-        $account->copy($data, $opFlags);
+        $account->copy($data);
 
         return $account;
     }
 
     public function setReportTotals(int $decimals)
     {
-        $this->creditTotal = '';
-        $this->debitTotal = '';
         if ($this->debit) {
-            $this->debitTotal = bcmul('-1', $this->total, $decimals);
-        } elseif ($this->credit) {
-            $this->creditTotal = $this->total;
+            $this->debitBalance = bcmul('-1', $this->balance, $decimals);
+            $this->creditBalance = '';
+        } else {
+            $this->debitBalance = '';
+            $this->creditBalance = $this->balance;
         }
     }
 

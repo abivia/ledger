@@ -58,7 +58,7 @@ class CreateLedgerTables extends Migration
             // Primary key
             $table->bigIncrements('journalEntryId');
 
-            $table->timestamp('transDate');
+            $table->dateTime('transDate');
             $table->foreignUuid('domainUuid');
             $table->uuid('subJournalUuid')->nullable();
             $table->string('currency', LedgerCurrency::CODE_SIZE);
@@ -76,7 +76,7 @@ class CreateLedgerTables extends Migration
             $table->string('createdBy')->nullable();
             $table->string('updatedBy')->nullable();
             // The update timestamp (server-side)
-            $table->timestamp('revision', 6)
+            $table->dateTime('revision', 6)
                 ->useCurrentOnUpdate()->nullable();
             $table->timestamps(6);
         });
@@ -87,7 +87,7 @@ class CreateLedgerTables extends Migration
             $table->string('code')->unique();
             $table->longText('extra')->nullable();
             // The update timestamp (server-side)
-            $table->timestamp('revision', 6)
+            $table->dateTime('revision', 6)
                 ->useCurrentOnUpdate()->nullable();
             $table->timestamps(6);
         });
@@ -108,7 +108,7 @@ class CreateLedgerTables extends Migration
             $table->longText('extra')->nullable();
             $table->json('flex')->nullable();
             // The update timestamp (server-side)
-            $table->timestamp('revision', 6)
+            $table->dateTime('revision', 6)
                 ->useCurrentOnUpdate()->nullable();
             $table->timestamps(6);
         });
@@ -130,7 +130,7 @@ class CreateLedgerTables extends Migration
         Schema::create('ledger_currencies', function (Blueprint $table) {
             $table->string('code', LedgerCurrency::CODE_SIZE)->primary();
             $table->integer('decimals');
-            $table->timestamp('revision', 6)
+            $table->dateTime('revision', 6)
                 ->useCurrentOnUpdate()->nullable();
             $table->timestamps(6);
         });
@@ -143,7 +143,7 @@ class CreateLedgerTables extends Migration
             $table->json('flex')->nullable();
             $table->string('currencyDefault', LedgerCurrency::CODE_SIZE);
             $table->boolean('subJournals')->default(false);
-            $table->timestamp('revision', 6)
+            $table->dateTime('revision', 6)
                 ->useCurrentOnUpdate()->nullable();
             $table->timestamps(6);
         });
@@ -179,7 +179,7 @@ class CreateLedgerTables extends Migration
             $table->uuid('subJournalUuid')->primary();
             $table->string('code', LedgerAccount::CODE_SIZE);
             $table->longText('extra')->nullable();
-            $table->timestamp('revision', 6)
+            $table->dateTime('revision', 6)
                 ->useCurrentOnUpdate()->nullable();
             $table->timestamps(6);
         });

@@ -5,18 +5,18 @@ namespace Abivia\Ledger\Reports;
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Messages\Report;
-use Abivia\Ledger\Messages\ReportAccount;
 use Abivia\Ledger\Models\JournalDetail;
 use Abivia\Ledger\Models\JournalEntry;
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Models\LedgerBalance;
 use Abivia\Ledger\Models\LedgerCurrency;
 use Abivia\Ledger\Models\LedgerDomain;
+use Abivia\Ledger\Models\ReportAccount;
+use Abivia\Ledger\Models\ReportData;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use stdClass;
 
 class TrialBalanceReport extends AbstractReport
 {
@@ -25,11 +25,11 @@ class TrialBalanceReport extends AbstractReport
      * @var string[][]
      */
     private array $byParent;
-    private int $decimals;
+
     /**
-     * @var mixed
+     * @var int The number of decimal places in the requested currency
      */
-    private array $languages;
+    private int $decimals;
 
     /**
      * Get the raw data required to generate the report.
@@ -37,8 +37,9 @@ class TrialBalanceReport extends AbstractReport
      * @throws Breaker
      * @throws Exception
      */
-    public function collect(Report $message): stdClass
+    public function collect(Report $message): ReportData
     {
+        $message->validate(0);
         /** @var LedgerDomain $ledgerDomain */
         $ledgerDomain = LedgerDomain::findWith($message->domain)->first();
         if ($ledgerDomain === null) {
@@ -47,13 +48,11 @@ class TrialBalanceReport extends AbstractReport
                 __('Domain :code not found.', ['code' => $message->domain->code])
             );
         }
-        $reportData = new stdClass();
-        $reportData->message = $message;
+        $reportData = new ReportData();
+        $reportData->request = $message;
         $reportData->journalEntryId = JournalEntry::query()->max('journalEntryId');
 
         // Grab the table names
-        $accountTable = (new LedgerAccount)->getTable();
-        $balanceTable = (new LedgerBalance)->getTable();
         $detailTable = (new JournalDetail)->getTable();
         $entryTable = (new JournalEntry)->getTable();
 
@@ -78,28 +77,27 @@ class TrialBalanceReport extends AbstractReport
         //$bcSql = $balanceChangeQuery->toSql();
         $balanceChanges = $balanceChangeQuery->get()->keyBy('uuid');
 
+        // Get a list of accounts
+        $ledgerAccounts = LedgerAccount::all()->keyBy('code');
         // Get balances for all accounts in the ledger with this currency
-        $balanceQuery = DB::table($accountTable)
-            ->select()
-            ->leftJoin($balanceTable, "$accountTable.ledgerUuid",
-                '=', "$balanceTable.ledgerUuid"
-            )
-            ->where('domainUuid', $ledgerDomain->domainUuid)
+        /** @var Collection $balances */
+        /** @noinspection PhpDynamicAsStaticMethodCallInspection */
+        $balances = LedgerBalance::where('domainUuid', $ledgerDomain->domainUuid)
             ->where('currency', $message->currency)
-            ->orderBy('code');
-        //$bSql = $balanceQuery->toSql();
-        $balances = $balanceQuery->get()->keyBy('ledgerUuid');
+            ->get()
+            ->keyBy('ledgerUuid');
 
         // Subtract balance changes from the current balance
         $reportData->accounts = [];
         $zero = bcadd('0', '0', $ledgerCurrency->decimals);
-        foreach ($balances as $uuid => $balance) {
-            // Zero in accounts with no balance.
-            $balance->balance ??= $zero;
-
-            // Create a report account and adjust the balance.
-            $account = ReportAccount::fromArray((array)$balance, Message::OP_ADD);
-            $account->parent = $balances[$balance->parentUuid]->code ?? '';
+        foreach ($ledgerAccounts as $ledgerAccount) {
+            $account = ReportAccount::fromArray($ledgerAccount->attributesToArray(), Message::OP_ADD);
+            $uuid = $account->ledgerUuid;
+            $account->currency = $message->currency;
+            $account->balance = $balances->has($uuid)
+                ? $balances->get($account->ledgerUuid)->balance : $zero;
+            $parent = $ledgerAccounts->firstWhere('ledgerUuid', $ledgerAccount->parentUuid);
+            $account->parent = $parent->code ?? '';
             if (isset($balanceChanges[$uuid])) {
                 $account->balance = bcsub(
                     $account->balance,
@@ -113,28 +111,35 @@ class TrialBalanceReport extends AbstractReport
         return $reportData;
     }
 
-    public function prepare(Report $message, $reportData): Collection
+    /**
+     * Use a report's raw data to prepare report accounts.
+     * @param ReportData $reportData
+     * @return Collection
+     * @throws Exception
+     */
+    public function prepare(ReportData $reportData): Collection
     {
         $this->accounts = collect($reportData->accounts)->keyBy('code');
         $this->decimals = $reportData->decimals;
         $this->rollUp();
 
-        $format = $message->options['format'] ?? '';
+        $format = $reportData->message->options['format'] ?? '';
         if ($format === 'raw') {
             return $this->accounts;
         }
-        $this->languages = $message->options['language'];
+        $languages = $reportData->request->options['language'];
 
         // Do a simple report
         /**
          * @var string $code
          * @var ReportAccount $account
          */
-        foreach ($this->accounts as $code => $account) {
+        foreach ($this->accounts as $account) {
+            /** @noinspection PhpDynamicAsStaticMethodCallInspection */
             $ledgerAccount = LedgerAccount::find($account->ledgerUuid);
             unset($account->name);
             $names = $ledgerAccount->names->keyBy('language');
-            foreach ($this->languages as $language) {
+            foreach ($languages as $language) {
                 if (isset($names[$language])) {
                     $account->name = $names[$language]->name;
                 }
@@ -164,20 +169,16 @@ class TrialBalanceReport extends AbstractReport
         foreach($this->accounts as $code => $account) {
             $account->total = $account->balance;
             $this->byParent[$account->parent] ??= [];
-            $this->byParent[$account->parent][] = $code;
+            if ($code !== '') {
+                $this->byParent[$account->parent][] = $code;
+            }
         }
 
-        // Add a temporary account for the root.
-        $root = new ReportAccount();
-        $root->code = '';
-        $root->balance = '0';
-        $root->total = '0';
-        $this->accounts->put('', $root);
-
         // Roll the balances up
-        $this->rollUpAccount('', 1);
+        $this->rollUpAccount('', 0);
 
         // Integrity check: the root account balance must still be zero
+        $root = $this->accounts->get('');
         if (bccomp('0', $root->total, $this->decimals) !== 0) {
             $message = "Ledger net balance is $root->total";
             Log::channel(env('LEDGER_LOG_CHANNEL', 'stack'))
@@ -190,7 +191,8 @@ class TrialBalanceReport extends AbstractReport
     /**
      * Recursively compute rolled up totals for an account.
      *
-     * @param string $code
+     * @param string $code Account code for the parent.
+     * @param int $depth Levels of nesting below the ledger root.
      * @return void
      */
     private function rollUpAccount(string $code, int $depth)
