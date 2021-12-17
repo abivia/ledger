@@ -2,7 +2,6 @@
 
 namespace Abivia\Ledger\Models;
 
-use Abivia\Ledger\Messages\Name;
 use Abivia\Ledger\Messages\Report;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -33,9 +32,14 @@ class LedgerReport extends Model
     ];
     protected $dateFormat = 'Y-m-d';
     protected $fillable = [
-        'currency', 'domainUuid', 'fromDate', 'journalEntryUuid',
+        'currency', 'domainUuid', 'fromDate', 'journalEntryId',
         'name', 'reportData', 'toDate'
     ];
+
+    /**
+     * @var bool Disable timestamps.
+     */
+    public $timestamps = false;
 
     public static function createFromMessage(Report $message): self
     {

@@ -8,16 +8,28 @@ use Abivia\Ledger\Messages\Message;
 
 class Balance extends Message
 {
+    /**
+     * @var EntityRef The unique code for the referenced account.
+     */
     public EntityRef $account;
 
+    /**
+     * @var string Return value: the current account balance.
+     */
     public string $amount;
 
     protected static array $copyable = [
         'currency', 'domain', 'language',
     ];
 
+    /**
+     * @var string The currency of the requested balance.
+     */
     public string $currency;
 
+    /**
+     * @var string|null Ledger domain. If not provided the default is used.
+     */
     public ?string $domain;
 
     public string $language;
@@ -39,7 +51,7 @@ class Balance extends Message
     /**
      * @inheritdoc
      */
-    public static function fromArray(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags = self::OP_CREATE): self
     {
         if (!($opFlags & self::OP_GET | Message::OP_CREATE)) {
             throw Breaker::withCode(
@@ -70,6 +82,9 @@ class Balance extends Message
             }
         }
         $balance->copy($data, $opFlags);
+        if (isset($data['domain'])) {
+            $balance->domain = EntityRef::fromMixed($data['domain']);
+        }
 
         if (count($errors) !== 0) {
             throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);
@@ -84,7 +99,7 @@ class Balance extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlags): self
+    public function validate(int $opFlags = 0): self
     {
         $errors = [];
         if ($opFlags & self::OP_CREATE) {

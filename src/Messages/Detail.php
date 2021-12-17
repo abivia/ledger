@@ -9,22 +9,38 @@ use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Messages\Message;
 use Exception;
 
+/**
+ * Account detail in a journal entry.
+ *
+ * @property-read $signTest
+ */
 class Detail extends Message
 {
     public const MAX_DECIMALS = 30;
 
-    public string $amount;
-    public EntityRef $account;
-    public string $credit;
-    public string $debit;
     /**
-     * @var int Amount sign (set on validation, amount is unchanged).
+     * @var string A valid amount for this Currency.
      */
-    public int $signTest;
+    public string $amount;
+
+    /**
+     * @var EntityRef A reference to the affected account.
+     */
+    public EntityRef $account;
+
+    /**
+     * @var string A valid amount for this Currency.
+     */
+    public string $credit;
+
+    /**
+     * @var string A valid amount for this Currency.
+     */
+    public string $debit;
 
     protected static array $copyable = [
         ['amount', self::OP_ADD | self::OP_UPDATE],
-        //['account', self::OP_ADD | UPDATE],
+        //['code', self::OP_ADD | UPDATE],
         ['debit', self::OP_ADD | self::OP_UPDATE],
         ['credit', self::OP_ADD | self::OP_UPDATE],
         //['reference', self::OP_ADD | self::OP_UPDATE],
@@ -36,6 +52,11 @@ class Detail extends Message
     private ?LedgerAccount $ledgerAccount = null;
 
     public Reference $reference;
+
+    /**
+     * @var int The sign of the amount (+1 or -1), set on validation.
+     */
+    protected int $signTest;
 
     /**
      * Detail constructor.
@@ -50,6 +71,19 @@ class Detail extends Message
         if ($amount !== null) {
             $this->amount = $amount;
         }
+    }
+
+    /**
+     * Property get.
+     * @param $name
+     * @return string|null
+     */
+    public function __get($name)
+    {
+        if ($name === 'signTest') {
+            return $this->signTest;
+        }
+        return null;
     }
 
     /**
@@ -71,17 +105,17 @@ class Detail extends Message
     /**
      * @inheritdoc
      */
-    public static function fromArray(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags = 0): self
     {
         $detail = new static();
         $detail->copy($data, $opFlags);
-        if (isset($data['accountCode'])) {
+        if (isset($data['code'])) {
             $detail->account = new EntityRef();
-            $detail->account->code = $data['accountCode'];
+            $detail->account->code = $data['code'];
         }
-        if (isset($data['accountUuid'])) {
+        if (isset($data['uuid'])) {
             $detail->account ??= new EntityRef();
-            $detail->account->code = $data['accountUuid'];
+            $detail->account->code = $data['uuid'];
         }
         if (isset($data['reference'])) {
             $detail->reference = Reference::fromArray($data['reference'], $opFlags);
@@ -108,7 +142,7 @@ class Detail extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlags): self
+    public function validate(int $opFlags = 0): self
     {
         $errors = [];
         if (isset($this->account)) {
@@ -119,7 +153,7 @@ class Detail extends Message
                 Merge::arrays($errors, $exception->getErrors());
             }
         } else {
-            $errors[] = __('the code property is required');
+            $errors[] = __('the account code property is required');
         }
         $multiplier = '1';
         if (isset($this->amount)) {

@@ -5,7 +5,7 @@ namespace Abivia\Ledger\Console;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
-class InstallLedger extends Command
+class Install extends Command
 {
     protected $signature = 'ledger:install';
 

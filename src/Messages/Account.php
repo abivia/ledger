@@ -9,9 +9,24 @@ use Abivia\Ledger\Messages\Message;
 
 class Account extends Message
 {
+    /**
+     * @var bool If set `true`, this will be a category account.
+     */
     public bool $category;
+
+    /**
+     * @var bool If set `true`, the account will be closed.
+     */
     public bool $closed;
+
+    /**
+     * @var string A unique identifier for the account.
+     */
     public string $code;
+
+    /**
+     * @var array Copyable properties
+     */
     protected static array $copyable = [
         'category', 'closed', 'code', 'credit',
         'debit',
@@ -21,25 +36,48 @@ class Account extends Message
         'uuid',
     ];
 
+    /**
+     * @var bool If set `true` then this account will be reported in the credit column.
+     */
     public bool $credit;
+
+    /**
+     * @var bool If set `true` then this account will be reported in the debit column.
+     */
     public bool $debit;
     /**
-     * @var mixed
+     * @var string An arbitrary string for use by the application.
      */
-    public $extra;
+    public string $extra;
     /**
-     * @var Name[]|null
+     * @var Name[] A list of `Name` messages.
      */
     public array $names = [];
+
+    /**
+     * @var EntityRef An account reference that contains the code or UUID of the parent account.
+     */
     public EntityRef $parent;
+
+    /**
+     * @var string The revision hash code for the account. Required on delete or update.
+     */
     public string $revision;
+
+    /**
+     * @var string A new account code to be assigned in an update operation.
+     */
     public string $toCode;
+
+    /**
+     * @var string The UUID for this account. Only valid on update/delete.
+     */
     public string $uuid;
 
     /**
      * @inheritdoc
      */
-    public static function fromArray(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags = self::OP_ADD): self
     {
         $errors = [];
         $account = new static();
@@ -77,7 +115,7 @@ class Account extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlags): self
+    public function validate(int $opFlags = 0): self
     {
         $errors = [];
         $codeFormat = LedgerAccount::rules()->account->codeFormat ?? '';

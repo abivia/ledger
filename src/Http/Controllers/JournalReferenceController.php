@@ -8,6 +8,7 @@ use Abivia\Ledger\Models\JournalEntry;
 use Abivia\Ledger\Models\JournalReference;
 use Abivia\Ledger\Messages\Reference;
 use Abivia\Ledger\Messages\Message;
+use Abivia\Ledger\Models\LedgerDomain;
 use Abivia\Ledger\Traits\Audited;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -31,9 +32,13 @@ class JournalReferenceController extends Controller
     {
         $inTransaction = false;
         $message->validate(Message::OP_ADD);
+        $this->checkDomain($message);
         // check for duplicates
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
-        if (JournalReference::where('code', $message->code)->first() !== null) {
+        $journalReference = JournalReference::where('domainUuid', $message->domain->uuid)
+            ->where('code', $message->code)
+            ->first();
+        if ($journalReference !== null) {
             throw Breaker::withCode(
                 Breaker::RULE_VIOLATION,
                 [
@@ -62,6 +67,23 @@ class JournalReferenceController extends Controller
         return $journalReference;
     }
 
+    private function checkDomain(Reference $message)
+    {
+        if (!isset($message->domain->uuid)) {
+            /** @var LedgerDomain $ledgerDomain */
+            $ledgerDomain = LedgerDomain::findWith($message->domain)->first();
+            if ($ledgerDomain === null) {
+                throw Breaker::withCode(
+                    Breaker::INVALID_DATA,
+                    [
+                        __('Unknown domain :code.', ['code' => $message->domain->code])
+                    ]
+                );
+            }
+            $message->domain->uuid = $ledgerDomain->domainUuid;
+        }
+    }
+
     /**
      * Delete a reference. The reference must be unused.
      *
@@ -72,7 +94,7 @@ class JournalReferenceController extends Controller
     public function delete(Reference $message)
     {
         $message->validate(Message::OP_DELETE);
-        $journalReference = $this->fetch($message->code);
+        $journalReference = $this->fetch($message);
         $journalReference->checkRevision($message->revision ?? null);
         // Ensure there are no journal entries that use this reference
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
@@ -99,18 +121,24 @@ class JournalReferenceController extends Controller
     /**
      * Retrieve a reference by code.
      *
-     * @param string $referenceCode
+     * @param Reference $message
      * @return JournalReference
      * @throws Breaker
      */
-    private function fetch(string $referenceCode): JournalReference
+    private function fetch(Reference $message): JournalReference
     {
+        $this->checkDomain($message);
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
-        $ledgerReference = JournalReference::where('code', $referenceCode)->first();
+        $ledgerReference = JournalReference::where('domainUuid', $message->domain->uuid)
+            ->where('code', $message->code)
+            ->first();
         if ($ledgerReference === null) {
             throw Breaker::withCode(
                 Breaker::RULE_VIOLATION,
-                [__('domain :code does not exist', ['code' => $referenceCode])]
+                [
+                    __('domain :code does not exist in domain :domain',
+                    ['code' => $message->code, 'domain' => $message->domain->code])
+                ]
             );
         }
 
@@ -127,7 +155,7 @@ class JournalReferenceController extends Controller
     public function get(Reference $message): JournalReference
     {
         $message->validate(Message::OP_GET);
-        return $this->fetch($message->code);
+        return $this->fetch($message);
     }
 
     /**
@@ -166,7 +194,7 @@ class JournalReferenceController extends Controller
         $message->validate(Message::OP_UPDATE);
         $inTransaction = false;
         try {
-            $journalReference = $this->fetch($message->code);
+            $journalReference = $this->fetch($message);
             $journalReference->checkRevision($message->revision ?? null);
 
             $codeChange = isset($message->toCode)

@@ -12,7 +12,7 @@ use Carbon\Carbon;
 class Entry extends Message
 {
     /**
-     * @var string[] Translation arguments. Optional.
+     * @var string[] Arguments to be passed to a string translation function.
      */
     public array $arguments = [];
 
@@ -36,7 +36,7 @@ class Entry extends Message
     public string $currency;
 
     /**
-     * @var string Transaction description. Required on add.
+     * @var string Transaction description.
      */
     public string $description;
 
@@ -46,30 +46,33 @@ class Entry extends Message
     public array $details = [];
 
     /**
-     * @var EntityRef Ledger domain. If not provided the default is used.
+     * @var EntityRef The domain this entry applies to.
      */
     public EntityRef $domain;
 
     /**
-     * @var mixed
+     * @var mixed An arbitrary string for use by the application.
      */
     public $extra;
 
     /**
-     * @var int|null The transaction ID, only used on update.
+     * @var int A unique identifier for this entry.
      */
     public int $id;
 
     /**
-     * @var EntityRef Sub-journal reference. Only relevant when adding an entry.
+     * @var EntityRef The journal this entry applies to.
      */
     public EntityRef $journal;
 
     /**
-     * @var string|null Language used for the description. If missing, ledger default used.
+     * @var string|null The language used for the supplied description.
      */
     public string $language;
 
+    /**
+     * @var Reference A link to an external entity.
+     */
     public Reference $reference;
 
     /**
@@ -78,26 +81,25 @@ class Entry extends Message
     public bool $reviewed = false;
 
     /**
-     * @var string Revision signature. Required for update.
+     * @var string Revision signature.
      */
     public string $revision;
 
     /**
-     * @var Carbon Transaction date. Required on add, optional on update.
+     * @var Carbon Transaction date.
      */
     public Carbon $transDate;
 
     /**
      * @inheritdoc
      */
-    public static function fromArray(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags = self::OP_ADD): self
     {
         $entry = new static();
         $entry->copy($data, $opFlags);
         if ($opFlags & self::OP_ADD) {
             if (isset($data['domain'])) {
-                $entry->domain = new EntityRef();
-                $entry->domain->code = $data['domain'];
+                $entry->domain = EntityRef::fromMixed($data['domain'], $opFlags);
             }
             if (isset($data['journal'])) {
                 $entry->journal = new EntityRef();
@@ -108,7 +110,9 @@ class Entry extends Message
             if (isset($data['reference'])) {
                 $entry->reference = Reference::fromArray($data['reference'], $opFlags);
             }
-            if (isset($data['date'])) {
+            if (isset($data['transDate'])) {
+                $entry->transDate = new Carbon($data['transDate']);
+            } elseif (isset($data['date'])) {
                 $entry->transDate = new Carbon($data['date']);
             }
             $entry->details = [];
@@ -126,7 +130,7 @@ class Entry extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlags): self
+    public function validate(int $opFlags = 0): self
     {
         $errors = [];
         $rules = LedgerAccount::rules();
@@ -166,6 +170,9 @@ class Entry extends Message
             if (!isset($this->revision)) {
                 $errors[] = __('Entry revision code required for update.');
             }
+        }
+        if (isset($this->reference)) {
+            $this->reference->validate($opFlags);
         }
         // Validate that the transaction is structured correctly.
         if (count($this->details) !== 0) {

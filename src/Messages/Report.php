@@ -32,13 +32,12 @@ class Report extends Message
     /**
      * @inheritDoc
      */
-    public static function fromArray(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags = 0): self
     {
         $report = new static();
         $report->copy($data, $opFlags);
         if (isset($data['domain'])) {
-            $report->domain = new EntityRef();
-            $report->domain->code = $data['domain'];
+            $report->domain = EntityRef::fromMixed($data['domain']);
         }
         if (isset($data['options'])) {
             $report->options = $data['options'];
@@ -57,7 +56,7 @@ class Report extends Message
     /**
      * @inheritDoc
      */
-    public function validate(int $opFlags): self
+    public function validate(int $opFlags = 0): self
     {
         if (!isset($this->name)) {
             throw Breaker::withCode(

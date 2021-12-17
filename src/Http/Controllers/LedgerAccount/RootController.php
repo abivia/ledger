@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Abivia\Ledger\Http\Controllers\LedgerAccount;
 
 use Abivia\Ledger\Exceptions\Breaker;
+use Abivia\Ledger\Helpers\Merge;
 use Abivia\Ledger\Helpers\Package;
 use Abivia\Ledger\Http\Controllers\LedgerAccountController;
 use Abivia\Ledger\Models\JournalDetail;
@@ -169,7 +170,7 @@ class RootController extends LedgerAccountController
     private function initializeAccounts()
     {
         // Load the template if provided.
-        $accounts = $this->initData->template ? $this->loadTemplate() : [];
+        $accounts = isset($this->initData->template) ? $this->loadTemplate() : [];
 
         // Merge in accounts from the request
         foreach ($this->initData->accounts as $account) {
@@ -209,6 +210,8 @@ class RootController extends LedgerAccountController
                     $this->accounts[$ledgerAccount->code] = $ledgerAccount;
                     // Create the name records
                     foreach ($account->names as $name) {
+                        // Revalidate to fill in any missing language code.
+                        $name->validate();
                         $name->ownerUuid = $ledgerAccount->ledgerUuid;
                         LedgerName::createFromMessage($name);
                     }
@@ -288,6 +291,7 @@ class RootController extends LedgerAccountController
                 if (count($balances) === 0) {
                     continue;
                 }
+                $decimals = $this->currencies[$currencyCode]->decimals;
                 // The opening balance is special as it can have any number of debits and credits.
                 /** @noinspection PhpDynamicAsStaticMethodCallInspection */
                 $journalEntry = JournalEntry::create([
@@ -320,14 +324,14 @@ class RootController extends LedgerAccountController
                     $journalDetail = new JournalDetail();
                     $journalDetail->journalEntryId = $journalEntry->journalEntryId;
                     $journalDetail->ledgerUuid = $ledgerAccount->ledgerUuid;
-                    $journalDetail->amount = $detail->amount;
+                    $journalDetail->amount = bcadd('0', $detail->amount, $decimals);
                     $journalDetail->save();
                     // Create the ledger balances
                     $ledgerBalance = new LedgerBalance();
                     $ledgerBalance->ledgerUuid = $journalDetail->ledgerUuid;
                     $ledgerBalance->domainUuid = $ledgerDomain->domainUuid;
                     $ledgerBalance->currency = $detail->currency;
-                    $ledgerBalance->balance = $detail->amount;
+                    $ledgerBalance->balance = bcadd('0', $detail->amount, $decimals);
                     $ledgerBalance->save();
                 }
             }
@@ -346,7 +350,8 @@ class RootController extends LedgerAccountController
     {
         $this->currencies = [];
         $this->firstCurrency = '';
-        foreach ($this->initData->currencies as $currencyCode => $currency) {
+        foreach ($this->initData->currencies as $currency) {
+            $currencyCode = $currency->code;
             /** @noinspection PhpDynamicAsStaticMethodCallInspection */
             $this->currencies[$currencyCode] = LedgerCurrency::createFromMessage($currency);
             if ($this->firstCurrency === '') {
@@ -396,7 +401,11 @@ class RootController extends LedgerAccountController
                 );
             }
         } else {
-            $ruleUpdate = ['domain' => ['default' => array_key_first($this->domains)]];
+            $ruleUpdate = (object) [
+                'domain' => (object) [
+                    'default' => array_key_first($this->domains)
+                ]
+            ];
             LedgerAccount::setRules($ruleUpdate);
         }
     }

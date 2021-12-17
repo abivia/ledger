@@ -6,6 +6,7 @@ namespace Abivia\Ledger\Messages;
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Models\JournalReference;
 use Abivia\Ledger\Messages\Message;
+use Abivia\Ledger\Models\LedgerAccount;
 use Exception;
 
 class Reference extends Message
@@ -18,6 +19,7 @@ class Reference extends Message
         'uuid',
     ];
 
+    public EntityRef $domain;
 
     /**
      * @var mixed
@@ -34,10 +36,13 @@ class Reference extends Message
     /**
      * @inheritdoc
      */
-    public static function fromArray(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags = 0): self
     {
         $reference = new static();
         $reference->copy($data, $opFlags);
+        if (isset($data['domain'])) {
+            $reference->domain = EntityRef::fromMixed($data['domain']);
+        }
         if (isset($data['uuid'])) {
             $reference->journalReferenceUuid = $data['uuid'];
         }
@@ -76,7 +81,7 @@ class Reference extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlags): self
+    public function validate(int $opFlags = 0): self
     {
         if (!isset($this->code)) {
             throw Breaker::withCode(
@@ -84,6 +89,12 @@ class Reference extends Message
                 [__('the code property is required')]
             );
         }
+        $rules = LedgerAccount::rules();
+        if (!isset($this->domain)) {
+            $this->domain = new EntityRef();
+            $this->domain->code = $rules->domain->default;
+        }
+        $this->domain->validate(0);
 
         return $this;
     }

@@ -34,14 +34,17 @@ trait CommonChecks {
         }
     }
 
-    private function exportNullable($value) {
+    private function exportNullable($value): string
+    {
         return ($value ? "'$value'" : "NULL");
     }
 
     protected function exportSnapshot(string $toPath)
     {
+        // Stops PHPStorm from complaining about SQL syntax.
+        $sqlBuster = 'INSERT INTO' . ' ';
         $lines = [];
-        $lines[] = 'INSERT INTO `journal_details` (`journalDetailId`, `journalEntryId`, `ledgerUuid`, `amount`, `journalReferenceUuid`) VALUES ';
+        $lines[] = $sqlBuster . '`journal_details` (`journalDetailId`, `journalEntryId`, `ledgerUuid`, `amount`, `journalReferenceUuid`) VALUES ';
         $glue = '';
         foreach (JournalDetail::all() as $detail) {
             $lines[] = $glue . '('
@@ -56,7 +59,7 @@ trait CommonChecks {
         $lines[] = ';';
         unset($detail);
         $lines[] = '-- Table';
-        $lines[] = 'INSERT INTO `journal_entries` (`journalEntryId`, `transDate`, `domainUuid`, `subJournalUuid`, `currency`, `opening`, `reviewed`, `description`, `arguments`, `language`, `extra`, `journalReferenceUuid`, `createdBy`, `updatedBy`, `revision`, `created_at`, `updated_at`) VALUES';
+        $lines[] = $sqlBuster . '`journal_entries` (`journalEntryId`, `transDate`, `domainUuid`, `subJournalUuid`, `currency`, `opening`, `reviewed`, `description`, `arguments`, `language`, `extra`, `journalReferenceUuid`, `createdBy`, `updatedBy`, `revision`, `created_at`, `updated_at`) VALUES';
         $glue = '';
         foreach (JournalEntry::all() as $entry) {
             $lines[] = $glue . '('
@@ -83,7 +86,7 @@ trait CommonChecks {
         $lines[] = ';';
         unset($entry);
         $lines[] = '-- Table';
-        $lines[] = 'INSERT INTO `ledger_accounts` (`ledgerUuid`, `code`, `parentUuid`, `debit`, `credit`, `category`, `closed`, `extra`, `flex`, `revision`, `created_at`, `updated_at`) VALUES';
+        $lines[] = $sqlBuster . '`ledger_accounts` (`ledgerUuid`, `code`, `parentUuid`, `debit`, `credit`, `category`, `closed`, `extra`, `flex`, `revision`, `created_at`, `updated_at`) VALUES';
         $glue = '';
         foreach (LedgerAccount::all() as $account) {
             $lines[] = $glue . '('
@@ -105,7 +108,7 @@ trait CommonChecks {
         $lines[] = ';';
         unset($account);
         $lines[] = '-- Table';
-        $lines[] = 'INSERT INTO `ledger_balances` (`id`, `ledgerUuid`, `domainUuid`, `currency`, `balance`, `created_at`, `updated_at`) VALUES';
+        $lines[] = $sqlBuster . '`ledger_balances` (`id`, `ledgerUuid`, `domainUuid`, `currency`, `balance`, `created_at`, `updated_at`) VALUES';
         $glue = '';
         foreach (LedgerBalance::all() as $balance) {
             $lines[] = $glue . '('
@@ -122,7 +125,7 @@ trait CommonChecks {
         $lines[] = ';';
         unset($balance);
         $lines[] = '-- Table';
-        $lines[] = 'INSERT INTO `ledger_currencies` (`code`, `decimals`, `revision`, `created_at`, `updated_at`) VALUES';
+        $lines[] = $sqlBuster . '`ledger_currencies` (`code`, `decimals`, `revision`, `created_at`, `updated_at`) VALUES';
         $glue = '';
         foreach (LedgerCurrency::all() as $currency) {
             $lines[] = $glue . '('
@@ -137,7 +140,7 @@ trait CommonChecks {
         $lines[] = ';';
         unset($currency);
         $lines[] = '-- Table';
-        $lines[] = 'INSERT INTO `ledger_domains` (`domainUuid`, `code`, `extra`, `flex`, `currencyDefault`, `subJournals`, `revision`, `created_at`, `updated_at`) VALUES';
+        $lines[] = $sqlBuster . '`ledger_domains` (`domainUuid`, `code`, `extra`, `flex`, `currencyDefault`, `subJournals`, `revision`, `created_at`, `updated_at`) VALUES';
         $glue = '';
         foreach (LedgerDomain::all() as $domain) {
             $lines[] = $glue . '('
@@ -156,7 +159,7 @@ trait CommonChecks {
         $lines[] = ';';
         unset($domain);
         $lines[] = '-- Table';
-        $lines[] = 'INSERT INTO `ledger_names` (`id`, `ownerUuid`, `language`, `name`, `created_at`, `updated_at`) VALUES';
+        $lines[] = $sqlBuster . '`ledger_names` (`id`, `ownerUuid`, `language`, `name`, `created_at`, `updated_at`) VALUES';
         $glue = '';
         foreach (LedgerName::all() as $name) {
             $lines[] = $glue . '('
@@ -202,7 +205,7 @@ trait CommonChecks {
     /**
      * Make sure the response was not an error and is well-structured.
      * @param TestResponse $response
-     * @param string $expect
+     * @param string|null $expect
      * @return mixed Decoded JSON response
      */
     private function isSuccessful(

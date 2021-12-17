@@ -57,11 +57,11 @@ class JournalEntryTest extends TestCase
             'date' => '2021-11-12',
             'details' => [
                 [
-                    'accountCode' => '1310',
+                    'code' => '1310',
                     'debit' => '520.00'
                 ],
                 [
-                    'accountCode' => '4110',
+                    'code' => '4110',
                     'credit' => '520.00'
                 ],
             ]
@@ -81,15 +81,15 @@ class JournalEntryTest extends TestCase
             'date' => '2021-11-12',
             'details' => [
                 [
-                    'accountCode' => '4110',
+                    'code' => '4110',
                     'amount' => '-520.00'
                 ],
                 [
-                    'accountCode' => '1120',
+                    'code' => '1120',
                     'amount' => '500.00'
                 ],
                 [
-                    'accountCode' => '2250',
+                    'code' => '2250',
                     'amount' => '20.00'
                 ],
             ]
@@ -109,7 +109,7 @@ class JournalEntryTest extends TestCase
      */
     public function testCreate(): void
     {
-        $response = $this->createLedger(['template'], ['template' => 'manufacturer']);
+        $response = $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
 
         $this->isSuccessful($response, 'ledger');
 
@@ -119,7 +119,7 @@ class JournalEntryTest extends TestCase
     public function testAdd()
     {
         // First we need a ledger
-        $response = $this->createLedger(['template'], ['template' => 'manufacturer']);
+        $response = $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
 
         $this->isSuccessful($response, 'ledger');
 
@@ -160,7 +160,7 @@ class JournalEntryTest extends TestCase
     public function testAddSplit()
     {
         // First we need a ledger
-        $response = $this->createLedger(['template'], ['template' => 'manufacturer']);
+        $response = $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
 
         $this->isSuccessful($response, 'ledger');
 
@@ -204,13 +204,15 @@ class JournalEntryTest extends TestCase
     public function testAddSplitWithReference()
     {
         // First we need a ledger
-        $response = $this->createLedger(['template'], ['template' => 'manufacturer']);
+        $response = $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
 
         $this->isSuccessful($response, 'ledger');
 
         // Add a reference
         $ref = new JournalReference();
         $ref->code = 'cust1';
+        $domain = LedgerDomain::first();
+        $ref->domainUuid = $domain->domainUuid;
         $ref->save();
         $ref->refresh();
 
@@ -221,18 +223,18 @@ class JournalEntryTest extends TestCase
             'date' => '2021-11-12',
             'details' => [
                 [
-                    'accountCode' => '4110',
+                    'code' => '4110',
                     'amount' => '-520.00',
                 ],
                 [
-                    'accountCode' => '1120',
+                    'code' => '1120',
                     'amount' => '500.00',
                     'reference' => [
                         'code' => 'cust1',
                     ],
                 ],
                 [
-                    'accountCode' => '2250',
+                    'code' => '2250',
                     'amount' => '20.00',
                 ],
             ]
@@ -255,7 +257,7 @@ class JournalEntryTest extends TestCase
     public function testDelete()
     {
         // First we need a ledger and transaction
-        $this->createLedger(['template'], ['template' => 'manufacturer']);
+        $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
 
         [$requestData, $response] = $this->addSalesTransaction();
         $actual = $this->isSuccessful($response);
@@ -301,7 +303,7 @@ class JournalEntryTest extends TestCase
     public function testGet()
     {
         // First we need a ledger and transaction
-        $this->createLedger(['template'], ['template' => 'manufacturer']);
+        $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
 
         [$requestData, $addResponse] = $this->addSalesTransaction();
         $addActual = $this->isSuccessful($addResponse);
@@ -338,7 +340,7 @@ class JournalEntryTest extends TestCase
     public function testUpdate()
     {
         // First we need a ledger and transaction
-        $this->createLedger(['template'], ['template' => 'manufacturer']);
+        $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
 
         [$requestData, $addResponse] = $this->addSalesTransaction();
         $addActual = $this->isSuccessful($addResponse);
@@ -347,7 +349,7 @@ class JournalEntryTest extends TestCase
         $requestData['id'] = $addActual->entry->id;
         $requestData['revision'] = $addActual->entry->revision;
         $requestData['description'] = 'Oops, that was a rental!';
-        $requestData['details'][1]['accountCode'] = '4240';
+        $requestData['details'][1]['code'] = '4240';
         $response = $this->json(
             'post', 'api/ledger/entry/update', $requestData
         );

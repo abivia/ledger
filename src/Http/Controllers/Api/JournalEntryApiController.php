@@ -36,10 +36,11 @@ class JournalEntryApiController
             $controller = new JournalEntryController();
             if ($opFlags & Message::OP_QUERY) {
                 $message = EntryQuery::fromArray($request->all(), $opFlags);
-                $response['entries'] = [];
+                $entries = [];
                 foreach ($controller->query($message, $opFlags) as $entry) {
-                    $response['entries'][] = $entry->toResponse(Message::OP_GET);
+                    $entries[] = $entry->toResponse(Message::OP_GET);
                 }
+                $response['entries'] = $entries;
             } else {
                 $message = Entry::fromArray($request->all(), $opFlags);
                 $journalEntry = $controller->run($message, $opFlags);

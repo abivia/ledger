@@ -67,7 +67,7 @@ class LedgerDomain extends Model
      */
     public static function findWith(EntityRef $entityRef): Builder
     {
-        if (isset($entityRef->uuid) && $entityRef->uuid !== null) {
+        if (isset($entityRef->uuid)) {
             $finder = self::where('domainUuid', $entityRef->uuid);
         } elseif (isset($entityRef->code)) {
             $finder = self::where('code', $entityRef->code);

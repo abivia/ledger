@@ -84,12 +84,15 @@ class CreateLedgerTables extends Migration
         // Connection to entities outside the GL
         Schema::create('journal_references', function (Blueprint $table) {
             $table->uuid('journalReferenceUuid')->primary();
-            $table->string('code')->unique();
+            $table->foreignUuid('domainUuid');
+            $table->string('code');
             $table->longText('extra')->nullable();
             // The update timestamp (server-side)
             $table->dateTime('revision', 6)
                 ->useCurrentOnUpdate()->nullable();
             $table->timestamps(6);
+
+            $table->unique(['domainUuid', 'code']);
         });
 
         // Account definitions (chart of accounts)

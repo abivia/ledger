@@ -7,15 +7,30 @@ use Abivia\Ledger\Messages\Message;
 
 class Currency extends Message
 {
+    /**
+     * @var string A unique identifier for the currency.
+     */
     public string $code;
+
+    /**
+     * @var int The number of decimal places to use for this currency.
+     */
     public int $decimals;
+
+    /**
+     * @var string The revision hash code for the account.
+     */
     public string $revision;
+
+    /**
+     * @var string A new currency code to be assigned in an update operation.
+     */
     public string $toCode;
 
     /**
      * @inheritdoc
      */
-    public static function fromArray(array $data, int $opFlags) : self
+    public static function fromArray(array $data, int $opFlags = 0) : self
     {
         $errors = [];
         $result = new static();
@@ -49,7 +64,7 @@ class Currency extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlags): self
+    public function validate(int $opFlags = 0): self
     {
         $errors = [];
         if (!isset($this->code)) {

@@ -68,13 +68,7 @@ trait CreateLedgerTrait {
      */
     protected function addRandomTransactions(int $count) {
         // Get a list of accounts in the ledger
-        $codes = [];
-        foreach (LedgerAccount::all() as $account) {
-            // Get rid of the root and any category accounts
-            if ($account->code != '' && !$account->category) {
-                $codes[] = $account->code;
-            }
-        }
+        $codes = $this->getPostingAccounts();
         $forDate = new Carbon('2001-01-02');
         $transId = 0;
         $shuffled = [];
@@ -133,6 +127,18 @@ trait CreateLedgerTrait {
         );
 
         return $response;
+    }
+
+    protected function getPostingAccounts(): array
+    {
+        $codes = [];
+        foreach (LedgerAccount::all() as $account) {
+            // Get rid of the root and any category accounts
+            if ($account->code != '' && !$account->category) {
+                $codes[] = $account->code;
+            }
+        }
+        return $codes;
     }
 
 }

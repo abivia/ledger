@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @property string $code External identifier.
  * @property Carbon $created_at
+ * @property string $domainUuid The domain this reference exists in.
  * @property string $extra Application specific information.
  * @property string $journalReferenceUuid UUID primary key.
  * @property Carbon $revision Revision timestamp to detect race condition on update.
@@ -31,7 +32,7 @@ class JournalReference extends Model
         'revision' => 'datetime',
     ];
     protected $dateFormat = 'Y-m-d H:i:s.u';
-    protected $fillable = ['code', 'extra'];
+    protected $fillable = ['code', 'domainUuid', 'extra'];
     public $incrementing = false;
     protected $keyType = 'string';
     protected $primaryKey = 'journalReferenceUuid';
@@ -44,6 +45,7 @@ class JournalReference extends Model
                 $instance->{$property} = $message->{$property};
             }
         }
+        $instance->domainUuid = $message->domain->uuid;
         $instance->save();
         $instance->refresh();
 
@@ -59,10 +61,11 @@ class JournalReference extends Model
      */
     public static function findWith(Reference $reference): Builder
     {
+        $finder = self::where('domainUuid', $reference->domain->uuid);
         if (isset($reference->journalReferenceUuid)) {
-            $finder = self::where('journalReferenceUuid', $reference->journalReferenceUuid);
+            $finder = $finder->where('journalReferenceUuid', $reference->journalReferenceUuid);
         } elseif (isset($reference->code)) {
-            $finder = self::where('code', $reference->code);
+            $finder = $finder->where('code', $reference->code);
         } else {
             throw new Exception('Reference must have either code or uuid entries');
         }

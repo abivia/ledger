@@ -119,6 +119,7 @@ class TrialBalanceReport extends AbstractReport
      */
     public function prepare(ReportData $reportData): Collection
     {
+        $result = collect(['request' => $reportData->request]);
         $this->accounts = collect($reportData->accounts)->keyBy('code');
         $this->decimals = $reportData->decimals;
         $this->rollUp();
@@ -149,8 +150,9 @@ class TrialBalanceReport extends AbstractReport
             }
             $account->setReportTotals($this->decimals);
         }
+        $result->put('accounts', $this->accounts);
 
-        return $this->accounts;
+        return $result;
     }
 
     /**

@@ -1,4 +1,4 @@
-<?php /** @noinspection PhpParamsInspection */
+<?php /** @noinspection ALL */
 
 namespace Abivia\Ledger\Tests\Feature;
 
@@ -77,7 +77,7 @@ class LedgerAccountTest extends TestCase
      */
     public function testCreateCommon(): void
     {
-        $response = $this->createLedger(['template'], ['template' => 'manufacturer']);
+        $response = $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
 
         $this->isSuccessful($response, 'ledger');
 
@@ -174,7 +174,7 @@ class LedgerAccountTest extends TestCase
                 // A/P
                 [ 'code' => '2120', 'amount' => '500', 'currency' => 'CAD'],
             ],
-            'template' => 'manufacturer'
+            'template' => 'manufacturer_1.0'
         ];
         $response = $this->createLedger(['template'], $balancePart);
 
@@ -200,7 +200,7 @@ class LedgerAccountTest extends TestCase
                 // A/R
                 [ 'code' => '1310', 'amount' => '-1500', 'currency' => 'CAD'],
             ],
-            'template' => 'manufacturer'
+            'template' => 'manufacturer_1.0'
         ];
         $response = $this->createLedger(['template'], $balancePart, true);
 
@@ -325,7 +325,7 @@ class LedgerAccountTest extends TestCase
         $response = $this->json(
             'post', 'api/ledger/account/get', $requestData
         );
-        $actual = $this->isFailure($response, 'accounts');
+        $this->isFailure($response);
     }
 
     public function testDeleteSubAccounts()
@@ -382,7 +382,6 @@ class LedgerAccountTest extends TestCase
         $this->isSuccessful($response);
 
         // Now fetch with uuid and correct code
-        $uuid = $actual->account->uuid;
         $requestData = ['code' => '1010', 'uuid' => $uuid];
         $response = $this->json(
             'post', 'api/ledger/account/get', $requestData
@@ -390,7 +389,6 @@ class LedgerAccountTest extends TestCase
         $this->isSuccessful($response);
 
         // Expect error when no code/uuid provided
-        $uuid = $actual->account->uuid;
         $requestData = ['bogus' => '9999'];
         $response = $this->json(
             'post', 'api/ledger/account/get', $requestData
@@ -398,7 +396,6 @@ class LedgerAccountTest extends TestCase
         $this->isFailure($response);
 
         // Expect error with code mismatch
-        $uuid = $actual->account->uuid;
         $requestData = ['code' => '9999', 'uuid' => $uuid];
         $response = $this->json(
             'post', 'api/ledger/account/get', $requestData
@@ -406,7 +403,6 @@ class LedgerAccountTest extends TestCase
         $this->isFailure($response);
 
         // Expect error with bad uuid
-        $uuid = $actual->account->uuid;
         $requestData = ['uuid' => 'bob'];
         $response = $this->json(
             'post', 'api/ledger/account/get', $requestData
@@ -414,7 +410,6 @@ class LedgerAccountTest extends TestCase
         $this->isFailure($response);
 
         // Expect error with bad code
-        $uuid = $actual->account->uuid;
         $requestData = ['code' => '9999'];
         $response = $this->json(
             'post', 'api/ledger/account/get', $requestData

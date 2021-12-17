@@ -109,7 +109,7 @@ class LedgerAccountController extends Controller
             $inTransaction = true;
             Db::table($balanceTable)->whereIn('ledgerUuid', $relatedAccounts)
                 ->delete();
-            Db::table($nameTable)->whereIn('ledgerUuid', $relatedAccounts)
+            Db::table($nameTable)->whereIn('ownerUuid', $relatedAccounts)
                 ->delete();
             Db::table($accountTable)->whereIn('ledgerUuid', $relatedAccounts)
                 ->delete();

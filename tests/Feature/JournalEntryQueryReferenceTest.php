@@ -4,21 +4,12 @@
 
 namespace Abivia\Ledger\Tests\Feature;
 
-use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Http\Controllers\JournalEntryController;
-use Abivia\Ledger\Models\JournalReference;
-use Abivia\Ledger\Models\LedgerAccount;
-use Abivia\Ledger\Messages\Detail;
-use Abivia\Ledger\Messages\EntityRef;
-use Abivia\Ledger\Messages\Entry;
 use Abivia\Ledger\Messages\EntryQuery;
 use Abivia\Ledger\Messages\Reference;
 use Abivia\Ledger\Messages\Message;
-use Carbon\Carbon;
-use Exception;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Abivia\Ledger\Tests\TestCase;
-use function array_shift;
 
 /**
  * Test entry queries incorporating a Journal Reference
@@ -33,73 +24,6 @@ class JournalEntryQueryReferenceTest extends TestCase
     private array $referenceUses = [];
     private array $references = [];
 
-    /**
-     * @throws Exception
-     */
-    protected function addRandomTransactions(int $count)
-    {
-        // Get a list of accounts in the ledger
-        $codes = [];
-        foreach (LedgerAccount::all() as $account) {
-            // Get rid of the root
-            if ($account->code != '') {
-                $codes[] = $account->code;
-            }
-        }
-
-        // Create some random references
-        $refs = self::TRANS_COUNT / 2;
-        for ($ind = 0; $ind < $refs; ++$ind) {
-            $journalReference = new JournalReference();
-            $journalReference->code = 'REF' . str_pad($ind, 4, '0', STR_PAD_LEFT);
-            $journalReference->save();
-            $this->references[$journalReference->code] = $journalReference;
-        }
-        $this->referenceUses = array_fill_keys(array_keys($this->references), 0);
-
-        $forDate = new Carbon('2001-01-02');
-        $transId = 0;
-        $shuffled = [];
-        shuffle($shuffled);
-        $controller = new JournalEntryController();
-        try {
-            while ($transId++ < $count) {
-                if (count($shuffled) < 2) {
-                    $shuffled = $codes;
-                    shuffle($shuffled);
-                }
-                $entry = new Entry();
-                $entry->currency = 'CAD';
-                $entry->description = "Random entry $transId";
-                $entry->transDate = clone $forDate;
-                $entry->transDate->addDays(random_int(0, $count));
-                $amount = (float)random_int(-99999, 99999);
-
-                // First detail has no reference
-                $entry->details[] = new Detail(
-                    new EntityRef(array_pop($shuffled)),
-                    (string)($amount / 100)
-                );
-
-                // Second detail has a reference
-                $detail = new Detail(
-                    new EntityRef(array_pop($shuffled)),
-                    (string)(-$amount / 100)
-                );
-                $ref = array_rand($this->references);
-                $detail->reference = new Reference();
-                $detail->reference->code = $ref;
-                ++$this->referenceUses[$ref];
-                $entry->details[] = $detail;
-
-                $controller->add($entry);
-            }
-        } catch (Breaker $exception) {
-            echo $exception->getMessage() . "\n"
-                . implode("\n", $exception->getErrors());
-        }
-    }
-
     public function setUp(): void
     {
         parent::setUp();
@@ -107,7 +31,7 @@ class JournalEntryQueryReferenceTest extends TestCase
         // Create a ledger and a set of transactions.
         $this->createLedger(
             ['template', 'date'],
-            ['template' => 'manufacturer', 'date' => '2001-01-01']
+            ['template' => 'manufacturer_1.0', 'date' => '2001-01-01']
         );
         // Subtract one
         $this->addRandomTransactions(self::TRANS_COUNT - 1);

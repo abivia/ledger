@@ -38,7 +38,7 @@ class JournalEntryQueryTest extends TestCase
         // Create a ledger and a set of transactions.
         $this->createLedger(
             ['template', 'date'],
-            ['template' => 'manufacturer', 'date' => '2001-01-01']
+            ['template' => 'manufacturer_1.0', 'date' => '2001-01-01']
         );
         // Subtract one
         $this->addRandomTransactions(self::TRANS_COUNT);
@@ -176,6 +176,29 @@ class JournalEntryQueryTest extends TestCase
                 $this->fail();
             }
         }
+    }
+
+    public function testQueryDomainBad()
+    {
+        // Query for everything, unpaginated
+        $query = new EntryQuery();
+        $query->domain = new EntityRef();
+        $query->domain->code = 'fubar';
+        $controller = new JournalEntryController();
+        $this->expectException(Breaker::class);
+        $controller->query($query, Message::OP_QUERY);
+    }
+
+    public function testQueryDomainApiBad()
+    {
+        // Query for everything, paginated
+        $pages = 0;
+        $totalEntries = 0;
+        $fetchData = ['domain' => 'fubar'];
+        $response = $this->json(
+            'post', 'api/ledger/entry/query', $fetchData
+        );
+        $this->isFailure($response);
     }
 
     public function testQueryReviewed()

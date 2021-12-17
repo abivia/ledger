@@ -14,11 +14,12 @@ class EntityRef extends Message
     public string $code;
 
     protected static array $copyable = [
-        'code', 'uuid',
+        'code',
+        ['uuid', self::ALL_OPS & ~self::OP_ADD],
     ];
 
     /**
-     * @var ?string The UUID of the entity (can be null)
+     * @var string The UUID of the entity.
      */
     public string $uuid;
 
@@ -51,7 +52,7 @@ class EntityRef extends Message
     /**
      * @inheritdoc
      */
-    public static function fromArray(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags = 0): self
     {
         $entityRef = new static();
         $entityRef->copy($data, $opFlags);
@@ -63,6 +64,29 @@ class EntityRef extends Message
         return $entityRef;
     }
 
+    public static function fromMixed($data, int $opFlags = 0): EntityRef
+    {
+        if (is_array($data)) {
+            $entityRef = EntityRef::fromArray($data, $opFlags);
+        } else {
+            $entityRef = new EntityRef();
+            $entityRef->code = $data;
+        }
+
+        return $entityRef;
+    }
+
+    public function sameAs(EntityRef $ref): bool
+    {
+        if (($this->code ?? null) !== ($ref->code ?? null)) {
+            return false;
+        }
+        if (($this->uuid ?? null) !== ($ref->uuid ?? null)) {
+            return false;
+        }
+        return true;
+    }
+
     /**
      * Make sure the reference is valid.
      *
@@ -72,7 +96,7 @@ class EntityRef extends Message
      * @return self
      * @throws Breaker
      */
-    public function validate(int $opFlags, string $codeFormat = ''): self
+    public function validate(int $opFlags = 0, string $codeFormat = ''): self
     {
         $errors = [];
         if (!isset($this->code) && !isset($this->uuid)) {

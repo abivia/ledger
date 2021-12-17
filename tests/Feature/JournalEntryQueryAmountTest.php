@@ -16,7 +16,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Abivia\Ledger\Tests\TestCase;
-use function array_shift;
+
 
 /**
  * Test entry queries incorporating a Journal Reference
@@ -39,7 +39,7 @@ class JournalEntryQueryAmountTest extends TestCase
         // Create a ledger and a set of transactions.
         $this->createLedger(
             ['template', 'date'],
-            ['template' => 'manufacturer', 'date' => '2001-01-01']
+            ['template' => 'manufacturer_1.0', 'date' => '2001-01-01']
         );
         // Subtract one for the opening balances.
         $this->addRandomTransactions(self::TRANS_COUNT - 1);
@@ -51,13 +51,7 @@ class JournalEntryQueryAmountTest extends TestCase
      */
     protected function addRandomTransactions(int $count) {
         // Get a list of accounts in the ledger
-        $codes = [];
-        foreach (LedgerAccount::all() as $account) {
-            // Get rid of the root
-            if ($account->code != '') {
-                $codes[] = $account->code;
-            }
-        }
+        $codes = $this->getPostingAccounts();
 
         $forDate = new Carbon('2001-01-02');
         $transId = 0;
@@ -107,37 +101,37 @@ class JournalEntryQueryAmountTest extends TestCase
         $query->amountMax = '120';
         $controller = new JournalEntryController();
         $entries = $controller->query($query, Message::OP_QUERY);
-        $this->assertCount(0, $entries);
+        $this->assertEquals(0, $entries->count());
 
         $query->amount = '2.10';
         $query->amountMax = '2.20';
         $controller = new JournalEntryController();
         $entries = $controller->query($query, Message::OP_QUERY);
-        $this->assertCount(0, $entries);
+        $this->assertEquals(0, $entries->count());
 
         $query->amount = '2.00';
         $query->amountMax = '6.00';
         $controller = new JournalEntryController();
         $entries = $controller->query($query, Message::OP_QUERY);
-        $this->assertCount(10, $entries);
+        $this->assertEquals(10, $entries->count());
 
         $query->amount = '8.00';
         $query->amountMax = '11';
         $controller = new JournalEntryController();
         $entries = $controller->query($query, Message::OP_QUERY);
-        $this->assertCount(8, $entries);
+        $this->assertEquals(8, $entries->count());
 
         $query->amount = '-2.00';
         $query->amountMax = '-6.00';
         $controller = new JournalEntryController();
         $entries = $controller->query($query, Message::OP_QUERY);
-        $this->assertCount(10, $entries);
+        $this->assertEquals(10, $entries->count());
 
         $query->amount = '2.00';
         $query->amountMax = '-6.00';
         $controller = new JournalEntryController();
         $entries = $controller->query($query, Message::OP_QUERY);
-        $this->assertCount(10, $entries);
+        $this->assertEquals(10, $entries->count());
     }
 
     public function testQueryAmountEqual()
@@ -146,22 +140,22 @@ class JournalEntryQueryAmountTest extends TestCase
         $query->amount = '27.60';
         $controller = new JournalEntryController();
         $entries = $controller->query($query, Message::OP_QUERY);
-        $this->assertCount(0, $entries);
+        $this->assertEquals(0, $entries->count());
 
         $query->amount = '2.00';
         $controller = new JournalEntryController();
         $entries = $controller->query($query, Message::OP_QUERY);
-        $this->assertCount(2, $entries);
+        $this->assertEquals(2, $entries->count());
 
         $query->amount = '2.001';
         $controller = new JournalEntryController();
         $entries = $controller->query($query, Message::OP_QUERY);
-        $this->assertCount(2, $entries);
+        $this->assertEquals(2, $entries->count());
 
         $query->amount = '-2.00';
         $controller = new JournalEntryController();
         $entries = $controller->query($query, Message::OP_QUERY);
-        $this->assertCount(2, $entries);
+        $this->assertEquals(2, $entries->count());
     }
 
     public function testQueryApiAmountBetween()

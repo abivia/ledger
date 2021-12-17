@@ -8,7 +8,11 @@ use Abivia\Ledger\Messages\Message;
 
 class Domain extends Message
 {
+    /**
+     * @var string A unique identifier for the Domain.
+     */
     public string $code;
+
     protected static array $copyable = [
         'code',
         'extra',
@@ -17,24 +21,44 @@ class Domain extends Message
         'uuid',
     ];
 
-    public string $currencyDefault;
-    public string $extra;
     /**
-     * @var Name[]
+     * @var string The Currency code that is used in journal entries by default.
+     */
+    public string $currencyDefault;
+
+    /**
+     * @var string An arbitrary string for use by the application.
+     */
+    public string $extra;
+
+    /**
+     * @var Name[] A list of names for the domain.
      */
     public array $names = [];
+
+    /**
+     * @var string The revision hash code for the Domain.
+     */
     public string $revision;
+
+    /**
+     * @var bool Set true when the Domain has separate journals.
+     */
     public bool $subJournals;
+
+    /**
+     * @var string A new Domain code to be assigned in an update operation.
+     */
     public string $toCode;
 
     /**
      * @inheritdoc
      */
-    public static function fromArray(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags = 0): self
     {
         $domain = new static();
         $domain->copy($data, $opFlags);
-        if (isset($data['names'])) {
+        if (isset($data['names']) || isset($data['name'])) {
             $nameList = $data['names'] ?? [];
             if (isset($data['name'])) {
                 array_unshift($nameList, ['name' => $data['name']]);
@@ -55,7 +79,7 @@ class Domain extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlags): self
+    public function validate(int $opFlags = 0): self
     {
         $errors = [];
         if (isset($this->code)) {

@@ -206,8 +206,8 @@ class LedgerAccount extends Model
                     );
                 } else {
                     throw new Exception(__(
-                        "Parent :parent does not exist but is used in :account",
-                        ['parent' => $next, 'account' => $current]
+                        "Parent :parent does not exist but is used in :code",
+                        ['parent' => $next, 'code' => $current]
                     ));
                 }
             }
@@ -302,9 +302,7 @@ class LedgerAccount extends Model
         self::$root = null;
         self::loadRoot();
         if (self::$root === null) {
-            if (!isset(self::$bootRules)) {
-                self::baseRuleSet();
-            }
+            self::baseRuleSet();
             return self::$bootRules;
         }
 
@@ -316,7 +314,7 @@ class LedgerAccount extends Model
      * @param array $data
      * @return stdClass
      */
-    public static function setRules(array $data)
+    public static function setRules(stdClass $data)
     {
         if (self::$root === null) {
             self::loadRoot();
@@ -324,11 +322,11 @@ class LedgerAccount extends Model
                 if (!isset(self::$bootRules)) {
                     self::baseRuleSet();
                 }
-                Merge::arrayToObject(self::$bootRules, $data);
+                Merge::objects(self::$bootRules, $data);
                 return self::$bootRules;
             }
         }
-        Merge::arrayToObject(self::$root->flex->rules, $data);
+        Merge::objects(self::$root->flex->rules, $data);
         self::$root->save();
 
         return self::$root->flex->rules;

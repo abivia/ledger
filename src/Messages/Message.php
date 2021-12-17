@@ -86,7 +86,7 @@ abstract class Message
      * @return static Message initialized with relevant data.
      * @throws Breaker On error, e.g. required data is missing or on validation.
      */
-    public abstract static function fromArray(array $data, int $opFlags): self;
+    public abstract static function fromArray(array $data, int $opFlags = 0): self;
 
     /**
      * Convert a method name to an operation bitmask.
@@ -124,6 +124,6 @@ abstract class Message
      * @return self
      * @throws Breaker When data is not valid.
      */
-    public abstract function validate(int $opFlags): self;
+    public abstract function validate(int $opFlags = 0): self;
 
 }

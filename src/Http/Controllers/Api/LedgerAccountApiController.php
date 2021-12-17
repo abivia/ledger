@@ -36,10 +36,11 @@ class LedgerAccountApiController
             $controller = new LedgerAccountController();
             if ($opFlags & Message::OP_QUERY) {
                 $message = AccountQuery::fromArray($request->all(), $opFlags);
-                $response['accounts'] = [];
+                $accounts = [];
                 foreach ($controller->query($message, $opFlags) as $entry) {
-                    $response['accounts'][] = $entry->toResponse([]);
+                    $accounts[] = $entry->toResponse([]);
                 }
+                $response['accounts'] = $accounts;
             } else {
                 $message = Account::fromArray($request->all(), $opFlags);
                 $ledgerAccount = $controller->run($message, $opFlags);

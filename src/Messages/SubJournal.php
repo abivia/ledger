@@ -27,7 +27,7 @@ class SubJournal extends Message
     /**
      * @inheritdoc
      */
-    public static function fromArray(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags = 0): self
     {
         $subJournal = new static();
         $subJournal->copy($data, $opFlags);
@@ -50,7 +50,7 @@ class SubJournal extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlags): self
+    public function validate(int $opFlags = 0): self
     {
         $errors = [];
         if (!isset($this->code)) {

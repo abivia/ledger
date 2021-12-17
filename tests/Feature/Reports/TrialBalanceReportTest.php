@@ -66,10 +66,10 @@ class TrialBalanceReportTest extends TestCase
         $this->loadRandomBaseline();
         $report = new TrialBalanceReport();
         $prepared = $report->prepare($reportData);
-        $this->assertCount(138, $prepared);
+        $this->assertCount(138, $prepared['accounts']);
         $lines = [];
         /** @var ReportAccount $account */
-        foreach ($prepared as $account) {
+        foreach ($prepared['accounts'] as $account) {
             $line = [$account->total, $account->balance, $account->creditBalance, $account->debitBalance];
             $line[] = '"' . $account->name . '"';
             $line[] = $account->code;
@@ -83,6 +83,22 @@ class TrialBalanceReportTest extends TestCase
             file_put_contents($exportPath, implode($lines));
         }
         $this->assertTrue(true);
-
     }
+
+    public function testApi()
+    {
+        $this->loadRandomBaseline();
+
+        $request = [
+            'name' => 'trialBalance',
+            'currency' => 'CAD',
+            'toDate' => '2001-02-28',
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/report', $request
+        );
+        $actual = $this->isSuccessful($response, 'report');
+        $this->assertCount(138, $actual->report->accounts);
+    }
+
 }

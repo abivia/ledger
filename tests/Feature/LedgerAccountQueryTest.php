@@ -23,7 +23,7 @@ class LedgerAccountQueryTest extends TestCase
     public function testGet()
     {
         // First we need a ledger
-        $this->createLedger(['template'], ['template' => 'manufacturer']);
+        $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
 
         // Query for everything, paginated
         $pages = 0;

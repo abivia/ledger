@@ -7,6 +7,8 @@ use Abivia\Ledger\Helpers\Merge;
 use Abivia\Ledger\Helpers\Package;
 use Abivia\Ledger\Messages\Message;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\App;
+use stdClass;
 use TypeError;
 
 /**
@@ -17,36 +19,53 @@ use TypeError;
 class Create extends Message
 {
     /**
-     * @var Account[]
+     * @var Account[] A list of ledger accounts.
      */
     public array $accounts = [];
 
     /**
-     * @var Balance[] Opening balances
+     * @var Balance[] A list of balances for the opening transaction.
      */
     public array $balances = [];
     /**
-     * @var Currency[]
+     * @var Currency[] A list of currencies supported by the ledger.
      */
     public array $currencies = [];
     /**
-     * @var Domain[]
+     * @var Domain[] A list of ledger domains (organizational units).
      */
     public array $domains = [];
     /**
-     * @var SubJournal[]
+     * @var SubJournal[] A list of sub-journals that can receive Journal Entries.
      */
     public array $journals = [];
     /**
-     * @var Name[]
+     * @var Name[] Name of the ledger, multilingual.
      */
     public array $names = [];
-    public array $rules = [];
+
+    /**
+     * @var stdClass Ledger attribute settings.
+     */
+    public stdClass $rules;
+
+    /**
+     * @var string A Chart of Accounts template to use.
+     */
     public string $template;
+
+    /**
+     * @var string The path to the CoA template (read only).
+     */
     protected string $templatePath;
+
+    /**
+     * @var Carbon The opening balance date.
+     */
     public Carbon $transDate;
 
     /**
+     * Property get.
      * @param $name
      * @return string|null
      */
@@ -190,7 +209,7 @@ class Create extends Message
     /**
      * @inheritdoc
      */
-    public static function fromArray(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags = 0): self
     {
         $errors = [];
         $create = new Create();
@@ -212,7 +231,9 @@ class Create extends Message
             if (isset($data['date'])) {
                 $create->transDate = new Carbon($data['date']);
             }
-            $create->rules = $data['rules'] ?? [];
+            // Convert the array into a stdClass
+            $ruleArray = $data['rules'] ?? [];
+            $create->rules = json_decode(json_encode($ruleArray));
         }
         catch (TypeError $exception) {
             if (
@@ -241,7 +262,7 @@ class Create extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlags): self
+    public function validate(int $opFlags = 0): self
     {
         $this->transDate ??= Carbon::now();
         if (isset($this->template)) {
@@ -266,10 +287,8 @@ class Create extends Message
             $this->domains['MAIN'] = domain::fromArray(
                 [
                     'code' => 'MAIN',
-                    'names' => [
-                        'name' => 'Main General Ledger',
-                        'language' => 'en'
-                    ]
+                    'name' => 'Main General Ledger',
+                    'language' => App::getLocale(),
                 ],
                 Message::OP_CREATE
             );

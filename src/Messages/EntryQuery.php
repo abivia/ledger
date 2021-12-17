@@ -23,25 +23,44 @@ class EntryQuery extends Message {
      */
     public Carbon $afterDate;
 
+    /**
+     * @var string Minimum transaction amount.
+     */
     public string $amount;
+
+    /**
+     * @var string Maximum transaction amount.
+     */
     public string $amountMax;
 
     protected static array $copyable = [
         'after', 'limit',
     ];
+
+    /**
+     * @var string The transaction currency.
+     */
     public string $currency;
+
+    /**
+     * @var Carbon The minimum transaction date.
+     */
     public Carbon $date;
+
+    /**
+     * @var Carbon The maximum transaction date.
+     */
     public Carbon $dateEnding;
 
     /**
-     * @var EntityRef[]
+     * @var EntityRef The ledger domain to query.
      */
-    public array $entities = [];
+    public EntityRef $domain;
 
     /**
-     * @var ?EntityRef Ledger domain. If not provided the default is used.
+     * @var EntityRef[] [future use]
      */
-    public ?EntityRef $domain;
+    public array $entities = [];
 
     /**
      * @var Message[] Message objects that limit query results
@@ -53,14 +72,20 @@ class EntryQuery extends Message {
      */
     public int $limit;
 
+    /**
+     * @var Reference A link to an external entity.
+     */
     public Reference $reference;
 
+    /**
+     * @var bool|null Find reviewed/unreviewed/all states.
+     */
     public ?bool $reviewed;
 
     /**
      * @inheritDoc
      */
-    public static function fromArray(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags = 0): self
     {
         $query = new self();
         $query->copy($data, $opFlags);
@@ -78,6 +103,9 @@ class EntryQuery extends Message {
             } else {
                 $query->amount = $data['amount'];
             }
+        }
+        if (isset($data['domain'])) {
+            $query->domain = EntityRef::fromMixed($data['domain']);
         }
         if (isset($data['reference'])) {
             $query->reference = new Reference();
@@ -249,7 +277,7 @@ class EntryQuery extends Message {
     /**
      * @inheritDoc
      */
-    public function validate(int $opFlags): self
+    public function validate(int $opFlags = 0): self
     {
         // Limit results on API calls
         if ($opFlags & self::F_API) {

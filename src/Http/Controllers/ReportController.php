@@ -5,6 +5,7 @@ namespace Abivia\Ledger\Http\Controllers;
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Messages\Report;
 use Abivia\Ledger\Models\JournalEntry;
+use Abivia\Ledger\Models\LedgerDomain;
 use Abivia\Ledger\Models\LedgerReport;
 use Abivia\Ledger\Models\ReportAccount;
 use Abivia\Ledger\Models\ReportData;
@@ -18,7 +19,7 @@ class ReportController extends Controller
             [
                 'currency' => $message->currency,
                 'domainUuid' =>$message->domain->uuid,
-                'fromDate' => $message->fromDate,
+                'fromDate' => $message->fromDate ?? null,
                 'journalEntryId' => $reportData->journalEntryId,
                 'name' => $message->name,
                 'reportData' => serialize($reportData),
@@ -36,12 +37,23 @@ class ReportController extends Controller
     public function generate(Report $message): Collection
     {
         $message->validate(0);
+        if (!isset($message->domain->uuid)) {
+            /** @var LedgerDomain $ledgerDomain */
+            $ledgerDomain = LedgerDomain::findWith($message->domain)->first();
+            if ($ledgerDomain === null) {
+                throw Breaker::withCode(
+                    Breaker::BAD_REQUEST,
+                    __('Domain :code is not defined.', ['code' => $message->domain->code])
+                );
+            }
+            $message->domain->uuid = $ledgerDomain->domainUuid;
+        }
         $className = 'Abivia\\Ledger\\Reports\\' . ucfirst($message->name) . 'Report';
         $reporter = new $className();
         $reportData = $this->getCached($message) ?? $reporter->collect($message);
         $this->cache($message, $reportData);
 
-        return $reporter->prepare($message, $reportData);
+        return $reporter->prepare($reportData);
     }
 
     /**

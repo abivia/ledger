@@ -41,7 +41,7 @@ class Name extends Message
     /**
      * @inheritdoc
      */
-    public static function fromArray(array $data, int $opFlags): self
+    public static function fromArray(array $data, int $opFlags = 0): self
     {
         $name = new static();
         $name->name = $data['name'] ?? '';
@@ -84,7 +84,7 @@ class Name extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlags): self
+    public function validate(int $opFlags = 0): self
     {
         if ($this->name === '' && !($opFlags & self::OP_UPDATE)) {
             throw Breaker::withCode(

@@ -367,7 +367,10 @@ class JournalEntryController extends Controller
             // Make sure the account is valid and that we have the uuid
             $ledgerAccount = $detail->findAccount();
             if ($ledgerAccount === null) {
-                $errors[] = __('Detail line :line has an invalid account.', compact('line'));
+                $errors[] = __(
+                    'Detail line :line has an invalid account.',
+                    compact('line')
+                );
             }
             if (!$postToCategory && $ledgerAccount->category) {
                 $errors[] = __(
@@ -387,6 +390,14 @@ class JournalEntryController extends Controller
 
             // Make sure any reference is valid and that we have the uuid
             if (isset($detail->reference)) {
+                if (!isset($detail->reference->domain)) {
+                    $detail->reference->domain = $message->domain;
+                } elseif (!$detail->reference->domain->sameAs($message->domain)) {
+                    $errors[] = __(
+                        'Reference in Detail line :line has a mismatched domain.',
+                        compact('line')
+                    );
+                }
                 $detail->reference->lookup();
             }
             $balance = bcadd($balance, $detail->normalizeAmount($precision));

@@ -26,7 +26,7 @@ class RootTest extends TestCase
         );
         $actual = $this->isSuccessful($response);
         $this->assertCount(2, $actual->templates);
-        $this->assertEquals('manufacturer', $actual->templates[0]->name);
+        $this->assertEquals('manufacturer_1.0', $actual->templates[0]->name);
         $this->assertEquals('sections', $actual->templates[1]->name);
     }
 

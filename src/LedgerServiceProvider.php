@@ -2,7 +2,9 @@
 
 namespace Abivia\Ledger;
 
-use Abivia\Ledger\Console\InstallLedger;
+use Abivia\Ledger\Console\Install;
+use Abivia\Ledger\Console\ImportFeatureTests;
+use Abivia\Ledger\Console\Templates;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -21,7 +23,9 @@ class LedgerServiceProvider extends ServiceProvider
                 'config'
             );
             $this->commands([
-                InstallLedger::class,
+                ImportFeatureTests::class,
+                Install::class,
+                Templates::class
             ]);
         }
     }

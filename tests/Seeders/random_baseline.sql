@@ -326,7 +326,7 @@ INSERT INTO `journal_entries` (`journalEntryId`, `transDate`, `domainUuid`, `sub
 ;
 -- Table
 INSERT INTO `ledger_accounts` (`ledgerUuid`, `code`, `parentUuid`, `debit`, `credit`, `category`, `closed`, `extra`, `flex`, `revision`, `created_at`, `updated_at`) VALUES
-('c0b81764-505f-4bef-b579-3f37bdd5c082', '', NULL, 0, 0, 1, 0, NULL, '{"rules":{"account":{"postToCategory":false,"codeFormat":"\/^[a-z0-9\\-]+$\/i"},"domain":{"default":"CORP"},"entry":{"reviewed":false},"language":{"default":"en"},"openDate":"2001-01-01 00:00:00.000000","pageSize":25},"salt":"c45249e78851251381f2fca351e749f1"}', NULL, '2021-12-13 07:15:13', '2021-12-13 07:15:13')
+('c0b81764-505f-4bef-b579-3f37bdd5c082', '', NULL, 0, 0, 1, 0, NULL, '{"rules":{"account":{"postToCategory":false,"codeFormat":"\/^[a-z0-9\\\\-]+$\/i"},"domain":{"default":"CORP"},"entry":{"reviewed":false},"language":{"default":"en"},"openDate":"2001-01-01 00:00:00.000000","pageSize":25},"salt":"c45249e78851251381f2fca351e749f1"}', NULL, '2021-12-13 07:15:13', '2021-12-13 07:15:13')
 ,('e8a09512-8a31-423c-a65d-c1de25871cd1', '1000', 'c0b81764-505f-4bef-b579-3f37bdd5c082', 1, 0, 1, 0, NULL, 'null', NULL, '2021-12-13 07:15:13', '2021-12-13 07:15:13')
 ,('c9e7d706-ffc4-4895-b619-b06e257a7fa2', '1100', 'e8a09512-8a31-423c-a65d-c1de25871cd1', 1, 0, 1, 0, NULL, 'null', NULL, '2021-12-13 07:15:13', '2021-12-13 07:15:13')
 ,('a4eeaef1-2152-4f71-aa92-9b9a7dd32a43', '1110', 'c9e7d706-ffc4-4895-b619-b06e257a7fa2', 1, 0, 1, 0, NULL, 'null', NULL, '2021-12-13 07:15:13', '2021-12-13 07:15:13')
@@ -592,8 +592,8 @@ INSERT INTO `ledger_domains` (`domainUuid`, `code`, `extra`, `flex`, `currencyDe
 ;
 -- Table
 INSERT INTO `ledger_names` (`id`, `ownerUuid`, `language`, `name`, `created_at`, `updated_at`) VALUES
-(1, 'dc93f99f-49b4-4e6b-87d2-1e3c3941d6ff', 'en-CA', 'General Corporate', '2021-12-13 07:15:12', '2021-12-13 07:15:12')
-,(2, 'dc93f99f-49b4-4e6b-87d2-1e3c3941d6ff', 'fr-CA', 'Général Corporatif', '2021-12-13 07:15:12', '2021-12-13 07:15:12')
+(1, 'dc93f99f-49b4-4e6b-87d2-1e3c3941d6ff', 'en-CA', 'Random Transactions Inc.', '2021-12-13 07:15:12', '2021-12-13 07:15:12')
+,(2, 'dc93f99f-49b4-4e6b-87d2-1e3c3941d6ff', 'fr-CA', 'Transactions aléatoires inc.', '2021-12-13 07:15:12', '2021-12-13 07:15:12')
 ,(3, 'c0b81764-505f-4bef-b579-3f37bdd5c082', 'en-CA', 'General Ledger Test', '2021-12-13 07:15:13', '2021-12-13 07:15:13')
 ,(4, 'c0b81764-505f-4bef-b579-3f37bdd5c082', 'fr-CA', 'Tester le grand livre', '2021-12-13 07:15:13', '2021-12-13 07:15:13')
 ,(5, 'e8a09512-8a31-423c-a65d-c1de25871cd1', 'en', 'Assets', '2021-12-13 07:15:13', '2021-12-13 07:15:13')
