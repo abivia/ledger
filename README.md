@@ -1,8 +1,9 @@
-# General Ledger and Journal Package for Laravel
+# General Ledger and Journal Package/API for Laravel
 
 Ledger is a full-featured implementation of the core of any good accounting system, a double-entry
 journal and general ledger. It is not a complete accounting solution, but rather the minimum for
-keeping track of financial transactions.
+keeping track of financial transactions. Ledger features a JSON API that provides access to all
+functions.
 
 That's the only minimal part. Ledger features:
 
@@ -27,6 +28,10 @@ Full documentation is available [here](https://ledger.abivia.com/).
 Install Ledger with composer:
 
 `composer install abivia/ledger`
+
+Publish configuration:
+
+`php artisan vendor:publish --provider="Abivia\Ledger\LedgerServiceProvider"`
 
 Create database tables
 
