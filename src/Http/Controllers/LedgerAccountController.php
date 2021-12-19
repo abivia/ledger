@@ -206,6 +206,12 @@ class LedgerAccountController extends Controller
         $message->validate($opFlags);
         $query = LedgerAccount::query()
             ->orderBy('code');
+        if (isset($message->range)) {
+            $query = $query->where('code', '>=', $message->range);
+        }
+        if (isset($message->rangeEnding)) {
+            $query = $query->where('code', '<=', $message->rangeEnding);
+        }
         $query->limit($message->limit);
         if (isset($message->after)) {
             try {
