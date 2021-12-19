@@ -11,7 +11,8 @@ use Exception;
 
 class Reference extends Message
 {
-    public string $code;
+    use HasCodes;
+
     protected static array $copyable = [
         'code', 'extra',
         ['revision', self::OP_DELETE | self::OP_UPDATE],
@@ -30,8 +31,6 @@ class Reference extends Message
      * @var string Revision signature. Required for update.
      */
     public string $revision;
-
-    public string $toCode;
 
     /**
      * @inheritdoc
@@ -83,18 +82,16 @@ class Reference extends Message
      */
     public function validate(int $opFlags = 0): self
     {
-        if (!isset($this->code)) {
-            throw Breaker::withCode(
-                Breaker::BAD_REQUEST,
-                [__('the code property is required')]
-            );
-        }
+        $errors = $this->validateCodes($opFlags, ['regEx' => '/.*/', 'uppercase' => false]);
         $rules = LedgerAccount::rules();
         if (!isset($this->domain)) {
             $this->domain = new EntityRef();
             $this->domain->code = $rules->domain->default;
         }
         $this->domain->validate(0);
+        if (count($errors) !== 0) {
+            throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);
+        }
 
         return $this;
     }

@@ -8,10 +8,7 @@ use Abivia\Ledger\Messages\Message;
 
 class Domain extends Message
 {
-    /**
-     * @var string A unique identifier for the Domain.
-     */
-    public string $code;
+    use HasCodes, HasNames;
 
     protected static array $copyable = [
         'code',
@@ -32,11 +29,6 @@ class Domain extends Message
     public string $extra;
 
     /**
-     * @var Name[] A list of names for the domain.
-     */
-    public array $names = [];
-
-    /**
      * @var string The revision hash code for the Domain.
      */
     public string $revision;
@@ -47,24 +39,13 @@ class Domain extends Message
     public bool $subJournals;
 
     /**
-     * @var string A new Domain code to be assigned in an update operation.
-     */
-    public string $toCode;
-
-    /**
      * @inheritdoc
      */
     public static function fromArray(array $data, int $opFlags = 0): self
     {
         $domain = new static();
         $domain->copy($data, $opFlags);
-        if (isset($data['names']) || isset($data['name'])) {
-            $nameList = $data['names'] ?? [];
-            if (isset($data['name'])) {
-                array_unshift($nameList, ['name' => $data['name']]);
-            }
-            $domain->names = Name::fromRequestList($nameList, $opFlags, 1);
-        }
+        $domain->loadNames($data, $opFlags);
         $domain->subJournals = $data['subJournals'] ?? false;
         if (isset($data['currency'])) {
             $domain->currencyDefault = $data['currency'];
@@ -81,12 +62,7 @@ class Domain extends Message
      */
     public function validate(int $opFlags = 0): self
     {
-        $errors = [];
-        if (isset($this->code)) {
-            $this->code = strtoupper($this->code);
-        } else {
-            $errors[] = 'the code property is required';
-        }
+        $errors = $this->validateCodes($opFlags);
         if (isset($this->currencyDefault)) {
             if ($this->currencyDefault === '') {
                 $errors[] = 'Currency code cannot be empty';
@@ -97,11 +73,10 @@ class Domain extends Message
         if ($opFlags & self::OP_ADD && count($this->names) === 0) {
             $errors[] = 'A non-empty names property is required';
         }
-        if ($opFlags & self::OP_UPDATE && !isset($this->revision)) {
-            $errors[] = 'A revision code is required';
-        }
-        if (isset($this->toCode)) {
-            $this->toCode = strtoupper($this->toCode);
+        if ($opFlags & self::OP_UPDATE) {
+            if (!isset($this->revision)) {
+                $errors[] = 'A revision code is required';
+            }
         }
         try {
             foreach ($this->names as $name) {
@@ -115,4 +90,5 @@ class Domain extends Message
         }
         return $this;
     }
+
 }

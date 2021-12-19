@@ -7,7 +7,7 @@ use Abivia\Ledger\Messages\Message;
 
 class SubJournal extends Message
 {
-    public string $code;
+    use HasCodes, HasNames;
 
     protected static array $copyable = [
         'code', 'extra',
@@ -17,12 +17,11 @@ class SubJournal extends Message
     ];
 
     /**
-     * @var mixed
+     * @var string
      */
-    public $extra;
-    public array $names = [];
+    public string $extra;
+
     public string $revision;
-    public string $toCode;
 
     /**
      * @inheritdoc
@@ -31,15 +30,7 @@ class SubJournal extends Message
     {
         $subJournal = new static();
         $subJournal->copy($data, $opFlags);
-        if ($opFlags & (self::OP_ADD | self::OP_UPDATE)) {
-            $nameList = $data['names'] ?? [];
-            if (isset($data['name'])) {
-                array_unshift($nameList, ['name' => $data['name']]);
-            }
-            $subJournal->names = Name::fromRequestList(
-                $nameList, $opFlags, ($opFlags & self::OP_ADD) ? 1 : 0
-            );
-        }
+        $subJournal->loadNames($data, $opFlags);
         if ($opFlags & self::F_VALIDATE) {
             $subJournal->validate($opFlags);
         }
@@ -52,10 +43,7 @@ class SubJournal extends Message
      */
     public function validate(int $opFlags = 0): self
     {
-        $errors = [];
-        if (!isset($this->code)) {
-            $errors[] = __('the code property is required');
-        }
+        $errors = $this->validateCodes($opFlags);
         if ($opFlags & self::OP_ADD && count($this->names) === 0) {
             $errors[] = __('at least one name property is required');
         }

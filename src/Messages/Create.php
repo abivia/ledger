@@ -18,6 +18,8 @@ use TypeError;
  */
 class Create extends Message
 {
+    use HasNames;
+
     /**
      * @var Account[] A list of ledger accounts.
      */
@@ -27,22 +29,21 @@ class Create extends Message
      * @var Balance[] A list of balances for the opening transaction.
      */
     public array $balances = [];
+
     /**
      * @var Currency[] A list of currencies supported by the ledger.
      */
     public array $currencies = [];
+
     /**
      * @var Domain[] A list of ledger domains (organizational units).
      */
     public array $domains = [];
+
     /**
      * @var SubJournal[] A list of sub-journals that can receive Journal Entries.
      */
     public array $journals = [];
-    /**
-     * @var Name[] Name of the ledger, multilingual.
-     */
-    public array $names = [];
 
     /**
      * @var stdClass Ledger attribute settings.
@@ -180,32 +181,6 @@ class Create extends Message
         return $errors;
     }
 
-    private function extractNames(array $data): array
-    {
-        $errors = [];
-        $this->names = [];
-        $nameList = $data['names'] ?? [];
-        if (isset($data['name'])) {
-            array_unshift($nameList, ['name' => $data['name']]);
-        }
-        foreach ($nameList as $index => $name) {
-            try {
-                $message = Name::fromArray($name, self::OP_ADD | self::OP_CREATE);
-                $this->names[$message->language] = $message;
-            } catch (Breaker $exception) {
-                $errors[] = __(
-                    ":Property in position :index :message.",
-                    [
-                        'property' => 'Name',
-                        'index' => $index + 1,
-                        'message' => $exception->getMessage()
-                    ]
-                );
-            }
-        }
-        return $errors;
-    }
-
     /**
      * @inheritdoc
      */
@@ -216,7 +191,7 @@ class Create extends Message
         try {
             Merge::arrays($errors, $create->extractAccounts($data));
             Merge::arrays($errors, $create->extractBalances($data));
-            Merge::arrays($errors, $create->extractNames($data));
+            Merge::arrays($errors, $create->loadNames($data, $opFlags));
 
             Merge::arrays($errors, $create->extractDomains($data));
             Merge::arrays($errors, $create->extractCurrencies($data));
@@ -228,7 +203,9 @@ class Create extends Message
             if ($data['template'] ?? false) {
                 $create->template = $data['template'];
             }
-            if (isset($data['date'])) {
+            if (isset($data['transDate'])) {
+                $create->transDate = new Carbon($data['transDate']);
+            } elseif (isset($data['date'])) {
                 $create->transDate = new Carbon($data['date']);
             }
             // Convert the array into a stdClass

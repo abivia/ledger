@@ -3,14 +3,10 @@
 namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
-use Abivia\Ledger\Messages\Message;
 
 class Currency extends Message
 {
-    /**
-     * @var string A unique identifier for the currency.
-     */
-    public string $code;
+    use HasCodes;
 
     /**
      * @var int The number of decimal places to use for this currency.
@@ -23,16 +19,10 @@ class Currency extends Message
     public string $revision;
 
     /**
-     * @var string A new currency code to be assigned in an update operation.
-     */
-    public string $toCode;
-
-    /**
      * @inheritdoc
      */
     public static function fromArray(array $data, int $opFlags = 0) : self
     {
-        $errors = [];
         $result = new static();
 
         if (($data['code'] ?? false)) {
@@ -66,16 +56,7 @@ class Currency extends Message
      */
     public function validate(int $opFlags = 0): self
     {
-        $errors = [];
-        if (!isset($this->code)) {
-            $errors[] = __('the code property is required');
-        } else {
-            $this->code = strtoupper($this->code);
-        }
-        if (isset($this->toCode)) {
-            $this->toCode = strtoupper($this->toCode);
-        }
-
+        $errors = $this->validateCodes($opFlags);
         if (!($opFlags & (self::OP_DELETE | self::OP_GET))) {
             if (!isset($this->decimals)) {
                 $errors[] = __('a numeric decimals property is required');

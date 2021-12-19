@@ -12,6 +12,7 @@ abstract class Message
      * Set when the request came from the JSON API.
      */
     public const F_API = 2**30;
+
     /**
      * Set on a request to validate the message.
      */
