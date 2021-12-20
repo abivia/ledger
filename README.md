@@ -41,3 +41,7 @@ Create database tables
 
 The configuration file is installed as `config\ledger.php`. You can enable/disable the 
 JSON API, set middleware, and a path prefix to the API.
+
+## Donations welcome
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/P5P47JJXZ)

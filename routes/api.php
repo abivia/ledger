@@ -3,6 +3,7 @@
 use Abivia\Ledger\Http\Controllers\Api\JournalEntryApiController;
 use Abivia\Ledger\Http\Controllers\Api\JournalReferenceApiController;
 use Abivia\Ledger\Http\Controllers\Api\LedgerAccountApiController;
+use Abivia\Ledger\Http\Controllers\Api\LedgerBalanceApiController;
 use Abivia\Ledger\Http\Controllers\Api\ReportApiController;
 use Abivia\Ledger\Http\Controllers\Api\RootApiController;
 use Abivia\Ledger\Http\Controllers\Api\LedgerCurrencyApiController;
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::post('account/{operation}', [LedgerAccountApiController::class, 'run']);
+Route::post('balance/{operation}', [LedgerBalanceApiController::class, 'run']);
 Route::post('currency/{operation}', [LedgerCurrencyApiController::class, 'run']);
 Route::post('domain/{operation}', [LedgerDomainApiController::class, 'run']);
 Route::post('entry/{operation}', [JournalEntryApiController::class, 'run']);

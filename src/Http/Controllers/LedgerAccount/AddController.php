@@ -74,6 +74,7 @@ class AddController extends LedgerAccountController
     {
         // No parent implies the ledger root
         if (!isset($message->parent)) {
+            $message->parent = new EntityRef();
             $ledgerParent = LedgerAccount::root();
             $parents = [$ledgerParent];
         } else {

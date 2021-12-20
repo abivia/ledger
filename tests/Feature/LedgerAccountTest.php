@@ -306,6 +306,35 @@ class LedgerAccountTest extends TestCase
         //print_r($actual);
     }
 
+    public function testAddToEmpty()
+    {
+        // First we need a ledger
+        $this->createLedger(['template']);
+
+        // Add an account
+        $requestData = [
+            'code' => '1000',
+            'name' => 'Cash in Bank',
+            'debit' => true,
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/account/add', $requestData
+        );
+        $actual = $this->isSuccessful($response);
+        $this->hasRevisionElements($actual->account);
+        $this->hasAttributes(['uuid', 'code', 'names'], $actual->account);
+        $this->assertEquals('1000', $actual->account->code);
+        $this->assertCount(1, $actual->account->names);
+        $this->assertEquals(
+            'Cash in Bank',
+            $actual->account->names[0]->name
+        );
+        $this->assertEquals(
+            'en',
+            $actual->account->names[0]->language
+        );
+    }
+
     public function testDelete()
     {
         // First we need a ledger and an account

@@ -19,7 +19,7 @@ class Balance extends Message
     public string $amount;
 
     protected static array $copyable = [
-        'currency', 'domain', 'language',
+        'currency', 'domain',
     ];
 
     /**
@@ -28,11 +28,9 @@ class Balance extends Message
     public string $currency;
 
     /**
-     * @var string|null Ledger domain. If not provided the default is used.
+     * @var EntityRef Ledger domain. If not provided the default is used.
      */
-    public ?string $domain;
-
-    public string $language;
+    public EntityRef $domain;
 
     /**
      * Add this balance amount to the passed amount.
@@ -65,7 +63,7 @@ class Balance extends Message
         if ($opFlags & self::OP_CREATE) {
             if (isset($data['code'])) {
                 $balance->account = new EntityRef();
-                $balance->account->code = $data['code'] ?? null;
+                $balance->account->code = $data['code'];
             } else {
                 $errors[] = __("Request requires account code.");
             }
@@ -75,8 +73,12 @@ class Balance extends Message
         } elseif ($opFlags & self::OP_GET) {
             if (isset($data['uuid']) || isset($data['code'])) {
                 $balance->account = new EntityRef();
-                $balance->account->code = $data['code'] ?? null;
-                $balance->account->uuid = $data['uuid'] ?? null;
+                if (isset($data['code'])) {
+                    $balance->account->code = $data['code'];
+                }
+                if (isset($data['uuid'])) {
+                    $balance->account->uuid = $data['uuid'];
+                }
             } else {
                 $errors[] = __("Request requires either account code or uuid.");
             }
@@ -112,13 +114,13 @@ class Balance extends Message
         } elseif ($opFlags & self::OP_GET) {
             if (
                 !isset($this->account)
-                || ($this->account->uuid === null && $this->account->code === null)
+                || (!isset($this->account->uuid) && !isset($this->account->code))
             ) {
                 $errors[] = __("Request requires an account code or uuid.");
             }
         }
         // Clean up missing values with the defaults
-        $this->domain ??= LedgerAccount::rules()->domain->default;
+        $this->domain ??= new EntityRef(LedgerAccount::rules()->domain->default);
         $this->language ??= LedgerAccount::rules()->language->default;
         if (count($errors) !== 0) {
             throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);

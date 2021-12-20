@@ -29,9 +29,18 @@ class LedgerName extends Model
     protected $dateFormat = 'Y-m-d H:i:s.u';
     protected $fillable = ['language', 'name', 'ownerUuid'];
 
-    public function named()
+    public static function getWildcard(string $ownerUuid, string $wildcard): Builder
     {
-        return $this->morphTo();
+        /** @var Builder $query */
+        /** @noinspection PhpDynamicAsStaticMethodCallInspection */
+        $query = static::where('ownerUuid', $ownerUuid);
+        if (strpos($wildcard, '*') === false) {
+            $query = $query->where('language', $wildcard);
+        } else {
+            $likeCard = str_replace('*', '%', $wildcard);
+            $query = $query->where('language', 'like', $likeCard);
+        }
+        return $query;
     }
 
     public static function createFromMessage(Name $message): self

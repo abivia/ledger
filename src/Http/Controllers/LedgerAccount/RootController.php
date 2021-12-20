@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Abivia\Ledger\Http\Controllers\LedgerAccount;
 
 use Abivia\Ledger\Exceptions\Breaker;
-use Abivia\Ledger\Helpers\Merge;
 use Abivia\Ledger\Helpers\Package;
 use Abivia\Ledger\Http\Controllers\LedgerAccountController;
 use Abivia\Ledger\Models\JournalDetail;
@@ -257,9 +256,9 @@ class RootController extends LedgerAccountController
                     )
                 );
             }
-            $byDomain[$balance->domain][$balance->currency][] = $balance;
+            $byDomain[$balance->domain->code][$balance->currency][] = $balance;
             $balance->addAmountTo(
-                $totals[$balance->domain][$balance->currency],
+                $totals[$balance->domain->code][$balance->currency],
                 $this->currencies[$balance->currency]->decimals
             );
         }
