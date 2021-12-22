@@ -80,11 +80,12 @@ class SubJournalTest extends TestCase
         $response = $this->json(
             'post', 'api/ledger/journal/add', $this->baseRequest
         );
-        $this->isSuccessful($response);
+        $addResult = $this->isSuccessful($response);
 
         // Now delete it
         $requestData = [
             'code' => 'SJ',
+            'revision' => $addResult->journal->revision,
         ];
         $response = $this->json(
             'post', 'api/ledger/journal/delete', $requestData

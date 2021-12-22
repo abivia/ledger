@@ -87,6 +87,7 @@ class LedgerAccountController extends Controller
         $inTransaction = false;
         try {
             $ledgerAccount = $this->fetchAccount($message);
+            $ledgerAccount->checkRevision($message->revision ?? null);
             // Ensure there are no sub-accounts with associated transactions
             $relatedAccounts = $this->getSubAccountList($ledgerAccount->ledgerUuid);
             $accountTable = (new LedgerAccount())->getTable();

@@ -50,6 +50,7 @@ class AddController extends LedgerAccountController
                 LedgerName::createFromMessage($name);
             }
             DB::commit();
+            $ledgerAccount->refresh();
             $inTransaction = false;
             $this->auditLog($message);
         } catch (Exception $exception) {

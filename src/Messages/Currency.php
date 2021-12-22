@@ -9,6 +9,15 @@ class Currency extends Message
     use HasCodes;
 
     /**
+     * @var array Copyable properties
+     */
+    protected static array $copyable = [
+        'code',
+        ['revision', self::OP_DELETE | self::OP_UPDATE],
+        ['toCode', self::OP_UPDATE],
+    ];
+
+    /**
      * @var int The number of decimal places to use for this currency.
      */
     public int $decimals;
@@ -24,24 +33,18 @@ class Currency extends Message
     public static function fromArray(array $data, int $opFlags = 0) : self
     {
         $result = new static();
-
-        if (($data['code'] ?? false)) {
-            $result->code = strtoupper($data['code']);
-        }
-
+        $result->copy($data, $opFlags);
         if (
             !($opFlags & self::OP_DELETE)
             && isset($data['decimals'])
-            && is_numeric($data['decimals'])
         ) {
-            $result->decimals = (int)$data['decimals'];
-        }
-        if ($opFlags & self::OP_UPDATE) {
-            if (isset($data['revision'])) {
-                $result->revision = $data['revision'];
-            }
-            if (isset($data['toCode'])) {
-                $result->toCode = $data['toCode'];
+            if (is_numeric($data['decimals'])) {
+                $result->decimals = (int)$data['decimals'];
+            } else {
+                throw Breaker::withCode(
+                    Breaker::BAD_REQUEST
+                    [__('value of decimals must be numeric')]
+                );
             }
         }
         if ($opFlags & self::F_VALIDATE) {

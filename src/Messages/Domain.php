@@ -13,7 +13,7 @@ class Domain extends Message
     protected static array $copyable = [
         'code',
         'extra',
-        ['revision', self::OP_UPDATE],
+        ['revision', self::OP_DELETE | self::OP_UPDATE],
         ['toCode', self::OP_UPDATE],
         'uuid',
     ];

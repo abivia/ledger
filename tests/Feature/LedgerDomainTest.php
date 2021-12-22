@@ -93,11 +93,12 @@ class LedgerDomainTest extends TestCase
         $response = $this->json(
             'post', 'api/ledger/domain/add', $this->baseRequest
         );
-        $this->isSuccessful($response);
+        $addResult = $this->isSuccessful($response);
 
         // Now delete it
         $requestData = [
             'code' => 'ENG',
+            'revision' => $addResult->domain->revision,
         ];
         $response = $this->json(
             'post', 'api/ledger/domain/delete', $requestData

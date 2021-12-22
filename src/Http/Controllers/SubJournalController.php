@@ -77,6 +77,7 @@ class SubJournalController extends Controller
         $message->validate(Message::OP_DELETE);
         $errors = [];
         $ledgerSubJournal = $this->fetch($message->code);
+        $ledgerSubJournal->checkRevision($message->revision ?? null);
         // Ensure there are no journal entries that use this domain
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
         $used = JournalEntry::where('subJournalUuid', $ledgerSubJournal->subJournalUuid)

@@ -340,6 +340,7 @@ class LedgerAccount extends Model
     /**
      * @param array $options
      * @return array
+     * @throws Exception
      */
     public function toResponse(array $options = []): array
     {

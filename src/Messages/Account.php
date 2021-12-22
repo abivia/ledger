@@ -27,7 +27,7 @@ class Account extends Message
         'category', 'closed', 'code', 'credit',
         'debit',
         'extra',
-        ['revision', self::OP_UPDATE],
+        ['revision', self::OP_DELETE | self::OP_UPDATE],
         ['toCode', self::OP_UPDATE],
         'uuid',
     ];

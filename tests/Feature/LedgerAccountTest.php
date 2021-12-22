@@ -339,11 +339,12 @@ class LedgerAccountTest extends TestCase
     {
         // First we need a ledger and an account
         $this->createLedger();
-        $this->addAccount('1010', '1000', true);
+        $addResult = $this->addAccount('1010', '1000', true);
 
         // Now delete the account
         $requestData = [
             'code' => '1010',
+            'revision' => $addResult->account->revision,
         ];
         $response = $this->json(
             'post', 'api/ledger/account/delete', $requestData
@@ -363,13 +364,14 @@ class LedgerAccountTest extends TestCase
         $this->createLedger();
 
         // Add an account and a few sub-accounts
-        $this->addAccount('1010', '1000', true);
+        $addResult = $this->addAccount('1010', '1000', true);
         $this->addAccount('1011', '1010', true);
         $this->addAccount('1012', '1010', true);
 
         // Now delete the parent account
         $requestData = [
             'code' => '1010',
+            'revision' => $addResult->account->revision,
         ];
         $response = $this->json(
             'post', 'api/ledger/account/delete', $requestData

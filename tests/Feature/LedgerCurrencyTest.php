@@ -83,6 +83,7 @@ class LedgerCurrencyTest extends TestCase
         // Now delete it
         $requestData = [
             'code' => 'FUD',
+            'revision' => $actual->currency->revision,
         ];
         $response = $this->json(
             'post', 'api/ledger/currency/delete', $requestData

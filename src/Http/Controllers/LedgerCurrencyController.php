@@ -74,6 +74,7 @@ class LedgerCurrencyController extends Controller
                 [__('currency :code does not exist', ['code' => $message->code])]
             );
         }
+        $ledgerCurrency->checkRevision($message->revision ?? null);
         // Ensure there are no journal entries that use this currency
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
         $used = JournalEntry::where('currency', $message->code)->count();

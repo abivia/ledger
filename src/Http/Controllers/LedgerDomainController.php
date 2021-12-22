@@ -59,6 +59,7 @@ class LedgerDomainController extends Controller
                 LedgerName::createFromMessage($name);
             }
             DB::commit();
+            //$ledgerDomain->refresh();
             $inTransaction = false;
             $this->auditLog($message);
         } catch (Exception $exception) {
@@ -92,6 +93,7 @@ class LedgerDomainController extends Controller
             );
         }
         $ledgerDomain = $this->fetch($message->code);
+        $ledgerDomain->checkRevision($message->revision ?? null);
         // Ensure there are no journal entries that use this domain
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
         $used = JournalEntry::where('domainUuid', $message->code)->count();
