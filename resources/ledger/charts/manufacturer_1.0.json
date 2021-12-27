@@ -8,7 +8,7 @@
                     "language": "en"
                 }
             ],
-            "code": 1000,
+            "code": "1000",
             "category": true,
             "debit": true
         },
@@ -19,9 +19,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1100,
+            "code": "1100",
             "parent": {
-                "code": 1000
+                "code": "1000"
             },
             "category": true,
             "debit": true
@@ -33,9 +33,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1110,
+            "code": "1110",
             "parent": {
-                "code": 1100
+                "code": "1100"
             },
             "category": true,
             "debit": true
@@ -51,9 +51,9 @@
                     "language": "en-CA"
                 }
             ],
-            "code": 1120,
+            "code": "1120",
             "parent": {
-                "code": 1100
+                "code": "1100"
             },
             "debit": true
         },
@@ -64,9 +64,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1130,
+            "code": "1130",
             "parent": {
-                "code": 1100
+                "code": "1100"
             },
             "debit": true
         },
@@ -77,9 +77,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1140,
+            "code": "1140",
             "parent": {
-                "code": 1100
+                "code": "1100"
             },
             "debit": true
         },
@@ -90,9 +90,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1150,
+            "code": "1150",
             "parent": {
-                "code": 1100
+                "code": "1100"
             },
             "debit": true
         },
@@ -103,9 +103,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1160,
+            "code": "1160",
             "parent": {
-                "code": 1100
+                "code": "1100"
             },
             "debit": true
         },
@@ -116,9 +116,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1200,
+            "code": "1200",
             "parent": {
-                "code": 1000
+                "code": "1000"
             },
             "category": true,
             "debit": true
@@ -130,9 +130,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1210,
+            "code": "1210",
             "parent": {
-                "code": 1200
+                "code": "1200"
             },
             "debit": true
         },
@@ -143,9 +143,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1300,
+            "code": "1300",
             "parent": {
-                "code": 1000
+                "code": "1000"
             },
             "category": true,
             "debit": true
@@ -157,9 +157,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1310,
+            "code": "1310",
             "parent": {
-                "code": 1300
+                "code": "1300"
             },
             "debit": true
         },
@@ -170,9 +170,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1320,
+            "code": "1320",
             "parent": {
-                "code": 1300
+                "code": "1300"
             },
             "credit": true
         },
@@ -183,9 +183,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1400,
+            "code": "1400",
             "parent": {
-                "code": 1000
+                "code": "1000"
             },
             "category": true,
             "debit": true
@@ -197,9 +197,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1410,
+            "code": "1410",
             "parent": {
-                "code": 1400
+                "code": "1400"
             },
             "debit": true
         },
@@ -210,9 +210,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1420,
+            "code": "1420",
             "parent": {
-                "code": 1400
+                "code": "1400"
             },
             "debit": true
         },
@@ -223,9 +223,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1430,
+            "code": "1430",
             "parent": {
-                "code": 1400
+                "code": "1400"
             },
             "debit": true
         },
@@ -236,9 +236,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1500,
+            "code": "1500",
             "parent": {
-                "code": 1000
+                "code": "1000"
             },
             "category": true,
             "debit": true
@@ -250,9 +250,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1510,
+            "code": "1510",
             "parent": {
-                "code": 1500
+                "code": "1500"
             },
             "debit": true
         },
@@ -263,9 +263,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1600,
+            "code": "1600",
             "parent": {
-                "code": 1000
+                "code": "1000"
             },
             "category": true,
             "debit": true
@@ -277,9 +277,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1610,
+            "code": "1610",
             "parent": {
-                "code": 1600
+                "code": "1600"
             },
             "debit": true
         },
@@ -290,9 +290,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1700,
+            "code": "1700",
             "parent": {
-                "code": 1000
+                "code": "1000"
             },
             "category": true,
             "debit": true
@@ -304,9 +304,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1710,
+            "code": "1710",
             "parent": {
-                "code": 1700
+                "code": "1700"
             },
             "debit": true
         },
@@ -317,9 +317,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1710,
+            "code": "1710",
             "parent": {
-                "code": 1700
+                "code": "1700"
             },
             "credit": true
         },
@@ -330,9 +330,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1720,
+            "code": "1720",
             "parent": {
-                "code": 1700
+                "code": "1700"
             },
             "debit": true
         },
@@ -343,9 +343,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1730,
+            "code": "1730",
             "parent": {
-                "code": 1700
+                "code": "1700"
             },
             "credit": true
         },
@@ -356,9 +356,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1740,
+            "code": "1740",
             "parent": {
-                "code": 1700
+                "code": "1700"
             },
             "debit": true
         },
@@ -369,9 +369,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1750,
+            "code": "1750",
             "parent": {
-                "code": 1700
+                "code": "1700"
             },
             "credit": true
         },
@@ -382,9 +382,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1800,
+            "code": "1800",
             "parent": {
-                "code": 1000
+                "code": "1000"
             },
             "category": true,
             "debit": true
@@ -396,9 +396,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1810,
+            "code": "1810",
             "parent": {
-                "code": 1800
+                "code": "1800"
             },
             "debit": true
         },
@@ -409,9 +409,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1820,
+            "code": "1820",
             "parent": {
-                "code": 1800
+                "code": "1800"
             },
             "credit": true
         },
@@ -422,9 +422,9 @@
                     "language": "en"
                 }
             ],
-            "code": 1840,
+            "code": "1840",
             "parent": {
-                "code": 1800
+                "code": "1800"
             },
             "debit": true
         },
@@ -435,7 +435,7 @@
                     "language": "en"
                 }
             ],
-            "code": 2000,
+            "code": "2000",
             "category": true,
             "credit": true
         },
@@ -446,9 +446,9 @@
                     "language": "en"
                 }
             ],
-            "code": 2100,
+            "code": "2100",
             "parent": {
-                "code": 2000
+                "code": "2000"
             },
             "category": true,
             "credit": true
@@ -460,9 +460,9 @@
                     "language": "en"
                 }
             ],
-            "code": 2110,
+            "code": "2110",
             "parent": {
-                "code": 2100
+                "code": "2100"
             },
             "credit": true
         },
@@ -473,9 +473,9 @@
                     "language": "en"
                 }
             ],
-            "code": 2120,
+            "code": "2120",
             "parent": {
-                "code": 2100
+                "code": "2100"
             },
             "credit": true
         },
@@ -486,9 +486,9 @@
                     "language": "en"
                 }
             ],
-            "code": 2200,
+            "code": "2200",
             "parent": {
-                "code": 2000
+                "code": "2000"
             },
             "category": true,
             "credit": true
@@ -500,9 +500,9 @@
                     "language": "en"
                 }
             ],
-            "code": 2210,
+            "code": "2210",
             "parent": {
-                "code": 2200
+                "code": "2200"
             },
             "credit": true
         },
@@ -513,9 +513,9 @@
                     "language": "en"
                 }
             ],
-            "code": 2220,
+            "code": "2220",
             "parent": {
-                "code": 2200
+                "code": "2200"
             },
             "credit": true
         },
@@ -526,9 +526,9 @@
                     "language": "en"
                 }
             ],
-            "code": 2230,
+            "code": "2230",
             "parent": {
-                "code": 2200
+                "code": "2200"
             },
             "credit": true
         },
@@ -539,9 +539,9 @@
                     "language": "en"
                 }
             ],
-            "code": 2240,
+            "code": "2240",
             "parent": {
-                "code": 2200
+                "code": "2200"
             },
             "credit": true
         },
@@ -552,9 +552,9 @@
                     "language": "en"
                 }
             ],
-            "code": 2250,
+            "code": "2250",
             "parent": {
-                "code": 2200
+                "code": "2200"
             },
             "credit": true
         },
@@ -565,9 +565,9 @@
                     "language": "en"
                 }
             ],
-            "code": 2260,
+            "code": "2260",
             "parent": {
-                "code": 2200
+                "code": "2200"
             },
             "credit": true
         },
@@ -578,9 +578,9 @@
                     "language": "en"
                 }
             ],
-            "code": 2270,
+            "code": "2270",
             "parent": {
-                "code": 2200
+                "code": "2200"
             },
             "credit": true
         },
@@ -591,9 +591,9 @@
                     "language": "en"
                 }
             ],
-            "code": 2280,
+            "code": "2280",
             "parent": {
-                "code": 2200
+                "code": "2200"
             },
             "credit": true
         },
@@ -604,9 +604,9 @@
                     "language": "en"
                 }
             ],
-            "code": 2300,
+            "code": "2300",
             "parent": {
-                "code": 2000
+                "code": "2000"
             },
             "category": true,
             "credit": true
@@ -618,9 +618,9 @@
                     "language": "en"
                 }
             ],
-            "code": 2310,
+            "code": "2310",
             "parent": {
-                "code": 2300
+                "code": "2300"
             },
             "credit": true
         },
@@ -631,9 +631,9 @@
                     "language": "en"
                 }
             ],
-            "code": 2320,
+            "code": "2320",
             "parent": {
-                "code": 2300
+                "code": "2300"
             },
             "credit": true
         },
@@ -644,7 +644,7 @@
                     "language": "en"
                 }
             ],
-            "code": 3000,
+            "code": "3000",
             "category": true,
             "credit": true
         },
@@ -655,9 +655,9 @@
                     "language": "en"
                 }
             ],
-            "code": 3100,
+            "code": "3100",
             "parent": {
-                "code": 3000
+                "code": "3000"
             },
             "credit": true
         },
@@ -668,9 +668,9 @@
                     "language": "en"
                 }
             ],
-            "code": 3200,
+            "code": "3200",
             "parent": {
-                "code": 3000
+                "code": "3000"
             },
             "credit": true
         },
@@ -681,7 +681,7 @@
                     "language": "en"
                 }
             ],
-            "code": 4000,
+            "code": "4000",
             "category": true,
             "credit": true
         },
@@ -692,9 +692,9 @@
                     "language": "en"
                 }
             ],
-            "code": 4100,
+            "code": "4100",
             "parent": {
-                "code": 4000
+                "code": "4000"
             },
             "category": true,
             "credit": true
@@ -706,9 +706,9 @@
                     "language": "en"
                 }
             ],
-            "code": 4110,
+            "code": "4110",
             "parent": {
-                "code": 4100
+                "code": "4100"
             },
             "credit": true
         },
@@ -719,9 +719,9 @@
                     "language": "en"
                 }
             ],
-            "code": 4120,
+            "code": "4120",
             "parent": {
-                "code": 4100
+                "code": "4100"
             },
             "debit": true
         },
@@ -732,9 +732,9 @@
                     "language": "en"
                 }
             ],
-            "code": 4200,
+            "code": "4200",
             "parent": {
-                "code": 4000
+                "code": "4000"
             },
             "category": true,
             "credit": true
@@ -746,9 +746,9 @@
                     "language": "en"
                 }
             ],
-            "code": 4210,
+            "code": "4210",
             "parent": {
-                "code": 4200
+                "code": "4200"
             },
             "credit": true
         },
@@ -759,9 +759,9 @@
                     "language": "en"
                 }
             ],
-            "code": 4220,
+            "code": "4220",
             "parent": {
-                "code": 4200
+                "code": "4200"
             },
             "credit": true
         },
@@ -772,9 +772,9 @@
                     "language": "en"
                 }
             ],
-            "code": 4230,
+            "code": "4230",
             "parent": {
-                "code": 4200
+                "code": "4200"
             },
             "credit": true
         },
@@ -785,9 +785,9 @@
                     "language": "en"
                 }
             ],
-            "code": 4240,
+            "code": "4240",
             "parent": {
-                "code": 4200
+                "code": "4200"
             },
             "credit": true
         },
@@ -798,7 +798,7 @@
                     "language": "en"
                 }
             ],
-            "code": 5000,
+            "code": "5000",
             "category": true,
             "debit": true
         },
@@ -809,9 +809,9 @@
                     "language": "en"
                 }
             ],
-            "code": 5110,
+            "code": "5110",
             "parent": {
-                "code": 5000
+                "code": "5000"
             },
             "debit": true
         },
@@ -822,9 +822,9 @@
                     "language": "en"
                 }
             ],
-            "code": 5120,
+            "code": "5120",
             "parent": {
-                "code": 5000
+                "code": "5000"
             },
             "debit": true
         },
@@ -835,9 +835,9 @@
                     "language": "en"
                 }
             ],
-            "code": 5130,
+            "code": "5130",
             "parent": {
-                "code": 5000
+                "code": "5000"
             },
             "debit": true
         },
@@ -848,9 +848,9 @@
                     "language": "en"
                 }
             ],
-            "code": 5140,
+            "code": "5140",
             "parent": {
-                "code": 5000
+                "code": "5000"
             },
             "debit": true
         },
@@ -861,9 +861,9 @@
                     "language": "en"
                 }
             ],
-            "code": 5150,
+            "code": "5150",
             "parent": {
-                "code": 5000
+                "code": "5000"
             },
             "debit": true
         },
@@ -874,9 +874,9 @@
                     "language": "en"
                 }
             ],
-            "code": 5160,
+            "code": "5160",
             "parent": {
-                "code": 5000
+                "code": "5000"
             },
             "debit": true
         },
@@ -887,9 +887,9 @@
                     "language": "en"
                 }
             ],
-            "code": 5170,
+            "code": "5170",
             "parent": {
-                "code": 5000
+                "code": "5000"
             },
             "debit": true
         },
@@ -900,9 +900,9 @@
                     "language": "en"
                 }
             ],
-            "code": 5180,
+            "code": "5180",
             "parent": {
-                "code": 5000
+                "code": "5000"
             },
             "credit": true
         },
@@ -913,9 +913,9 @@
                     "language": "en"
                 }
             ],
-            "code": 5190,
+            "code": "5190",
             "parent": {
-                "code": 5000
+                "code": "5000"
             },
             "debit": true
         },
@@ -926,7 +926,7 @@
                     "language": "en"
                 }
             ],
-            "code": 6000,
+            "code": "6000",
             "category": true,
             "debit": true
         },
@@ -937,9 +937,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6100,
+            "code": "6100",
             "parent": {
-                "code": 6000
+                "code": "6000"
             },
             "debit": true
         },
@@ -950,9 +950,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6200,
+            "code": "6200",
             "parent": {
-                "code": 6000
+                "code": "6000"
             },
             "category": true,
             "debit": true
@@ -964,9 +964,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6210,
+            "code": "6210",
             "parent": {
-                "code": 6200
+                "code": "6200"
             },
             "debit": true
         },
@@ -977,9 +977,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6220,
+            "code": "6220",
             "parent": {
-                "code": 6200
+                "code": "6200"
             },
             "debit": true
         },
@@ -990,9 +990,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6230,
+            "code": "6230",
             "parent": {
-                "code": 6200
+                "code": "6200"
             },
             "debit": true
         },
@@ -1003,9 +1003,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6240,
+            "code": "6240",
             "parent": {
-                "code": 6200
+                "code": "6200"
             },
             "debit": true
         },
@@ -1016,9 +1016,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6250,
+            "code": "6250",
             "parent": {
-                "code": 6200
+                "code": "6200"
             },
             "debit": true
         },
@@ -1029,9 +1029,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6300,
+            "code": "6300",
             "parent": {
-                "code": 6000
+                "code": "6000"
             },
             "category": true,
             "debit": true
@@ -1043,9 +1043,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6310,
+            "code": "6310",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1056,9 +1056,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6320,
+            "code": "6320",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1069,9 +1069,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6330,
+            "code": "6330",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1082,9 +1082,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6340,
+            "code": "6340",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1095,9 +1095,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6350,
+            "code": "6350",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1108,9 +1108,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6360,
+            "code": "6360",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1121,9 +1121,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6370,
+            "code": "6370",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1134,9 +1134,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6380,
+            "code": "6380",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1147,9 +1147,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6390,
+            "code": "6390",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1160,9 +1160,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6400,
+            "code": "6400",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1173,9 +1173,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6410,
+            "code": "6410",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1186,9 +1186,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6420,
+            "code": "6420",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1199,9 +1199,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6430,
+            "code": "6430",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1212,9 +1212,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6440,
+            "code": "6440",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1225,9 +1225,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6450,
+            "code": "6450",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1238,9 +1238,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6460,
+            "code": "6460",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1251,9 +1251,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6470,
+            "code": "6470",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1264,9 +1264,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6480,
+            "code": "6480",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1277,9 +1277,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6490,
+            "code": "6490",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1290,9 +1290,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6500,
+            "code": "6500",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1303,9 +1303,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6510,
+            "code": "6510",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1316,9 +1316,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6520,
+            "code": "6520",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1329,9 +1329,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6530,
+            "code": "6530",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1342,9 +1342,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6540,
+            "code": "6540",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1355,9 +1355,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6550,
+            "code": "6550",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1368,9 +1368,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6560,
+            "code": "6560",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1381,9 +1381,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6570,
+            "code": "6570",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1394,9 +1394,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6580,
+            "code": "6580",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1407,9 +1407,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6590,
+            "code": "6590",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1420,9 +1420,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6600,
+            "code": "6600",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1433,9 +1433,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6610,
+            "code": "6610",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1446,9 +1446,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6620,
+            "code": "6620",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1459,9 +1459,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6630,
+            "code": "6630",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1472,9 +1472,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6640,
+            "code": "6640",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1485,9 +1485,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6650,
+            "code": "6650",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1498,9 +1498,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6660,
+            "code": "6660",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1511,9 +1511,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6670,
+            "code": "6670",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1524,9 +1524,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6680,
+            "code": "6680",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1537,9 +1537,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6690,
+            "code": "6690",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1550,9 +1550,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6700,
+            "code": "6700",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1563,9 +1563,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6710,
+            "code": "6710",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1576,9 +1576,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6720,
+            "code": "6720",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1589,9 +1589,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6730,
+            "code": "6730",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1602,9 +1602,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6740,
+            "code": "6740",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1615,9 +1615,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6750,
+            "code": "6750",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1628,9 +1628,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6760,
+            "code": "6760",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1641,9 +1641,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6770,
+            "code": "6770",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1654,9 +1654,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6780,
+            "code": "6780",
             "parent": {
-                "code": 6300
+                "code": "6300"
             },
             "debit": true
         },
@@ -1667,9 +1667,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6800,
+            "code": "6800",
             "parent": {
-                "code": 6000
+                "code": "6000"
             },
             "category": true,
             "debit": true
@@ -1681,9 +1681,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6810,
+            "code": "6810",
             "parent": {
-                "code": 6800
+                "code": "6800"
             },
             "debit": true
         },
@@ -1694,9 +1694,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6820,
+            "code": "6820",
             "parent": {
-                "code": 6800
+                "code": "6800"
             },
             "debit": true
         },
@@ -1707,9 +1707,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6830,
+            "code": "6830",
             "parent": {
-                "code": 6800
+                "code": "6800"
             },
             "debit": true
         },
@@ -1720,9 +1720,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6840,
+            "code": "6840",
             "parent": {
-                "code": 6800
+                "code": "6800"
             },
             "debit": true
         },
@@ -1733,9 +1733,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6900,
+            "code": "6900",
             "parent": {
-                "code": 6000
+                "code": "6000"
             },
             "category": true,
             "debit": true
@@ -1747,9 +1747,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6910,
+            "code": "6910",
             "parent": {
-                "code": 6900
+                "code": "6900"
             },
             "category": true,
             "debit": true
@@ -1761,9 +1761,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6920,
+            "code": "6920",
             "parent": {
-                "code": 6900
+                "code": "6900"
             },
             "debit": true
         },
@@ -1774,9 +1774,9 @@
                     "language": "en"
                 }
             ],
-            "code": 6930,
+            "code": "6930",
             "parent": {
-                "code": 6900
+                "code": "6900"
             },
             "debit": true
         },
@@ -1787,9 +1787,9 @@
                     "language": "en"
                 }
             ],
-            "code": 7100,
+            "code": "7100",
             "parent": {
-                "code": 6000
+                "code": "6000"
             },
             "category": true,
             "debit": true
@@ -1801,9 +1801,9 @@
                     "language": "en"
                 }
             ],
-            "code": 7110,
+            "code": "7110",
             "parent": {
-                "code": 7100
+                "code": "7100"
             },
             "debit": true
         },
@@ -1814,11 +1814,67 @@
                     "language": "en"
                 }
             ],
-            "code": 7120,
+            "code": "7120",
             "parent": {
-                "code": 7100
+                "code": "7100"
             },
             "debit": true
+        }
+    ],
+    "sections": [
+        {
+            "name": "Current Assets",
+            "codes": ["1100", "1200", "1300"]
+        },
+        {
+            "name": "Inventory",
+            "codes": ["1400"]
+        },
+        {
+            "name": "Other Short Term Assets",
+            "codes": ["1500"]
+        },
+        {
+            "name": "Capital Assets",
+            "codes": ["1600", "1700", "1800"]
+        },
+        {
+            "name": "Current Liabilities",
+            "credit": true,
+            "codes": ["2100", "2200"]
+        },
+        {
+            "name": "Long Term Liabilities",
+            "credit": true,
+            "codes": ["2300"]
+        },
+        {
+            "name": "Share Capital",
+            "credit": true,
+            "codes": ["3100"]
+        },
+        {
+            "name": "Retained Earnings",
+            "credit": true,
+            "codes": ["3200"]
+        },
+        {
+            "name": "Sales Revenue",
+            "codes": ["4100"]
+        },
+        {
+            "name": "Other Revenue",
+            "codes": ["4200"]
+        },
+        {
+            "name": "Cost of Sales",
+            "credit": true,
+            "codes": ["5000"]
+        },
+        {
+            "name": "Expenses",
+            "credit": true,
+            "codes": ["6000"]
         }
     ]
 }
