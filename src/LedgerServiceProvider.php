@@ -12,14 +12,28 @@ class LedgerServiceProvider extends ServiceProvider
 {
     public function boot()
     {
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         if (config('ledger.api', true)) {
             $this->registerRoutes();
         }
 
         if ($this->app->runningInConsole()) {
+            $base = __DIR__ . '/../';
+            $migrateFrom = $base . 'database/migrations/';
+
+            // Export migrations
+            if (!class_exists('CreatePostsTable')) {
+                $this->publishes(
+                    [
+                        $migrateFrom . 'CreateLedgerTables.php.stub' =>
+                            $this->migratePath('create_posts_table'),
+                        $migrateFrom . 'AddAccountTaxCode.php.stub' =>
+                            $this->migratePath('add_account_tax_code'),
+                    ],
+                    'migrations'
+                );
+            }
             $this->publishes(
-                [__DIR__ . '/../config/config.php' => config_path('ledger.php')],
+                [$base . 'config/config.php' => config_path('ledger.php')],
                 'config'
             );
             $this->commands([
@@ -28,6 +42,13 @@ class LedgerServiceProvider extends ServiceProvider
                 Templates::class
             ]);
         }
+    }
+
+    private function migratePath(string $file): string
+    {
+        return database_path(
+            'migrations/' . date('Y_m_d_His', time()) . "_$file.php"
+        );
     }
 
     public function register()
@@ -42,7 +63,7 @@ class LedgerServiceProvider extends ServiceProvider
         });
     }
 
-    protected function routeConfiguration()
+    protected function routeConfiguration(): array
     {
         return [
             'prefix' => config('ledger.prefix'),
