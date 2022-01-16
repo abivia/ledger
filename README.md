@@ -27,7 +27,7 @@ Full documentation is available [here](https://ledger.abivia.com/).
 
 Install Ledger with composer:
 
-`composer install abivia/ledger`
+`composer require abivia/ledger`
 
 Publish configuration:
 
