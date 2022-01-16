@@ -261,7 +261,7 @@ class Create extends Message
         }
         if (count($this->domains) === 0) {
             // Create a default domain
-            $this->domains['MAIN'] = domain::fromArray(
+            $this->domains['MAIN'] = Domain::fromArray(
                 [
                     'code' => 'MAIN',
                     'name' => 'Main General Ledger',
