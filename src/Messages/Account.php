@@ -94,8 +94,7 @@ class Account extends Message
      */
     public function validate(int $opFlags = 0): self
     {
-        $codeFormat = LedgerAccount::rules()->account->codeFormat ?? '';
-        $errors = $this->validateCodes($opFlags, ['regEx' => $codeFormat]);
+        $errors = $this->validateCodes($opFlags);
         if ($opFlags & self::OP_ADD) {
             if (isset($this->uuid)) {
                 $errors[] = __("UUID not valid on account create.");
