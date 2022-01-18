@@ -28,6 +28,7 @@ class Account extends Message
         'debit',
         'extra',
         ['revision', self::OP_DELETE | self::OP_UPDATE],
+        'taxCode',
         ['toCode', self::OP_UPDATE],
         'uuid',
     ];
@@ -55,6 +56,16 @@ class Account extends Message
      * @var string The revision hash code for the account. Required on delete or update.
      */
     public string $revision;
+
+    /**
+     * @var string An account code for tax purposes.
+     */
+    public string $taxCode;
+
+    /**
+     * @var string Account code used in an update that changes the account code.
+     */
+    public string $toCode;
 
     /**
      * @var string The UUID for this account. Only valid on update/delete.
@@ -94,7 +105,8 @@ class Account extends Message
      */
     public function validate(int $opFlags = 0): self
     {
-        $errors = $this->validateCodes($opFlags);
+        $codeFormat = LedgerAccount::rules()->account->codeFormat ?? '';
+        $errors = $this->validateCodes($opFlags, ['regEx' => $codeFormat]);
         if ($opFlags & self::OP_ADD) {
             if (isset($this->uuid)) {
                 $errors[] = __("UUID not valid on account create.");

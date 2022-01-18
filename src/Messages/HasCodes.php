@@ -27,7 +27,7 @@ trait HasCodes
     ): array
     {
         $options['uppercase'] ??= true;
-        if (isset($options['regEx'])) {
+        if (isset($options['regEx']) && $options['regEx'] !== '') {
             $regExMessage = 'the :prop property must match the format :regex';
         } else {
             $options['regEx'] = '/^[^ \t\r\n*]*$/';
