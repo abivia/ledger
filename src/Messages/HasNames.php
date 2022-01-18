@@ -17,7 +17,6 @@ trait HasNames
      * @param array $data
      * @param int $opFlags
      * @return array
-     * @throws Breaker
      */
     protected function loadNames(array $data, int $opFlags): array
     {
