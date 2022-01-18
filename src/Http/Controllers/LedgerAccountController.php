@@ -274,6 +274,11 @@ class LedgerAccountController extends Controller
             // Update the parent
             $ledgerParent = $this->updateParent($ledgerAccount, $message);
 
+            // Apply a tax code change
+            if (isset($message->taxCode)) {
+                $ledgerAccount->taxCode = $message->taxCode;
+            }
+
             // Apply a category flag
             $isCategory = $message->category ?? false;
             if ($ledgerAccount->category !== $isCategory) {
