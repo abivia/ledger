@@ -2,11 +2,14 @@
 
 namespace Abivia\Ledger\Models;
 
+use Abivia\Hydration\HydrationException;
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Merge;
 use Abivia\Ledger\Helpers\Revision;
 use Abivia\Ledger\Messages\Account;
 use Abivia\Ledger\Messages\EntityRef;
+use Abivia\Ledger\Root\Flex;
+use Abivia\Ledger\Root\Rules\LedgerRules;
 use Abivia\Ledger\Traits\HasRevisions;
 use Abivia\Ledger\Traits\UuidPrimaryKey;
 use Carbon\Carbon;
@@ -15,7 +18,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\App;
 use stdClass;
 
 /**
@@ -33,6 +35,7 @@ use stdClass;
  * @property LedgerName[] $names Associated names.
  * @property string $parentUuid The parent account (or null if this is the root).
  * @property Carbon $revision Revision timestamp to detect race condition on update.
+ * @property string $taxCode An account code for tax purposes.
  * @property Carbon $updated_at When the record was updated.
  * @mixin Builder
  * @mixin \Illuminate\Database\Query\Builder
@@ -56,9 +59,9 @@ class LedgerAccount extends Model
     ];
 
     /**
-     * @var stdClass Temporary rules instance while creating a ledger
+     * @var LedgerRules Temporary rules instance while creating a ledger
      */
-    private static stdClass $bootRules;
+    private static LedgerRules $bootRules;
 
     /**
      * @var string[] Casts for table columns
@@ -76,7 +79,7 @@ class LedgerAccount extends Model
      */
     protected $dateFormat = 'Y-m-d H:i:s.u';
     protected $fillable = [
-        'category', 'code', 'credit', 'debit', 'extra', 'parentUuid'
+        'category', 'code', 'credit', 'debit', 'extra', 'parentUuid', 'taxCode'
     ];
 
     public $incrementing = false;
@@ -92,18 +95,7 @@ class LedgerAccount extends Model
 
     private static function baseRuleSet()
     {
-        self::$bootRules = new stdClass();
-
-        self::$bootRules->account = new stdClass();
-        self::$bootRules->account->postToCategory = false;
-        self::$bootRules->domain = new stdClass();
-        // Default is to leave transactions as not reviewed
-        self::$bootRules->entry = new stdClass();
-        self::$bootRules->entry->reviewed = false;
-        self::$bootRules->language = new stdClass();
-        self::$bootRules->language->default = App::getLocale();
-        self::$bootRules->openDate = Carbon::now()->format(self::systemDateFormat());
-        self::$bootRules->pageSize = 100;
+        self::$bootRules = new LedgerRules();
     }
 
     public static function createFromMessage(Account $message): self
@@ -114,7 +106,7 @@ class LedgerAccount extends Model
                 $instance->{$property} = $message->{$property};
             }
         }
-        if ($message->parent !== null) {
+        if (isset($message->parent)) {
             $instance->parentUuid = $message->parent->uuid;
         }
         $instance->save();
@@ -137,7 +129,7 @@ class LedgerAccount extends Model
      */
     public static function findWith(EntityRef $entityRef): Builder
     {
-        if (isset($entityRef->uuid) && $entityRef->uuid !== null) {
+        if (isset($entityRef->uuid)) {
             $finder = self::where('ledgerUuid', $entityRef->uuid);
         } elseif (isset($entityRef->code)) {
             $finder = self::where('code', $entityRef->code);
@@ -149,9 +141,14 @@ class LedgerAccount extends Model
     }
 
     /** @noinspection PhpUnused */
-    public function getFlexAttribute($value)
+    /**
+     * @throws HydrationException
+     */
+    public function getFlexAttribute($value): Flex
     {
-        return json_decode($value);
+        $flex = new Flex();
+        $flex->hydrate($value);
+        return $flex;
     }
 
     public function matchesEntity(EntityRef $ref): bool
@@ -160,7 +157,7 @@ class LedgerAccount extends Model
         if (isset($ref->uuid) && $ref->uuid !== $this->ledgerUuid) {
             $match = false;
         }
-        if ($ref->code !== null && $ref->code !== $this->code) {
+        if ($ref->code !== $this->code) {
             $match = false;
         }
         return $match;
@@ -259,9 +256,9 @@ class LedgerAccount extends Model
     /**
      * Get the current rule set. During ledger creation, this is a set of bootstrap rules.
      *
-     * @return stdClass
+     * @return LedgerRules
      */
-    public static function rules(): stdClass
+    public static function rules(): LedgerRules
     {
         if (self::$root === null) {
             self::loadRoot();
@@ -295,9 +292,9 @@ class LedgerAccount extends Model
 
     /**
      * Merge data into the rule set.
-     * @return stdClass
+     * @return LedgerRules
      */
-    public static function resetRules()
+    public static function resetRules(): LedgerRules
     {
         self::$root = null;
         self::loadRoot();
@@ -311,10 +308,10 @@ class LedgerAccount extends Model
 
     /**
      * Merge data into the rule set.
-     * @param array $data
-     * @return stdClass
+     * @param stdClass $data
+     * @return LedgerRules
      */
-    public static function setRules(stdClass $data)
+    public static function setRules(stdClass $data): LedgerRules
     {
         if (self::$root === null) {
             self::loadRoot();
@@ -326,7 +323,9 @@ class LedgerAccount extends Model
                 return self::$bootRules;
             }
         }
-        Merge::objects(self::$root->flex->rules, $data);
+        $flex = self::$root->flex;
+        Merge::objects($flex->rules, $data);
+        self::$root->flex = $flex;
         self::$root->save();
 
         return self::$root->flex->rules;
@@ -347,6 +346,9 @@ class LedgerAccount extends Model
         $response = ['uuid' => $this->ledgerUuid];
         if ($this->code !== '') {
             $response['code'] = $this->code;
+        }
+        if ($this->taxCode !== '') {
+            $response['taxCode'] = $this->taxCode;
         }
         if ($this->parentUuid !== null) {
             $response['parentUuid'] = $this->parentUuid;
@@ -372,7 +374,7 @@ class LedgerAccount extends Model
     /**
      * @param string $operator
      * @param EntityRef $entityRef
-     * @param Builder $query
+     * @param Builder|null $query
      * @return Builder
      * @throws Exception
      */
@@ -386,12 +388,13 @@ class LedgerAccount extends Model
         if (isset($entityRef->code)) {
             // We have a code so simple case, just use it
             $finder = $query->where('code', $operator, $entityRef->code);
-        } elseif (isset($entityRef->uuid) && $entityRef->uuid !== null) {
+        } elseif (isset($entityRef->uuid)) {
             if ($operator === '=') {
                 // With an equal operator, the UUID can be used directly.
                 $finder = $query->where('ledgerUuid', $operator, $entityRef->uuid);
             } else {
                 // Other operators need the account code, so get that first.
+                /** @noinspection PhpDynamicAsStaticMethodCallInspection */
                 $ref = self::find($entityRef->uuid);
                 if ($ref === null) {
                     throw new Exception(
