@@ -4,7 +4,6 @@ namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Models\LedgerAccount;
-use Abivia\Ledger\Messages\Message;
 
 class Balance extends Message
 {
@@ -121,7 +120,6 @@ class Balance extends Message
         }
         // Clean up missing values with the defaults
         $this->domain ??= new EntityRef(LedgerAccount::rules()->domain->default);
-        $this->language ??= LedgerAccount::rules()->language->default;
         if (count($errors) !== 0) {
             throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);
         }
