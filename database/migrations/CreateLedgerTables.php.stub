@@ -17,16 +17,16 @@ class CreateLedgerTables extends Migration
      */
     public function down()
     {
-        Schema::drop('journal_details');
-        Schema::drop('journal_entries');
-        Schema::drop('journal_references');
-        Schema::drop('ledger_accounts');
-        Schema::drop('ledger_balances');
-        Schema::drop('ledger_currencies');
-        Schema::drop('ledger_domains');
-        Schema::drop('ledger_names');
-        Schema::drop('ledger_reports');
-        Schema::drop('sub_journals');
+        Schema::dropIfExists('journal_details');
+        Schema::dropIfExists('journal_entries');
+        Schema::dropIfExists('journal_references');
+        Schema::dropIfExists('ledger_accounts');
+        Schema::dropIfExists('ledger_balances');
+        Schema::dropIfExists('ledger_currencies');
+        Schema::dropIfExists('ledger_domains');
+        Schema::dropIfExists('ledger_names');
+        Schema::dropIfExists('ledger_reports');
+        Schema::dropIfExists('sub_journals');
     }
 
     /**
