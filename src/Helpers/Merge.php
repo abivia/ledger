@@ -25,11 +25,11 @@ class Merge
     /**
      * Merge source array into an object.
      *
-     * @param stdClass $target
+     * @param object $target
      * @param array $source
      * @return void
      */
-    public static function arrayToObject(stdClass $target, array $source)
+    public static function arrayToObject(object $target, array $source)
     {
         foreach ($source as $property => $value) {
             if (isset($target->{$property})) {
@@ -57,11 +57,11 @@ class Merge
     /**
      * Merge source object into target object.
      *
-     * @param stdClass $target
-     * @param stdClass $source
+     * @param object $target
+     * @param object $source
      * @return void
      */
-    public static function objects(stdClass $target, stdClass $source)
+    public static function objects(object $target, object $source)
     {
         foreach ($source as $property => $value) {
             if (isset($target->{$property})) {
