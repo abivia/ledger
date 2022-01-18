@@ -6,6 +6,7 @@ use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Merge;
 use Abivia\Ledger\Helpers\Package;
 use Abivia\Ledger\Messages\Message;
+use Abivia\Ledger\Root\Rules\Section;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\App;
 use stdClass;
@@ -49,6 +50,11 @@ class Create extends Message
      * @var stdClass Ledger attribute settings.
      */
     public stdClass $rules;
+
+    /**
+     * @var Section[] Section definitions.
+     */
+    public array $sections = [];
 
     /**
      * @var string A Chart of Accounts template to use.
@@ -181,6 +187,24 @@ class Create extends Message
         return $errors;
     }
 
+    private function extractSections(array $data): array
+    {
+        $errors = [];
+        $this->sections = [];
+        foreach ($data['sections'] ?? [] as $index => $sectionData) {
+            try {
+                $this->sections[] = Section::fromArray($sectionData, ['checkAccount' =>false]);
+            } catch (Breaker $exception) {
+                $errors[] = __(
+                    ":Property in position :index "
+                    . implode(', ', $exception->getErrors()) . ".",
+                    ['property' => 'Section', 'index' => $index + 1]
+                );
+            }
+        }
+        return $errors;
+    }
+
     /**
      * @inheritdoc
      */
@@ -195,6 +219,7 @@ class Create extends Message
 
             Merge::arrays($errors, $create->extractDomains($data));
             Merge::arrays($errors, $create->extractCurrencies($data));
+            Merge::arrays($errors, $create->extractSections($data));
             if (count($create->currencies) === 0) {
                 $errors[] = __('At least one currency is required.');
             }

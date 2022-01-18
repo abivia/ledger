@@ -6,6 +6,11 @@ namespace Abivia\Ledger\Http\Controllers\LedgerAccount;
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Package;
 use Abivia\Ledger\Http\Controllers\LedgerAccountController;
+use Abivia\Ledger\Messages\Account;
+use Abivia\Ledger\Messages\Balance;
+use Abivia\Ledger\Messages\Create;
+use Abivia\Ledger\Messages\EntityRef;
+use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Models\JournalDetail;
 use Abivia\Ledger\Models\JournalEntry;
 use Abivia\Ledger\Models\LedgerAccount;
@@ -13,12 +18,8 @@ use Abivia\Ledger\Models\LedgerBalance;
 use Abivia\Ledger\Models\LedgerCurrency;
 use Abivia\Ledger\Models\LedgerDomain;
 use Abivia\Ledger\Models\LedgerName;
-use Abivia\Ledger\Messages\Account;
-use Abivia\Ledger\Messages\Balance;
-use Abivia\Ledger\Messages\Create;
-use Abivia\Ledger\Messages\EntityRef;
-use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Models\SubJournal;
+use Abivia\Ledger\Root\Rules\Section;
 use Abivia\Ledger\Traits\Audited;
 use Carbon\Carbon;
 use Exception;
@@ -37,6 +38,11 @@ class RootController extends LedgerAccountController
      * @var LedgerAccount[] List of the created accounts.
      */
     private array $accounts;
+
+    /**
+     * @var array Maps account codes to section index.
+     */
+    private array $codeToSection;
 
     /**
      * @var LedgerCurrency[] Supported currencies.
@@ -58,6 +64,30 @@ class RootController extends LedgerAccountController
      * @var Create|null Data associated with initial ledger create request.
      */
     private ?Create $initData = null;
+
+    /**
+     * @var Section[] List of section definitions.
+     */
+    private array $sections = [];
+
+    /**
+     * @var Account[]
+     */
+    private array $templateAccounts = [];
+
+    private function buildSectionMap(int $key, Section $section, bool $overwrite)
+    {
+        foreach ($section->codes as $code) {
+            if (!$overwrite && isset($this->codeToSection[$code])) {
+                $this->errors[] = __(
+                    "Account code :code cannot appear in multiple sections.",
+                    ['code' => $code]
+                );
+                throw Breaker::withCode(Breaker::INVALID_DATA);
+            }
+            $this->codeToSection[$code] = $key;
+        }
+    }
 
     /**
      * Verify that the Ledger has not been created already.
@@ -112,6 +142,8 @@ class RootController extends LedgerAccountController
             $this->initializeJournals();
             // Create accounts
             $this->initializeAccounts();
+            // Validate and save sections
+            $this->initializeSections();
             // Load initial balances
             $this->initializeBalances();
             // Commit everything
@@ -168,12 +200,12 @@ class RootController extends LedgerAccountController
      */
     private function initializeAccounts()
     {
-        // Load the template if provided.
-        $accounts = isset($this->initData->template) ? $this->loadTemplate() : [];
+        // Load any template.
+        $this->loadTemplate();
 
         // Merge in accounts from the request
         foreach ($this->initData->accounts as $account) {
-            $accounts[$account->code] = $account;
+            $this->templateAccounts[$account->code] = $account;
         }
 
         // Create the ledger root account
@@ -184,7 +216,7 @@ class RootController extends LedgerAccountController
         $emptyRun = false;
         while (!$emptyRun) {
             $emptyRun = true;
-            foreach ($accounts as $code => $account) {
+            foreach ($this->templateAccounts as $code => $account) {
                 $parentCode = $account->parent->code ?? null;
                 $create = false;
                 if ($parentCode === null) {
@@ -214,15 +246,15 @@ class RootController extends LedgerAccountController
                         $name->ownerUuid = $ledgerAccount->ledgerUuid;
                         LedgerName::createFromMessage($name);
                     }
-                    unset($accounts[$code]);
+                    unset($this->templateAccounts[$code]);
                     $emptyRun = false;
                 }
             }
         }
-        if (count($accounts)) {
+        if (count($this->templateAccounts)) {
             $errors[] = __(
                 "Unable to create accounts :list because parent doesn't exist.",
-                ['list' => implode(', ', array_keys($accounts))]
+                ['list' => implode(', ', array_keys($this->templateAccounts))]
             );
         }
         if (count($errors)) {
@@ -428,6 +460,43 @@ class RootController extends LedgerAccountController
     }
 
     /**
+     * Validate, reorganize and save section settings.
+     *
+     * @return void
+     * @throws Breaker
+     */
+    private function initializeSections()
+    {
+        // Merge sections from the ledger create message into any from the template.
+        foreach ($this->initData->sections as $section) {
+            $this->sections[] = $section;
+            $key = array_key_last($this->sections);
+            $this->buildSectionMap($key, $section, true);
+        }
+        $newSections = [];
+        $sectionMap = [];
+
+        // Rebuild the code lists
+        ksort($this->codeToSection);
+        foreach ($this->codeToSection as $code => $key) {
+            if (!isset($sectionMap[$key])) {
+                $this->sections[$key]->codes = [];
+                $newSections[] = $this->sections[$key];
+                $sectionMap[$key] = array_key_last($newSections);
+            }
+            $newKey = $sectionMap[$key];
+            $newSections[$newKey]->codes[] = (string) $code;
+        }
+
+        $this->sections = $newSections;
+
+        // Store the sections into the root
+        $sectionsOnly = new stdClass();
+        $sectionsOnly->sections = $newSections;
+        $dbg = LedgerAccount::setRules($sectionsOnly);
+    }
+
+    /**
      * Get a list of the names and title of the predefined templates.
      *
      * @return array
@@ -455,39 +524,47 @@ class RootController extends LedgerAccountController
     /**
      * Load a Chart of Accounts template.
      *
-     * @return Account[]
      * @throws Breaker
      */
-    private function loadTemplate(): array
+    private function loadTemplate()
     {
-        $accounts = [];
-        $template = json_decode(
-            file_get_contents($this->initData->templatePath), true
-        );
-        if ($template === false) {
-            $this->errors[] = __(
-                "Template :template is not valid JSON.",
-                ['template' => $this->initData->template]
+        $this->templateAccounts = [];
+        if (isset($this->initData->template)) {
+            $template = json_decode(
+                file_get_contents($this->initData->templatePath), true
             );
-            throw Breaker::withCode(Breaker::INVALID_DATA);
-        }
-        foreach ($template['accounts'] as $account) {
-            try {
-                $message = Account::fromArray(
-                    $account, Message::OP_ADD | Message::F_VALIDATE
-                );
-            } catch (Breaker $exception) {
-                $errors = $exception->getErrors();
-                $errors[] = __(
-                    "Template :template is badly structured.",
+            if ($template === false) {
+                $this->errors[] = __(
+                    "Template :template is not valid JSON.",
                     ['template' => $this->initData->template]
                 );
-                throw Breaker::withCode(Breaker::INVALID_DATA, $errors);
+                throw Breaker::withCode(Breaker::INVALID_DATA);
             }
-            $accounts[$message->code] = $message;
+            foreach ($template['accounts'] as $account) {
+                try {
+                    $message = Account::fromArray(
+                        $account, Message::OP_ADD | Message::F_VALIDATE
+                    );
+                } catch (Breaker $exception) {
+                    $errors = $exception->getErrors();
+                    $errors[] = __(
+                        "Template :template is badly structured.",
+                        ['template' => $this->initData->template]
+                    );
+                    throw Breaker::withCode(Breaker::INVALID_DATA, $errors);
+                }
+                $this->templateAccounts[$message->code] = $message;
+            }
+            $this->codeToSection = [];
+            $this->sections = [];
+            /**
+             * @var int $key
+             * @var array $section */
+            foreach ($template['sections'] ?? [] as $key => $section) {
+                $this->sections[$key] = Section::fromArray($section, ['checkAccount' =>false]);
+                $this->buildSectionMap($key, $this->sections[$key], false);
+            }
         }
-
-        return $accounts;
     }
 
 }
