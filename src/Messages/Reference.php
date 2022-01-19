@@ -84,11 +84,15 @@ class Reference extends Message
     {
         $errors = $this->validateCodes($opFlags, ['regEx' => '/.*/', 'uppercase' => false]);
         $rules = LedgerAccount::rules();
-        if (!isset($this->domain)) {
-            $this->domain = new EntityRef();
-            $this->domain->code = $rules->domain->default;
+        if ($rules === null) {
+            $errors[] = __('Ledger has not been initialized.');
+        } else {
+            if (!isset($this->domain)) {
+                $this->domain = new EntityRef();
+                $this->domain->code = $rules->domain->default;
+            }
+            $this->domain->validate(0);
         }
-        $this->domain->validate(0);
         if (count($errors) !== 0) {
             throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);
         }
