@@ -42,7 +42,7 @@ class RootController extends LedgerAccountController
     /**
      * @var array Maps account codes to section index.
      */
-    private array $codeToSection;
+    private array $codeToSection = [];
 
     /**
      * @var LedgerCurrency[] Supported currencies.
@@ -174,7 +174,7 @@ class RootController extends LedgerAccountController
 
         // Commit the boot rules and a revision salt into the flex property.
         $flex = new stdClass();
-        $flex->rules = LedgerAccount::rules();
+        $flex->rules = LedgerAccount::rules(true);
         $flex->rules->openDate = $this->initData->transDate->format(LedgerAccount::systemDateFormat());
         $flex->salt = bin2hex(random_bytes(16));
         $root->flex = $flex;
