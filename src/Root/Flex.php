@@ -28,6 +28,10 @@ class Flex implements Hydratable
      */
     public function hydrate($config, ?array $options = []): bool
     {
+        // Some legacy flex values were improperly encoded as 'null'.
+        if ($config === null || $config === 'null') {
+            return true;
+        }
         if (!isset(self::$hydrator)) {
             self::$hydrator = Hydrator::make(self::class);
         }
