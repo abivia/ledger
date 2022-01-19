@@ -3,13 +3,13 @@
 namespace Abivia\Ledger\Tests\Feature;
 
 
-use Abivia\Ledger\Tests\TestCase;
+use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /**
  * Test Ledger Currency API calls.
  */
-class LedgerCurrencyTest extends TestCase
+class LedgerCurrencyTest extends TestCaseWithMigrations
 {
     use CommonChecks;
     use CreateLedgerTrait;

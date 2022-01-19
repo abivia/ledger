@@ -6,13 +6,13 @@ namespace Abivia\Ledger\Tests\Feature;
 
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Models\LedgerName;
-use Abivia\Ledger\Tests\TestCase;
+use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /**
  * Test Ledger Domain API calls.
  */
-class LedgerDomainTest extends TestCase
+class LedgerDomainTest extends TestCaseWithMigrations
 {
     use CommonChecks;
     use CreateLedgerTrait;
@@ -36,7 +36,6 @@ class LedgerDomainTest extends TestCase
         ],
         'currency' => 'CAD'
     ];
-
 
     public function setUp(): void
     {

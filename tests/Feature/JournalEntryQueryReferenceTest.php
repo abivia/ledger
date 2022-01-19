@@ -8,13 +8,14 @@ use Abivia\Ledger\Http\Controllers\JournalEntryController;
 use Abivia\Ledger\Messages\EntryQuery;
 use Abivia\Ledger\Messages\Reference;
 use Abivia\Ledger\Messages\Message;
+use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Abivia\Ledger\Tests\TestCase;
 
 /**
  * Test entry queries incorporating a Journal Reference
  */
-class JournalEntryQueryReferenceTest extends TestCase
+class JournalEntryQueryReferenceTest extends TestCaseWithMigrations
 {
     const TRANS_COUNT = 30;
 

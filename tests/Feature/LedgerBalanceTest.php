@@ -4,13 +4,14 @@ namespace Abivia\Ledger\Tests\Feature;
 
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Tests\TestCase;
+use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Exception;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /**
  * Test Ledger API balance calls.
  */
-class LedgerBalanceTest extends TestCase
+class LedgerBalanceTest extends TestCaseWithMigrations
 {
     use CommonChecks;
     use CreateLedgerTrait;

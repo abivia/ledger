@@ -2,13 +2,13 @@
 
 namespace Abivia\Ledger\Tests\Feature;
 
+use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Abivia\Ledger\Tests\TestCase;
 
 /**
  * Test Ledger API calls that don't involve journal transactions.
  */
-class LedgerAccountQueryTest extends TestCase
+class LedgerAccountQueryTest extends TestCaseWithMigrations
 {
     use CommonChecks;
     use CreateLedgerTrait;

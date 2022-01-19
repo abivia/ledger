@@ -13,6 +13,7 @@ use Abivia\Ledger\Messages\EntityRef;
 use Abivia\Ledger\Messages\Entry;
 use Abivia\Ledger\Messages\EntryQuery;
 use Abivia\Ledger\Messages\Message;
+use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,7 +24,7 @@ use function array_shift;
 /**
  * Test Ledger API calls that don't involve journal transactions.
  */
-class JournalEntryQueryTest extends TestCase
+class JournalEntryQueryTest extends TestCaseWithMigrations
 {
     const TRANS_COUNT = 107;
 

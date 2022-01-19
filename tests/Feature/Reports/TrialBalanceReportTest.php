@@ -8,12 +8,12 @@ use Abivia\Ledger\Models\ReportData;
 use Abivia\Ledger\Reports\TrialBalanceReport;
 use Abivia\Ledger\Tests\Feature\CommonChecks;
 use Abivia\Ledger\Tests\Feature\CreateLedgerTrait;
-use Abivia\Ledger\Tests\TestCase;
+use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
-class TrialBalanceReportTest extends TestCase
+class TrialBalanceReportTest extends TestCaseWithMigrations
 {
     use CommonChecks;
     use CreateLedgerTrait;

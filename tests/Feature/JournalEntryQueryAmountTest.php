@@ -12,6 +12,7 @@ use Abivia\Ledger\Messages\EntityRef;
 use Abivia\Ledger\Messages\Entry;
 use Abivia\Ledger\Messages\EntryQuery;
 use Abivia\Ledger\Messages\Message;
+use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -21,7 +22,7 @@ use Abivia\Ledger\Tests\TestCase;
 /**
  * Test entry queries incorporating a Journal Reference
  */
-class JournalEntryQueryAmountTest extends TestCase
+class JournalEntryQueryAmountTest extends TestCaseWithMigrations
 {
     const TRANS_COUNT = 30;
 

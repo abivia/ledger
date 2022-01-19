@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Abivia\Ledger\Tests\Feature;
 
+use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Abivia\Ledger\Tests\TestCase;
+
 
 /**
  * Test Journal Reference API calls.
  */
-class JournalReferenceTest extends TestCase
+class JournalReferenceTest extends TestCaseWithMigrations
 {
     use CommonChecks;
     use CreateLedgerTrait;

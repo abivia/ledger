@@ -15,6 +15,7 @@ use Abivia\Ledger\Messages\Name;
 use Abivia\Ledger\Messages\Report;
 use Abivia\Ledger\Models\ReportAccount;
 use Abivia\Ledger\Tests\TestCase;
+use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -24,7 +25,7 @@ use function strlen;
 /**
  * Test Ledger API calls that don't involve journal transactions.
  */
-class GettingStartedTest extends TestCase
+class GettingStartedTest extends TestCaseWithMigrations
 {
     use RefreshDatabase;
 

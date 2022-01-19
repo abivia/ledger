@@ -4,13 +4,14 @@ namespace Abivia\Ledger\Tests\Feature;
 
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Tests\TestCase;
+use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Exception;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /**
  * Test Ledger API calls that don't involve journal transactions.
  */
-class LedgerAccountTest extends TestCase
+class LedgerAccountTest extends TestCaseWithMigrations
 {
     use CommonChecks;
     use CreateLedgerTrait;
@@ -151,6 +152,190 @@ class LedgerAccountTest extends TestCase
             'At least one currency is required.',
             $response['errors'][1]
         );
+    }
+
+    /**
+     * Create a more complex ledger and test parent links
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testCreateSectionOverride(): void
+    {
+        $response = $this->createLedger(
+            ['template'],
+            [
+                'template' => 'manufacturer_1.0',
+                'sections' => [
+                    [
+                        'name' => 'Accounts Receivable',
+                        'codes' => '2100',
+                    ],
+                    [
+                        'name' => 'Other Liabilities',
+                        'codes' => '2200',
+                    ],
+                ],
+            ]
+        );
+
+        $this->isSuccessful($response, 'ledger');
+
+        $rules = LedgerAccount::rules();
+
+        $sections = $rules->sections;
+        foreach ($sections as &$section) {
+            unset($section->ledgerUuids);
+            $section = (array) $section;
+            foreach ($section['names'] as &$name) {
+                $name = (array) $name;
+            }
+        }
+        $expect = [
+            [
+                "codes" => ['1100', '1200', '1300'],
+                "names" => [
+                    [
+                        "language" => "en",
+                        "name" => "Current Assets"
+                    ]
+                ]
+            ],
+            [
+                "codes" => ['1400'],
+                "names" => [
+                    [
+                        "language" => "en",
+                        "name" => "Inventory"
+                    ]
+                ],
+            ],
+            [
+                "codes" => ['1500'],
+                "names" => [
+                    [
+                        "language" => "en",
+                        "name" => "Other Short Term Assets"
+                    ]
+                ]
+            ],
+            [
+                "codes" => ['1600', '1700', '1800'],
+                "names" => [
+                    [
+                        "language" => "en",
+                        "name" => "Capital Assets"
+                    ]
+                ]
+            ],
+            [
+                "codes" => ['2100'],
+                "names" => [
+                    [
+                        "language" => "en",
+                        "name" => "Accounts Receivable"
+                    ]
+                ]
+            ],
+            [
+                "codes" => ['2200'],
+                "names" => [
+                    [
+                        "language" => "en",
+                        "name" => "Other Liabilities"
+                    ]
+                ]
+            ],
+            [
+                "codes" => ['2300'],
+                "names" => [
+                    [
+                        "language" => "en",
+                        "name" => "Long Term Liabilities"
+                    ]
+                ]
+            ],
+            [
+                "codes" => ['3100'],
+                "names" => [
+                    [
+                        "language" => "en",
+                        "name" => "Share Capital"
+                    ]
+                ]
+            ],
+            [
+                "codes" => ['3200'],
+                "names" => [
+                    [
+                        "language" => "en",
+                        "name" => "Retained Earnings"
+                    ]
+                ]
+            ],
+            [
+                "codes" => ['4100'],
+                "names" => [
+                    [
+                        "language" => "en",
+                        "name" => "Sales Revenue"
+                    ]
+                ]
+            ],
+            [
+                "codes" => ['4200'],
+                "names" => [
+                    [
+                        "language" => "en",
+                        "name" => "Other Revenue"
+                    ]
+                ]
+            ],
+            [
+                "codes" => ['5000'],
+                "names" => [
+                    [
+                        "language" => "en",
+                        "name" => "Cost of Sales"
+                    ]
+                ]
+            ],
+            [
+                "codes" => ['6000'],
+                "names" => [
+                    [
+                        "language" => "en",
+                        "name" => "Expenses"
+                    ]
+                ]
+            ]
+        ];
+        $this->assertEquals($expect, $sections);
+    }
+
+    /**
+     * Create a more complex ledger and test parent links
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testCreateSectionOverrideBad(): void
+    {
+        $response = $this->createLedger(
+            ['template'],
+            [
+                'template' => 'manufacturer_1.0',
+                'sections' => [
+                    [
+                        'name' => 'Accounts Erroneous',
+                        'codes' => '4321',
+                    ],
+                ],
+            ],
+            true
+        );
+
+        $this->isFailure($response, 'ledger');
     }
 
     /**
@@ -470,7 +655,8 @@ class LedgerAccountTest extends TestCase
         $requestData = [
             'revision' => 'bogus',
             'code' => '1010',
-            'credit' => true
+            'credit' => true,
+            'taxCode' => '1.1.1',
         ];
         $response = $this->json(
             'post', 'api/ledger/account/update', $requestData
@@ -483,6 +669,7 @@ class LedgerAccountTest extends TestCase
             'post', 'api/ledger/account/update', $requestData
         );
         $result = $this->isSuccessful($response);
+        $this->assertEquals('1.1.1', $result->account->taxCode);
 
         // Attempt a retry with the same (now invalid) revision.
         $requestData['revision'] = $accountInfo->account->revision;

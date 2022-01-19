@@ -8,14 +8,14 @@ use Abivia\Ledger\Models\JournalReference;
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Models\LedgerBalance;
 use Abivia\Ledger\Models\LedgerDomain;
-use Abivia\Ledger\Tests\TestCase;
+use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /**
  * Test Ledger API calls that don't involve journal transactions.
  */
-class JournalEntryTest extends TestCase
+class JournalEntryTest extends TestCaseWithMigrations
 {
     use CommonChecks;
     use CreateLedgerTrait;
@@ -268,7 +268,7 @@ class JournalEntryTest extends TestCase
         $details = $journalEntry->details;
         $ledgerDomain = LedgerDomain::find($journalEntry->domainUuid);
 
-        // Now delete the account
+        // Now delete the entry
         $deleteData = [
             'id' => $actual->entry->id,
             'revision' => $actual->entry->revision,
