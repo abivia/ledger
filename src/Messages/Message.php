@@ -21,10 +21,11 @@ abstract class Message
     /**
      * Bitmask for all the OP_ constants.
      */
-    public const ALL_OPS = 0b111111;
+    public const ALL_OPS = 0b1111111;
 
     // Operation flags from bit 0 up.
     public const OP_ADD = 1;
+    public const OP_BATCH = 2**6;
     public const OP_CREATE = 2;
     public const OP_DELETE = 2**2;
     public const OP_GET = 2**3;
@@ -41,6 +42,7 @@ abstract class Message
 
     private static array $opMap = [
         'add' => self::OP_ADD,
+        'batch' => self::OP_BATCH,
         'create' => self::OP_CREATE,
         'delete' => self::OP_DELETE,
         'get' => self::OP_GET,
