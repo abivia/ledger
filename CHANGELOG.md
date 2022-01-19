@@ -1,3 +1,11 @@
+### 1.2.0
+
+- Templates and ledger create operations can now define "sections" for reporting purposes.
+- Accounts now have a `taxCode` attribute to simplify mapping for tax reporting.
+- Created a set of Rules classes for storing Ledger rules.
+- Switched from referencing migrations to publishing them.
+- Bug fixes.
+
 ### 1.1.1
 
 - Delete operations for Account, Currency, Domain, SubJournal weren't verifying revision hash.
