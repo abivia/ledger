@@ -256,13 +256,17 @@ class LedgerAccount extends Model
     /**
      * Get the current rule set. During ledger creation, this is a set of bootstrap rules.
      *
-     * @return LedgerRules
+     * @param bool $bootable
+     * @return LedgerRules|null
      */
-    public static function rules(): LedgerRules
+    public static function rules(bool $bootable = false): ?LedgerRules
     {
         if (self::$root === null) {
             self::loadRoot();
             if (self::$root === null) {
+                if (!$bootable) {
+                    return null;
+                }
                 if (!isset(self::$bootRules)) {
                     self::baseRuleSet();
                 }
@@ -287,7 +291,11 @@ class LedgerAccount extends Model
     /** @noinspection PhpUnused */
     public function setFlexAttribute($value)
     {
-        $this->attributes['flex'] = json_encode($value);
+        if ($value === null) {
+            $this->attributes['flex'] = null;
+        } else {
+            $this->attributes['flex'] = json_encode($value);
+        }
     }
 
     /**
