@@ -56,6 +56,7 @@ JSON;
     "account": {
         "postToCategory": true
     },
+    "appAttributes": [],
     "domain": {},
     "entry": {
         "reviewed": true

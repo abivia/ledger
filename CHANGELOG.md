@@ -1,3 +1,7 @@
+### 1.2.1
+
+- Fix regression: custom ledger rules were being dropped.
+
 ### 1.2.0
 
 - Templates and ledger create operations can now define "sections" for reporting purposes.

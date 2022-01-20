@@ -3,6 +3,7 @@
 namespace Abivia\Ledger\Tests\Feature;
 
 use Abivia\Ledger\Models\LedgerAccount;
+use Abivia\Ledger\Root\Flex;
 use Abivia\Ledger\Tests\TestCase;
 use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Exception;
@@ -67,7 +68,15 @@ class LedgerAccountTest extends TestCaseWithMigrations
         $this->isSuccessful($response, 'ledger');
 
         LedgerAccount::loadRoot();
-        //print_r(LedgerAccount::root());
+        $root = LedgerAccount::root();
+        $this->assertTrue($root->category);
+        /** @var Flex $flex */
+        $flex = $root->flex;
+        $this->assertEquals('CORP', $flex->rules->domain->default);
+        $this->assertEquals([1, 2, 3], $flex->rules->_myAppRule);
+        $this->assertEquals('en', $flex->rules->language->default);
+        $this->assertEquals(25, $flex->rules->pageSize);
+        $this->assertEquals([], $flex->rules->sections);
     }
 
     /**

@@ -493,7 +493,7 @@ class RootController extends LedgerAccountController
         // Store the sections into the root
         $sectionsOnly = new stdClass();
         $sectionsOnly->sections = $newSections;
-        $dbg = LedgerAccount::setRules($sectionsOnly);
+        LedgerAccount::setRules($sectionsOnly);
     }
 
     /**

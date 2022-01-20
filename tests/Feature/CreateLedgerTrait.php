@@ -58,6 +58,7 @@ trait CreateLedgerTrait {
                 'codeFormat' => '/^[a-z0-9\-]+$/i'
             ],
             'pageSize' => 25,
+            '_myAppRule' => [1, 2, 3],
         ],
         'extra' => 'arbitrary JSON',
         'template' => 'sections'
