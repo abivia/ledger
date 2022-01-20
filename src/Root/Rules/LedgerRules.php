@@ -101,8 +101,7 @@ class LedgerRules implements Hydratable
         }
 
         // Handle application extensions.
-        $options['source'] ??= 'json';
-        if (is_string($config) && $options['source'] === 'json') {
+        if (is_string($config)) {
             $config = self::$hydrator::parse($config, $options);
         }
         if (!is_string($config)) {
