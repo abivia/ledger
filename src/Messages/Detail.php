@@ -12,7 +12,7 @@ use Exception;
 /**
  * Account detail in a journal entry.
  *
- * @property-read $signTest
+ * @property-read int $signTest
  */
 class Detail extends Message
 {
