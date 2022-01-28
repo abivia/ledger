@@ -84,7 +84,7 @@ class Account extends Message
             Merge::arrays($errors, $account->loadNames($data, $opFlags));
             if (isset($data['parent'])) {
                 try {
-                    $account->parent = EntityRef::fromArray($data['parent'], $opFlags);
+                    $account->parent = EntityRef::fromMixed($data['parent'], $opFlags);
                 } catch (Breaker $exception) {
                     Merge::arrays($errors, $exception->getErrors());
                 }

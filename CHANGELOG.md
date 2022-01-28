@@ -1,3 +1,7 @@
+### 1.2.2
+
+- Bugfix: short form parent account references (code only) not handled correctly.
+
 ### 1.2.1
 
 - Fix regression: custom ledger rules were being dropped.

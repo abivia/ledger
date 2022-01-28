@@ -18,12 +18,6 @@ class LedgerAccountTest extends TestCaseWithMigrations
     use CreateLedgerTrait;
     use RefreshDatabase;
 
-    public function setUp(): void
-    {
-        parent::setUp();
-        self::$expectContent = 'account';
-    }
-
     protected function addAccount(string $code, string $parentCode, bool $debit)
     {
         // Add an account
@@ -45,6 +39,140 @@ class LedgerAccountTest extends TestCaseWithMigrations
         );
 
         return $this->isSuccessful($response);
+    }
+
+    public function setUp(): void
+    {
+        parent::setUp();
+        self::$expectContent = 'account';
+    }
+
+    public function testAdd()
+    {
+        // First we need a ledger
+        $this->createLedger();
+
+        // Add an account
+        $requestData = [
+            'code' => '1010',
+            'parent' => [
+                'code' => '1000',
+            ],
+            'name' => 'Cash in Bank',
+            'names' => [
+                [
+                    'name' => 'Cash Stash',
+                    'language' => 'en-YO',
+                ]
+            ],
+            "debit" => true,
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/account/add', $requestData
+        );
+        $actual = $this->isSuccessful($response);
+        $this->hasRevisionElements($actual->account);
+        $this->hasAttributes(['uuid', 'code', 'names'], $actual->account);
+        $this->assertEquals('1010', $actual->account->code);
+        $this->assertCount(2, $actual->account->names);
+        $this->assertEquals(
+            'Cash in Bank',
+            $actual->account->names[0]->name
+        );
+        $this->assertEquals(
+            'en',
+            $actual->account->names[0]->language
+        );
+        $this->assertEquals(
+            'Cash Stash',
+            $actual->account->names[1]->name
+        );
+        $this->assertEquals(
+            'en-YO',
+            $actual->account->names[1]->language
+        );
+    }
+
+    public function testAddBadCode()
+    {
+        // First we need a ledger
+        $this->createLedger();
+
+        // Add an account
+        $requestData = [
+            'code' => '10b/76',
+            'parent' => [
+                'code' => '1000',
+            ],
+            'names' => [
+                [
+                    'name' => 'Cash in Bank',
+                    'language' => 'en',
+                ]
+            ]
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/account/add', $requestData
+        );
+        $actual = $this->isFailure($response);
+    }
+
+    public function testAddDuplicate()
+    {
+        // First we need a ledger
+        $response = $this->postJson(
+            'api/ledger/root/create', $this->createRequest
+        );
+        $this->isSuccessful($response, 'ledger');
+
+        // Add an account
+        $requestData = [
+            'code' => '1010',
+            'parent' => ['code' => '1000',],
+            'names' => [
+                [
+                    'name' => 'Cash in Bank',
+                    'language' => 'en',
+                ]
+            ]
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/account/add', $requestData
+        );
+        $response = $this->json(
+            'post', 'api/ledger/account/add', $requestData
+        );
+        $actual = $this->isFailure($response);
+        //print_r($actual);
+    }
+
+    public function testAddToEmpty()
+    {
+        // First we need a ledger
+        $this->createLedger(['template']);
+
+        // Add an account
+        $requestData = [
+            'code' => '1000',
+            'name' => 'Cash in Bank',
+            'debit' => true,
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/account/add', $requestData
+        );
+        $actual = $this->isSuccessful($response);
+        $this->hasRevisionElements($actual->account);
+        $this->hasAttributes(['uuid', 'code', 'names'], $actual->account);
+        $this->assertEquals('1000', $actual->account->code);
+        $this->assertCount(1, $actual->account->names);
+        $this->assertEquals(
+            'Cash in Bank',
+            $actual->account->names[0]->name
+        );
+        $this->assertEquals(
+            'en',
+            $actual->account->names[0]->language
+        );
     }
 
     public function testBadRequest()
@@ -104,45 +232,6 @@ class LedgerAccountTest extends TestCaseWithMigrations
     }
 
     /**
-     * Create a ledger with a preset account
-     *
-     * @return void
-     * @throws Exception
-     */
-    public function testCreateWithAccounts(): void
-    {
-        $response = $this->createLedger(
-            ['template'],
-            [
-            'accounts' => [
-                [
-                    'names' => [
-                        [
-                            'name' =>'Assets',
-                            'language' => 'en',
-                        ],
-                    ],
-                    'code' => '1100',
-                    'parent' => [
-                        'code' => '1000',
-                    ],
-                    'debit' => true,
-                ]
-            ],
-            'template' => 'sections'
-        ]);
-
-        $this->isSuccessful($response, 'ledger');
-
-        LedgerAccount::loadRoot();
-
-        // Get the sub-sub account and make sure it's connected correctly.
-        $account = LedgerAccount::where('code', '1100')->first();
-        $parent = LedgerAccount::find($account->parentUuid);
-        $this->assertEquals('1000', $parent->code);
-    }
-
-    /**
      * Attempt to create a ledger with no currencies.
      *
      * @return void
@@ -195,9 +284,9 @@ class LedgerAccountTest extends TestCaseWithMigrations
         $sections = $rules->sections;
         foreach ($sections as &$section) {
             unset($section->ledgerUuids);
-            $section = (array) $section;
+            $section = (array)$section;
             foreach ($section['names'] as &$name) {
-                $name = (array) $name;
+                $name = (array)$name;
             }
         }
         $expect = [
@@ -348,6 +437,49 @@ class LedgerAccountTest extends TestCaseWithMigrations
     }
 
     /**
+     * Create a more complex ledger and test parent links
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testCreateWithAccounts(): void
+    {
+        $response = $this->createLedger(
+            ['template'],
+            [
+                'accounts' => [
+                    [
+                        'code' => '1000',
+                        'name' => 'Assets',
+                        'category' => true,
+                        'debit' => true,
+                    ],
+                    [
+                        'code' => '1100',
+                        'name' => 'Chequing Account',
+                        'parent' => '1000',
+                        'debit' => true,
+                    ],
+                ],
+            ]
+        );
+
+        $this->isSuccessful($response, 'ledger');
+
+        LedgerAccount::loadRoot();
+
+        // Get the accounts
+        $account = LedgerAccount::where('code', '1000')->first();
+        $this->assertNotNull($account);
+        $this->assertEquals('1000', $account->code);
+        $account = LedgerAccount::where('code', '1100')->first();
+        $this->assertNotNull($account);
+        $this->assertEquals('1100', $account->code);
+        $parent = LedgerAccount::find($account->parentUuid);
+        $this->assertEquals('1000', $parent->code);
+    }
+
+    /**
      * Create a valid ledger
      *
      * @return void
@@ -358,15 +490,15 @@ class LedgerAccountTest extends TestCaseWithMigrations
         $balancePart = [
             'balances' => [
                 // Cash in bank
-                [ 'code' => '1120', 'amount' => '-3000', 'currency' => 'CAD'],
+                ['code' => '1120', 'amount' => '-3000', 'currency' => 'CAD'],
                 // Savings
-                [ 'code' => '1130', 'amount' => '-10000', 'currency' => 'CAD'],
+                ['code' => '1130', 'amount' => '-10000', 'currency' => 'CAD'],
                 // A/R
-                [ 'code' => '1310', 'amount' => '-1500', 'currency' => 'CAD'],
+                ['code' => '1310', 'amount' => '-1500', 'currency' => 'CAD'],
                 // Retained earnings
-                [ 'code' => '3200', 'amount' => '14000', 'currency' => 'CAD'],
+                ['code' => '3200', 'amount' => '14000', 'currency' => 'CAD'],
                 // A/P
-                [ 'code' => '2120', 'amount' => '500', 'currency' => 'CAD'],
+                ['code' => '2120', 'amount' => '500', 'currency' => 'CAD'],
             ],
             'template' => 'manufacturer_1.0'
         ];
@@ -388,11 +520,11 @@ class LedgerAccountTest extends TestCaseWithMigrations
         $balancePart = [
             'balances' => [
                 // Cash in bank
-                [ 'code' => '1120', 'amount' => '-3000', 'currency' => 'CAD'],
+                ['code' => '1120', 'amount' => '-3000', 'currency' => 'CAD'],
                 // Savings
-                [ 'code' => '1130', 'amount' => '-10000', 'currency' => 'CAD'],
+                ['code' => '1130', 'amount' => '-10000', 'currency' => 'CAD'],
                 // A/R
-                [ 'code' => '1310', 'amount' => '-1500', 'currency' => 'CAD'],
+                ['code' => '1310', 'amount' => '-1500', 'currency' => 'CAD'],
             ],
             'template' => 'manufacturer_1.0'
         ];
@@ -401,132 +533,43 @@ class LedgerAccountTest extends TestCaseWithMigrations
         $this->isFailure($response);
     }
 
-    public function testAdd()
+    /**
+     * Create a ledger with a preset account
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testCreateWithTemplateAndAccounts(): void
     {
-        // First we need a ledger
-        $this->createLedger();
+        $response = $this->createLedger(
+            ['template'],
+            [
+                'accounts' => [
+                    [
+                        'names' => [
+                            [
+                                'name' => 'Assets',
+                                'language' => 'en',
+                            ],
+                        ],
+                        'code' => '1100',
+                        'parent' => [
+                            'code' => '1000',
+                        ],
+                        'debit' => true,
+                    ]
+                ],
+                'template' => 'sections'
+            ]);
 
-        // Add an account
-        $requestData = [
-            'code' => '1010',
-            'parent' => [
-                'code' => '1000',
-            ],
-            'name' => 'Cash in Bank',
-            'names' => [
-                [
-                    'name' => 'Cash Stash',
-                    'language' => 'en-YO',
-                ]
-            ],
-            "debit" => true,
-        ];
-        $response = $this->json(
-            'post', 'api/ledger/account/add', $requestData
-        );
-        $actual = $this->isSuccessful($response);
-        $this->hasRevisionElements($actual->account);
-        $this->hasAttributes(['uuid', 'code', 'names'], $actual->account);
-        $this->assertEquals('1010', $actual->account->code);
-        $this->assertCount(2, $actual->account->names);
-        $this->assertEquals(
-            'Cash in Bank',
-            $actual->account->names[0]->name
-        );
-        $this->assertEquals(
-            'en',
-            $actual->account->names[0]->language
-        );
-        $this->assertEquals(
-            'Cash Stash',
-            $actual->account->names[1]->name
-        );
-        $this->assertEquals(
-            'en-YO',
-            $actual->account->names[1]->language
-        );
-    }
-
-    public function testAddBadCode()
-    {
-        // First we need a ledger
-        $this->createLedger();
-
-        // Add an account
-        $requestData = [
-            'code' => '10b/76',
-            'parent' => [
-                'code' => '1000',
-            ],
-            'names' => [
-                [
-                    'name' => 'Cash in Bank',
-                    'language' => 'en',
-                ]
-            ]
-        ];
-        $response = $this->json(
-            'post', 'api/ledger/account/add', $requestData
-        );
-        $actual = $this->isFailure($response);
-    }
-
-    public function testAddDuplicate()
-    {
-        // First we need a ledger
-        $response = $this->postJson(
-            'api/ledger/root/create', $this->createRequest
-        );
         $this->isSuccessful($response, 'ledger');
 
-        // Add an account
-        $requestData = [
-            'code' => '1010',
-            'parent' => ['code' => '1000',],
-            'names' => [
-                [
-                    'name' => 'Cash in Bank',
-                    'language' => 'en',
-                ]
-            ]
-        ];
-        $response = $this->json(
-            'post', 'api/ledger/account/add', $requestData
-        );
-        $response = $this->json(
-            'post', 'api/ledger/account/add', $requestData
-        );
-        $actual = $this->isFailure($response);
-        //print_r($actual);
-    }
+        LedgerAccount::loadRoot();
 
-    public function testAddToEmpty()
-    {
-        // First we need a ledger
-        $this->createLedger(['template']);
-
-        // Add an account
-        $requestData = [
-            'code' => '1000',
-            'name' => 'Cash in Bank',
-            'debit' => true,
-        ];
-        $response = $this->json(
-            'post', 'api/ledger/account/add', $requestData
-        );
-        $actual = $this->isSuccessful($response);
-        $this->hasRevisionElements($actual->account);
-        $this->hasAttributes(['uuid', 'code', 'names'], $actual->account);
-        $this->assertEquals('1000', $actual->account->code);
-        $this->assertCount(1, $actual->account->names);
-        $this->assertEquals(
-            'Cash in Bank',
-            $actual->account->names[0]->name
-        );
-        $this->assertEquals(
-            'en',
-            $actual->account->names[0]->language
-        );
+        // Get the sub-sub account and make sure it's connected correctly.
+        $account = LedgerAccount::where('code', '1100')->first();
+        $parent = LedgerAccount::find($account->parentUuid);
+        $this->assertEquals('1000', $parent->code);
     }
 
     public function testDelete()

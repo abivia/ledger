@@ -60,7 +60,7 @@ trait CreateLedgerTrait {
             'pageSize' => 25,
             '_myAppRule' => [1, 2, 3],
         ],
-        'extra' => 'arbitrary JSON',
+        'extra' => 'arbitrary string',
         'template' => 'sections'
     ];
 
