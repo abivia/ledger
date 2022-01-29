@@ -8,7 +8,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 
-class AddAccountTaxCode extends Migration
+class LedgerAddAccountTaxCode extends Migration
 {
     /**
      * Reverse the migrations.

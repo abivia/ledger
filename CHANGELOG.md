@@ -1,3 +1,7 @@
+### 1.2.6
+
+- Bugfix: fix migration file/class naming #2.
+
 ### 1.2.5
 
 - Bugfix: fix migration file/class naming.

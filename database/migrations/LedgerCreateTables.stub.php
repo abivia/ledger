@@ -8,7 +8,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 
-class CreateLedgerTables extends Migration
+class LedgerCreateTables extends Migration
 {
     /**
      * Reverse the migrations.
