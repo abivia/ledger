@@ -1,3 +1,7 @@
+### 1.2.3
+
+- Bugfix: add sequence number to migrations to ensure they run in the right order.
+
 ### 1.2.2
 
 - Bugfix: short form parent account references (code only) not handled correctly.

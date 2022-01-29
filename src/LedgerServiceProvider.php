@@ -25,9 +25,9 @@ class LedgerServiceProvider extends ServiceProvider
                 $this->publishes(
                     [
                         $migrateFrom . 'CreateLedgerTables.php.stub' =>
-                            $this->migratePath('create_posts_table'),
+                            $this->migratePath('01_create_posts_table'),
                         $migrateFrom . 'AddAccountTaxCode.php.stub' =>
-                            $this->migratePath('add_account_tax_code'),
+                            $this->migratePath('02_add_account_tax_code'),
                     ],
                     'migrations'
                 );
