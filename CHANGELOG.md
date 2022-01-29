@@ -1,3 +1,7 @@
+### 1.2.5
+
+- Bugfix: fix migration file/class naming.
+
 ### 1.2.4
 
 - Bugfix: adjust migration timestamps to ensure they run in the right order.
