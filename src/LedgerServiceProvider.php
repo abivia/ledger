@@ -10,6 +10,8 @@ use Illuminate\Support\ServiceProvider;
 
 class LedgerServiceProvider extends ServiceProvider
 {
+    private int $migrationCount;
+
     public function boot()
     {
         if (config('ledger.api', true)) {
@@ -21,13 +23,14 @@ class LedgerServiceProvider extends ServiceProvider
             $migrateFrom = $base . 'database/migrations/';
 
             // Export migrations
+            $this->migrationCount = 2;
             if (!class_exists('CreatePostsTable')) {
                 $this->publishes(
                     [
                         $migrateFrom . 'CreateLedgerTables.php.stub' =>
-                            $this->migratePath('01_create_posts_table'),
+                            $this->migratePath('create_posts_table'),
                         $migrateFrom . 'AddAccountTaxCode.php.stub' =>
-                            $this->migratePath('02_add_account_tax_code'),
+                            $this->migratePath('add_account_tax_code'),
                     ],
                     'migrations'
                 );
@@ -46,8 +49,9 @@ class LedgerServiceProvider extends ServiceProvider
 
     private function migratePath(string $file): string
     {
+        $timeKludge = date('Y_m_d_His', time() - --$this->migrationCount);
         return database_path(
-            'migrations/' . date('Y_m_d_His', time()) . "_$file.php"
+            'migrations/' . $timeKludge . "_$file.php"
         );
     }
 

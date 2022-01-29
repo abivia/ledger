@@ -1,3 +1,7 @@
+### 1.2.4
+
+- Bugfix: adjust migration timestamps to ensure they run in the right order.
+
 ### 1.2.3
 
 - Bugfix: add sequence number to migrations to ensure they run in the right order.
