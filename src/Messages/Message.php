@@ -71,9 +71,9 @@ abstract class Message
             } else {
                 $property = $info;
                 $fromProperty = $info;
-                $mask = $opFlags;
+                $mask = Message::ALL_OPS;
             }
-            if ($opFlags & $mask && isset($data[$fromProperty])) {
+            if (($opFlags & $mask) && isset($data[$fromProperty])) {
                 $this->{$property} = $data[$fromProperty];
             }
         }

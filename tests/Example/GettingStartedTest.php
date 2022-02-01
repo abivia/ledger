@@ -150,8 +150,8 @@ class GettingStartedTest extends TestCaseWithMigrations
                 'currency' => 'USD',
                 'description' => 'Widget sale customer #1',
                 'details' => [
-                    ['code' => '140', 'amount' => '-10'],
-                    ['code' => '510', 'amount' => '10'],
+                    ['code' => '140', 'amount' => '10'],
+                    ['code' => '510', 'amount' => '-10'],
                 ],
                 'transDate' => '2022-01-02 11:15',
             ])

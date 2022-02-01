@@ -208,7 +208,7 @@ class Create extends Message
     /**
      * @inheritdoc
      */
-    public static function fromArray(array $data, int $opFlags = 0): self
+    public static function fromArray(array $data, int $opFlags = self::OP_CREATE): self
     {
         $errors = [];
         $create = new Create();

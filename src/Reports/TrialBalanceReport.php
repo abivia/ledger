@@ -107,6 +107,7 @@ class TrialBalanceReport extends AbstractReport
             }
             $reportData->accounts[$account->code] = $account;
         }
+        ksort($reportData->accounts);
 
         return $reportData;
     }

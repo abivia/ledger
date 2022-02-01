@@ -26,7 +26,7 @@ class SubJournal extends Message
     /**
      * @inheritdoc
      */
-    public static function fromArray(array $data, int $opFlags = 0): self
+    public static function fromArray(array $data, int $opFlags = self::OP_ADD): self
     {
         $subJournal = new static();
         $subJournal->copy($data, $opFlags);

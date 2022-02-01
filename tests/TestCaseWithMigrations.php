@@ -3,6 +3,8 @@
 
 namespace Abivia\Ledger\Tests;
 
+use Illuminate\Foundation\Testing\RefreshDatabaseState;
+
 abstract class TestCaseWithMigrations extends TestCase
 {
     public function getEnvironmentSetUp($app)
@@ -15,13 +17,18 @@ abstract class TestCaseWithMigrations extends TestCase
     {
         $base = __DIR__ . '/../database/migrations/';
         $migrations = [
-            'CreateLedgerTables',
-            'AddAccountTaxCode'
+            ['LedgerCreateTables', true],
+            ['LedgerAddAccountTaxCode', false],
         ];
         foreach ($migrations as $migrationClass) {
-            include_once "$base$migrationClass.php.stub";
-            (new $migrationClass)->up();
+            include_once "$base{$migrationClass[0]}.stub.php";
+            $migrate = new $migrationClass[0]();
+            if ($migrationClass[1]) {
+                $migrate->down();
+            }
+            $migrate->up();
         }
+        RefreshDatabaseState::$migrated = true;
     }
 
 }
