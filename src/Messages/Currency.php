@@ -27,6 +27,16 @@ class Currency extends Message
      */
     public string $revision;
 
+    public function __construct(?string $code = null, ?int $decimals = null)
+    {
+        if ($code !== null) {
+            $this->code = $code;
+        }
+        if ($decimals !== null) {
+            $this->decimals = $decimals;
+        }
+    }
+
     /**
      * @inheritdoc
      */

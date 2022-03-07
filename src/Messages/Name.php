@@ -14,6 +14,22 @@ class Name extends Message
     public string $name;
     public string $ownerUuid;
 
+    public function __construct(
+        ?string $name = null,
+        ?string $language = null,
+        ?string $ownerUuid = null
+    ) {
+        if ($language !== null) {
+            $this->language = $language;
+        }
+        if ($name !== null) {
+            $this->name = $name;
+        }
+        if ($ownerUuid !== null) {
+            $this->ownerUuid = $ownerUuid;
+        }
+    }
+
     /**
      * Add, update, or delete this name from/to a model
      * @param Model $owner
