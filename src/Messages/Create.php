@@ -21,6 +21,8 @@ class Create extends Message
 {
     use HasNames;
 
+    public const DEFAULT_DOMAIN = 'MAIN';
+
     /**
      * @var Account[] A list of ledger accounts.
      */
@@ -286,9 +288,9 @@ class Create extends Message
         }
         if (count($this->domains) === 0) {
             // Create a default domain
-            $this->domains['MAIN'] = Domain::fromArray(
+            $this->domains[self::DEFAULT_DOMAIN] = Domain::fromArray(
                 [
-                    'code' => 'MAIN',
+                    'code' => self::DEFAULT_DOMAIN,
                     'name' => 'Main General Ledger',
                     'language' => App::getLocale(),
                 ],
