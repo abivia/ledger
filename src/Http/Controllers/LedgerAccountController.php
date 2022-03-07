@@ -8,8 +8,8 @@ namespace Abivia\Ledger\Http\Controllers;
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Http\Controllers\LedgerAccount\AddController;
 use Abivia\Ledger\Http\Controllers\LedgerAccount\RootController;
+use Abivia\Ledger\Logic\AccountLogic;
 use Abivia\Ledger\Models\LedgerAccount;
-use Abivia\Ledger\Models\LedgerBalance;
 use Abivia\Ledger\Models\LedgerName;
 use Abivia\Ledger\Messages\Account;
 use Abivia\Ledger\Messages\Create;
@@ -79,50 +79,24 @@ class LedgerAccountController extends Controller
      * @param Account $message
      * @return null
      * @throws Breaker
+     * @throws Exception
      */
     public function delete(Account $message)
     {
         $message->validate(Message::OP_DELETE);
         $this->errors = [];
-        $inTransaction = false;
-        try {
-            $ledgerAccount = $this->fetchAccount($message);
-            $ledgerAccount->checkRevision($message->revision ?? null);
-            // Ensure there are no sub-accounts with associated transactions
-            $relatedAccounts = $this->getSubAccountList($ledgerAccount->ledgerUuid);
-            $accountTable = (new LedgerAccount())->getTable();
-            $balanceTable = (new LedgerBalance())->getTable();
-            $subCats = DB::table($accountTable)
-                ->join($balanceTable,
-                    $accountTable . '.ledgerUuid', '=',
-                    $balanceTable . '.ledgerUuid'
-                )
-                ->whereIn($accountTable . '.ledgerUuid', $relatedAccounts)
-                ->count();
-            if ($subCats !== 0) {
-                throw Breaker::withCode(
-                    Breaker::RULE_VIOLATION,
-                    [__("Can't delete: account or sub-accounts have transactions.")]
-                );
-            }
-            $nameTable = (new LedgerName())->getTable();
-            DB::beginTransaction();
-            $inTransaction = true;
-            Db::table($balanceTable)->whereIn('ledgerUuid', $relatedAccounts)
-                ->delete();
-            Db::table($nameTable)->whereIn('ownerUuid', $relatedAccounts)
-                ->delete();
-            Db::table($accountTable)->whereIn('ledgerUuid', $relatedAccounts)
-                ->delete();
-            DB::commit();
-            $inTransaction = false;
-            $this->auditLog($message);
-        } catch (Exception $exception) {
-            if ($inTransaction) {
-                DB::rollBack();
-            }
-            throw $exception;
+        $ledgerAccount = $this->fetchAccount($message);
+        $ledgerAccount->checkRevision($message->revision ?? null);
+
+        // Fails if there are sub-accounts with associated transactions
+        $logic = new AccountLogic();
+        if (!$logic->delete($ledgerAccount)) {
+            throw Breaker::withCode(
+                Breaker::RULE_VIOLATION,
+                [__("Can't delete: account or sub-accounts have transactions.")]
+            );
         }
+        $this->auditLog($message);
 
         return null;
     }
@@ -180,18 +154,6 @@ class LedgerAccountController extends Controller
     {
         $message->validate(Message::OP_GET);
         return $this->fetchAccount($message);
-    }
-
-    protected function getSubAccountList(string $ledgerUuid): array
-    {
-        $idList = [$ledgerUuid];
-        $subAccounts = LedgerAccount::where('parentUuid', $ledgerUuid)->get();
-        /** @var LedgerAccount $account */
-        foreach ($subAccounts as $account) {
-            $idList = array_merge($idList, $this->getSubAccountList($account->ledgerUuid));
-        }
-
-        return $idList;
     }
 
     /**
@@ -267,8 +229,18 @@ class LedgerAccountController extends Controller
 
             DB::beginTransaction();
             $inTransaction = true;
-            if (!isset($message->code)) {
-                $ledgerAccount->code = $message->code;
+            if (isset($message->toCode) && $message->toCode !== $ledgerAccount->code) {
+                // Check for duplicate
+                if (LedgerAccount::where('code', $message->toCode)->first() !== null) {
+                    throw Breaker::withCode(
+                        Breaker::RULE_VIOLATION,
+                        [__(
+                            "Account :code already exists, can't update.",
+                            ['code' => $message->toCode]
+                        )]
+                    );
+                }
+                $ledgerAccount->code = $message->toCode;
             }
 
             // Update the parent
