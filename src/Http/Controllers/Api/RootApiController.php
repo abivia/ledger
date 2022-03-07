@@ -16,25 +16,18 @@ class RootApiController
 {
     use ControllerResultHandler;
 
-    public function run(Request $request, string $operation): array
+    public function create(Request $request): array
     {
-        $response = [];
-        $this->errors = [];
         try {
+            // The Ledger must be empty
+            RootController::checkNoLedgerExists();
             $controller = new RootController();
-            if ($operation === 'templates') {
-                $response['templates'] = array_values($controller->listTemplates());
-            } else {
-                // The Ledger must be empty
-                RootController::checkNoLedgerExists();
 
-                $message = Create::fromArray($request->all(), Message::OP_ADD | Message::OP_CREATE);
-                $ledgerAccount = $controller->create($message);
-                //$response['whatever'] = $ledgerAccount->toResponse();
+            $message = Create::fromArray($request->all(), Message::OP_ADD | Message::OP_CREATE);
+            $ledgerAccount = $controller->create($message);
 
-                // Add the ledger information to the response
-                $response['ledger'] = $ledgerAccount->toResponse();
-            }
+            // Add the ledger information to the response
+            $response['ledger'] = $ledgerAccount->toResponse();
             //$this->success($message);
         } catch (Breaker $exception) {
             $this->warning($exception);
@@ -49,6 +42,25 @@ class RootApiController
         }
         $response['time'] = new Carbon();
 
+        return $response;
+    }
+
+    public function run(Request $request, string $operation): array
+    {
+        $response = [];
+        $this->errors = [];
+        if ($operation === 'create') {
+            return $this->create($request);
+        } elseif ($operation === 'templates') {
+            return $this->templates();
+        }
+
+        $response['errors'] = [__(
+            ':operation is not a valid operation',
+            ['operation' => $operation]
+        )];
+        $response['time'] = new Carbon();
+
 
         return $response;
     }
@@ -58,8 +70,7 @@ class RootApiController
         $response = [];
         $this->errors = [];
         try {
-            $controller = new RootController();
-            $response['templates'] = array_values($controller->listTemplates());
+            $response['templates'] = array_values(RootController::listTemplates());
             //$this->success($message);
         } catch (Breaker $exception) {
             $this->warning($exception);
