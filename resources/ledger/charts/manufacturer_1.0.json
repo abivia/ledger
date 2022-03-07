@@ -1821,6 +1821,7 @@
             "debit": true
         }
     ],
+    "codeFormat": "/^[a-z0-9\\-]{4}$/i",
     "sections": [
         {
             "name": "Current Assets",
