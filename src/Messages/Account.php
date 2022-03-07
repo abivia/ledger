@@ -63,11 +63,6 @@ class Account extends Message
     public string $taxCode;
 
     /**
-     * @var string Account code used in an update that changes the account code.
-     */
-    public string $toCode;
-
-    /**
      * @var string The UUID for this account. Only valid on update/delete.
      */
     public string $uuid;
@@ -98,6 +93,16 @@ class Account extends Message
         }
 
         return $account;
+    }
+
+    public function inheritFlagsFrom(LedgerAccount $parent)
+    {
+        if (!isset($this->debit)) {
+            $this->debit = $parent->debit;
+        }
+        if (!isset($this->credit)) {
+            $this->credit = $parent->credit;
+        }
     }
 
     /**
