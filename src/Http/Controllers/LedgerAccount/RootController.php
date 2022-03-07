@@ -227,6 +227,7 @@ class RootController extends LedgerAccountController
                 } elseif (isset($this->accounts[$parentCode])) {
                     $parent = $this->accounts[$parentCode];
                     $account->parent->uuid = $parent->ledgerUuid;
+                    $account->inheritFlagsFrom($parent);
                     $create = true;
                     if (($account->category ?? false) === true && $parent->category !== true) {
                         $errors[] = __(
@@ -501,7 +502,7 @@ class RootController extends LedgerAccountController
      *
      * @return array
      */
-    public function listTemplates(): array
+    public static function listTemplates(): array
     {
         $list = [];
         $chartDir = Package::chartPath();
@@ -539,6 +540,18 @@ class RootController extends LedgerAccountController
                     ['template' => $this->initData->template]
                 );
                 throw Breaker::withCode(Breaker::INVALID_DATA);
+            }
+            // If no account format has been set, see if we can inherit from the template
+            if (
+                !isset($this->initData->rules->account->codeFormat)
+                && isset($template['codeFormat'])
+            ) {
+                $ruleUpdate = (object) [
+                    'account' => (object) [
+                        'codeFormat' => $template['codeFormat']
+                    ]
+                ];
+                LedgerAccount::setRules($ruleUpdate);
             }
             foreach ($template['accounts'] as $account) {
                 try {
