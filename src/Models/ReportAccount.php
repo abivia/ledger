@@ -26,7 +26,7 @@ class ReportAccount extends NoDatabase
     /**
      * @var mixed
      */
-    public $flex;
+    protected $flex;
     public string $ledgerUuid;
     public string $name;
     public string $parent;
