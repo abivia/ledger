@@ -76,7 +76,7 @@ class SubJournal extends Model
 
     public function names(): HasMany
     {
-        return $this->hasMany(LedgerName::class, 'ownerUuid', 'domainUuid');
+        return $this->hasMany(LedgerName::class, 'ownerUuid', 'subJournalUuid');
     }
 
     public function toResponse(): array
