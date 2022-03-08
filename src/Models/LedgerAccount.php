@@ -33,6 +33,7 @@ use stdClass;
  * @property object $flex JSON-formatted internal information (via accessor).
  * @property string $ledgerUuid UUID primary key.
  * @property LedgerName[] $names Associated names.
+ * @property-read  string $parentCode The parent account code (or null if this is the root).
  * @property string $parentUuid The parent account (or null if this is the root).
  * @property Carbon $revision Revision timestamp to detect race condition on update.
  * @property string $taxCode An account code for tax purposes.
@@ -84,9 +85,29 @@ class LedgerAccount extends Model
 
     public $incrementing = false;
     protected $keyType = 'string';
+
+    /**
+     * @var array|string[] Attributes that can be copied directly into a message
+     */
+    protected static array $inMessage = [
+        'category', 'closed', 'code', 'credit', 'debit', 'extra', 'taxCode'
+    ];
+
     protected $primaryKey = 'ledgerUuid';
 
     private static ?LedgerAccount $root = null;
+
+    public function __get($key)
+    {
+        if ($key === 'parentCode') {
+            if ($this->parentUuid === null) {
+                return null;
+            }
+            $parent = LedgerAccount::find($this->parentUuid);
+            return $parent->code ?? null;
+        }
+        return parent::__get($key);
+    }
 
     public function balances(): HasMany
     {
@@ -149,6 +170,23 @@ class LedgerAccount extends Model
         $flex = new Flex();
         $flex->hydrate($value);
         return $flex;
+    }
+
+    /**
+     * Get a list of this account ID and all subaccount IDs.
+     *
+     * @return string[]
+     */
+    public function getSubAccountList(): array
+    {
+        $idList = [$this->ledgerUuid];
+        $subAccounts = LedgerAccount::where('parentUuid', $this->ledgerUuid)->get();
+        /** @var LedgerAccount $account */
+        foreach ($subAccounts as $account) {
+            $idList = array_merge($idList, $account->getSubAccountList());
+        }
+
+        return $idList;
     }
 
     public function matchesEntity(EntityRef $ref): bool
@@ -342,6 +380,27 @@ class LedgerAccount extends Model
     public static function systemDateFormat(): string {
         $dummy = new self();
         return $dummy->getDateFormat();
+    }
+
+    public function toMessage(): Account
+    {
+        $message = new Account();
+        $message->uuid = $this->ledgerUuid;
+        foreach (self::$inMessage as $property) {
+            if ($this->{$property} !== null) {
+                $message->{$property} = $this->{$property};
+            }
+        }
+        if ($this->parentUuid !== null) {
+            $message->parent = new EntityRef();
+            $message->parent->uuid = $this->parentUuid;
+        }
+        $message->revision = Revision::create($this->revision, $this->updated_at);
+        foreach ($this->names as $name) {
+            $message->names[] = $name->toMessage();
+        }
+
+        return $message;
     }
 
     /**
