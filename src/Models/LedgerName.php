@@ -28,6 +28,13 @@ class LedgerName extends Model
 
     protected $dateFormat = 'Y-m-d H:i:s.u';
     protected $fillable = ['language', 'name', 'ownerUuid'];
+    /**
+     * @var array|string[] Attributes that can be copied directly into a message
+     */
+    protected static array $inMessage = [
+        'language', 'name', 'ownerUuid'
+    ];
+
 
     public static function getWildcard(string $ownerUuid, string $wildcard): Builder
     {
@@ -55,6 +62,18 @@ class LedgerName extends Model
         $instance->refresh();
 
         return $instance;
+    }
+
+    public function toMessage(): Name
+    {
+        $message = new Name();
+        foreach (self::$inMessage as $property) {
+            if ($this->{$property} !== null) {
+                $message->{$property} = $this->{$property};
+            }
+        }
+
+        return $message;
     }
 
     public function toResponse(): array
