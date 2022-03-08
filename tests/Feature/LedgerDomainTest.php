@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Abivia\Ledger\Tests\Feature;
 
+use Abivia\Ledger\Messages\Create;
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Models\LedgerName;
 use Abivia\Ledger\Tests\TestCaseWithMigrations;
@@ -172,13 +173,13 @@ class LedgerDomainTest extends TestCaseWithMigrations
         $requestData = [
             'revision' => $actual->domain->revision,
             'code' => 'Corp',
-            'toCode' => 'Main'
+            'toCode' => 'Main' // Expect conversion to uppercase
         ];
         $response = $this->json(
             'post', 'api/ledger/domain/update', $requestData
         );
         $result = $this->isSuccessful($response);
-        $this->assertEquals('MAIN', $result->domain->code);
+        $this->assertEquals(Create::DEFAULT_DOMAIN, $result->domain->code);
         $this->assertEquals('CAD', $result->domain->currency);
 
         // Attempt a retry with the same (now invalid) revision.
@@ -189,7 +190,7 @@ class LedgerDomainTest extends TestCaseWithMigrations
 
         // Make sure the default domain has been updated
         $rules = LedgerAccount::rules();
-        $this->assertEquals('MAIN', $rules->domain->default);
+        $this->assertEquals(Create::DEFAULT_DOMAIN, $rules->domain->default);
     }
 
     public function testUpdateNameDelete()

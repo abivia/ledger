@@ -54,9 +54,9 @@ trait CreateLedgerTrait {
             ]
         ],
         'rules' => [
-            'account' => [
-                'codeFormat' => '/^[a-z0-9\-]+$/i'
-            ],
+//            'account' => [
+//                'codeFormat' => '/^[a-z0-9\-]+$/i'
+//            ],
             'pageSize' => 25,
             '_myAppRule' => [1, 2, 3],
         ],

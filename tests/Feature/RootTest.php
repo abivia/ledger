@@ -19,6 +19,15 @@ class RootTest extends TestCase
         self::$expectContent = 'templates';
     }
 
+    public function testBadOperation()
+    {
+        $response = $this->postJson(
+            'api/ledger/root/bogus', []
+        );
+        $actual = $this->isFailure($response);
+        $this->assertCount(1, $actual->errors);
+    }
+
     public function testListTemplates()
     {
         $response = $this->postJson(

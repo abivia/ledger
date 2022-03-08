@@ -53,6 +53,8 @@ class SubJournalTest extends TestCaseWithMigrations
         $this->hasRevisionElements($actual->journal);
         $this->hasAttributes(['code', 'names'], $actual->journal);
         $this->assertEquals('SJ', $actual->journal->code);
+        $this->assertCount(1, $actual->journal->names);
+        $this->assertEquals('Sales Journal', $actual->journal->names[0]->name);
     }
 
     public function testAddDuplicate()

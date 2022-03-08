@@ -758,4 +758,36 @@ class LedgerAccountTest extends TestCaseWithMigrations
         $this->assertCount(2, $result->account->names);
     }
 
+    public function testUpdateCode()
+    {
+        // First we need a ledger
+        $this->createLedger();
+
+        // Add an account
+        $accountInfo = $this->addAccount('1010', '1000', true);
+
+        // Cahnge the code to 1011
+        $requestData = [
+            'revision' => $accountInfo->account->revision,
+            'code' => '1010',
+            'credit' => true,
+            'toCode' => '1011',
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/account/update', $requestData
+        );
+        $result = $this->isSuccessful($response);
+        $this->assertEquals('1011', $result->account->code);
+
+        // Add second account to check duplicates
+        $this->addAccount('1012', '1000', true);
+        $requestData['code'] = '1011';
+        $requestData['toCode'] = '1012';
+        $requestData['revision'] = $result->account->revision;
+        $response = $this->json(
+            'post', 'api/ledger/account/update', $requestData
+        );
+        $result = $this->isFailure($response);
+    }
+
 }

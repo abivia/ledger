@@ -15,6 +15,20 @@ class CurrencyTest extends TestCase
         'decimals' => 2,
     ];
 
+    public function testConstruct()
+    {
+        $obj = new Currency('cad', 2);
+        $obj->validate();
+        $this->assertTrue(true);
+    }
+
+    public function testConstructBad()
+    {
+        $obj = new Currency('cad');
+        $this->expectException(Breaker::class);
+        $obj->validate();
+    }
+
     public function testFromRequest()
     {
         $parentRef = Currency::fromArray(

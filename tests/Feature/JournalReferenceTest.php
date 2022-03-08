@@ -53,6 +53,7 @@ class JournalReferenceTest extends TestCaseWithMigrations
         $actual = $this->isSuccessful($response);
         $this->hasAttributes(['code', 'extra'], $actual->reference);
         $this->assertEquals('Customer 25', $actual->reference->code);
+        $this->assertEquals($this->baseRequest['extra'], $actual->reference->extra);
     }
 
     public function testAddDuplicate()
