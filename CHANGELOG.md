@@ -1,3 +1,27 @@
+## 1.4.0
+
+### Changes:
+
+- Moving logic that's useful to applications outside the API into separate classes
+under the Logic namespace.
+- Templates can now set the account codeFormat rule. Ledger create requests can override the
+template.
+- Added LedgerAccount->parentCode which will fetch the parent's account code (or null if no parent)
+- LedgerAccount and Name models have a new toMessage() method.
+- Made RootController::listTemplates() static.
+- Made the default domain name a constant in Messages\Create
+- Added constructors to Messages\Currency, Messages\Name
+- Added Messages\Account::inheritFlagsFrom()
+- Made ReportAccount::$flex protected so that it is invisible to the API
+
+### Bugs:
+
+- Duplicate error messages were being returned.
+- The toCode attribute of an account update message was being ignored.
+- Invalid API root operations were being treated as create.
+- Debit/credit flags were not being inherited for accounts defined in a Create message.
+- Names were not being returned on sub-journal requests.
+
 ## 1.3.0
 
 ### Changes:
