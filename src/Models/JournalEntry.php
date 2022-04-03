@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Abivia\Ledger\Models;
 
+use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Revision;
 use Abivia\Ledger\Messages\Entry;
 use Abivia\Ledger\Messages\Message;
@@ -29,6 +30,7 @@ use Illuminate\Support\Collection;
  * @property string $extra Extra data for application use.
  * @property int $journalEntryId Primary key.
  * @property string $language The language this description is written in.
+ * @property bool $locked Set when this transaction is not to be modified.
  * @property bool $opening Set if this is the opening balance entry.
  * @property string $journalReferenceUuid Optional reference to an associated entity.
  * @property bool $reviewed Set when the transaction has been reviewed.
@@ -49,6 +51,7 @@ class JournalEntry extends Model
 
     protected $casts = [
         'arguments' => 'array',
+        'locked' => 'boolean',
         'opening' => 'boolean',
         'reviewed' => 'boolean',
         'revision' => 'datetime',
@@ -58,7 +61,7 @@ class JournalEntry extends Model
 
     protected $fillable = [
         'arguments', 'createdBy', 'currency', 'description', 'domainUuid', 'extra',
-        'journalReferenceUuid', 'language', 'opening', 'reviewed',
+        'journalReferenceUuid', 'language', 'locked', 'opening', 'reviewed',
         'transDate', 'updatedBy'
     ];
     protected $keyType = 'int';
@@ -70,6 +73,21 @@ class JournalEntry extends Model
     //protected $with = ['journal_detail'];
 
     //$by = Auth::id() ? 'User id ' . Auth::id() : 'unknown';
+
+    /**
+     * Check that the entry is unlocked and can be modified.
+     *
+     * @throws Breaker
+     */
+    public function checkUnlocked()
+    {
+        if ($this->locked) {
+            throw Breaker::withCode(
+                Breaker::RULE_VIOLATION,
+                [__('Journal entry :id is locked', ['id' => $this->journalEntryId])]
+            );
+        }
+    }
 
     public function details(): HasMany
     {

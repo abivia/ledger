@@ -1,3 +1,10 @@
+## 1.5.0
+
+### Changes:
+
+- Added a `locked` flag to Journal Entries and a lock (/unlock) operation to the
+journal entry API. Delete and update transactions will fail when an entry is locked.
+
 ## 1.4.0
 
 ### Changes:

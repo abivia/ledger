@@ -21,7 +21,7 @@ abstract class Message
     /**
      * Bitmask for all the OP_ constants.
      */
-    public const ALL_OPS = 0b1111111;
+    public const ALL_OPS = 0b11111111;
 
     // Operation flags from bit 0 up.
     public const OP_ADD = 1;
@@ -29,6 +29,7 @@ abstract class Message
     public const OP_CREATE = 2;
     public const OP_DELETE = 2**2;
     public const OP_GET = 2**3;
+    public const OP_LOCK = 2**7;
     public const OP_QUERY = 2**4;
     public const OP_UPDATE = 2**5;
 
@@ -46,6 +47,7 @@ abstract class Message
         'create' => self::OP_CREATE,
         'delete' => self::OP_DELETE,
         'get' => self::OP_GET,
+        'lock' => self::OP_LOCK,
         'query' => self::OP_QUERY,
         'update' => self::OP_UPDATE,
         'validate' => self::F_VALIDATE,

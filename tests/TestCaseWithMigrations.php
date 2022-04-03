@@ -19,6 +19,7 @@ abstract class TestCaseWithMigrations extends TestCase
         $migrations = [
             ['LedgerCreateTables', true],
             ['LedgerAddAccountTaxCode', false],
+            ['JournalEntryAddLockedFlag', false],
         ];
         foreach ($migrations as $migrationClass) {
             include_once "$base{$migrationClass[0]}.stub.php";

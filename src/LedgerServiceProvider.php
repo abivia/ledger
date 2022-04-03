@@ -31,6 +31,8 @@ class LedgerServiceProvider extends ServiceProvider
                             $this->migratePath('ledger_create_tables'),
                         $migrateFrom . 'LedgerAddAccountTaxCode.stub.php' =>
                             $this->migratePath('ledger_add_account_tax_code'),
+                        $migrateFrom . 'JournalEntryAddLockedFlag.stub.php' =>
+                            $this->migratePath('journal_entry_add_locked'),
                     ],
                     'migrations'
                 );

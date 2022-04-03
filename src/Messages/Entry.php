@@ -22,11 +22,12 @@ class Entry extends Message
         [['descriptionArgs', 'arguments'], self::OP_ADD | self::OP_UPDATE],
         //['domain', self::OP_ADD],
         ['extra', self::OP_ADD | self::OP_UPDATE],
-        ['id', self::OP_DELETE | self::OP_GET | self::OP_UPDATE],
+        ['id', self::OP_DELETE | self::OP_GET | self::OP_LOCK | self::OP_UPDATE],
         //['journal', self::OP_ADD],
         ['language', self::OP_UPDATE],
+        ['lock', self::OP_LOCK],
         ['reviewed', self::OP_ADD | self::OP_UPDATE],
-        ['revision', self::OP_DELETE | self::OP_UPDATE],
+        ['revision', self::OP_DELETE | self::OP_LOCK | self::OP_UPDATE],
         //[['date', 'transDate'], self::OP_ADD | self::OP_UPDATE],
     ];
 
@@ -69,6 +70,11 @@ class Entry extends Message
      * @var string|null The language used for the supplied description.
      */
     public string $language;
+
+    /**
+     * @var bool Lock or unlock a journal entry.
+     */
+    public bool $lock;
 
     /**
      * @var Reference A link to an external entity.
@@ -174,32 +180,39 @@ class Entry extends Message
         if (isset($this->reference)) {
             $this->reference->validate($opFlags);
         }
-        // Validate that the transaction is structured correctly.
-        if (count($this->details) !== 0) {
-            $debitCount = 0;
-            $creditCount = 0;
-            foreach ($this->details as $detail) {
-                try {
-                    $detail->validate($opFlags);
-                    if ($detail->signTest > 0) {
-                        ++$debitCount;
-                    } else {
-                        ++$creditCount;
+        if ($opFlags & self::OP_LOCK) {
+            // Locking operations only care about the lock flag.
+            if (!isset($this->lock)) {
+                $errors[] = __('Lock operation requires a lock flag.');
+            }
+        } else {
+            // Validate that the transaction is structured correctly.
+            if (count($this->details) !== 0) {
+                $debitCount = 0;
+                $creditCount = 0;
+                foreach ($this->details as $detail) {
+                    try {
+                        $detail->validate($opFlags);
+                        if ($detail->signTest > 0) {
+                            ++$debitCount;
+                        } else {
+                            ++$creditCount;
+                        }
+                    } catch (Breaker $exception) {
+                        Merge::arrays($errors, $exception->getErrors());
                     }
-                } catch (Breaker $exception) {
-                    Merge::arrays($errors, $exception->getErrors());
                 }
-            }
-            if ($creditCount === 0 || $debitCount === 0) {
-                $errors[] = __(
-                    'Entry must have at least one debit and credit'
-                );
-            }
-            if ($creditCount > 1 && $debitCount > 1) {
-                $errors[] = __(
-                    "Entry can't have multiple debits and multiple credits"
-                );
+                if ($creditCount === 0 || $debitCount === 0) {
+                    $errors[] = __(
+                        'Entry must have at least one debit and credit'
+                    );
+                }
+                if ($creditCount > 1 && $debitCount > 1) {
+                    $errors[] = __(
+                        "Entry can't have multiple debits and multiple credits"
+                    );
 
+                }
             }
         }
         if (count($errors) !== 0) {

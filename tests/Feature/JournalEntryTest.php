@@ -300,6 +300,61 @@ class JournalEntryTest extends TestCaseWithMigrations
         }
     }
 
+    public function testDeleteLocked()
+    {
+        // First we need a ledger and transaction
+        $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
+
+        [$requestData, $response] = $this->addSalesTransaction();
+        $actual = $this->isSuccessful($response);
+
+        // Get the created data
+        $journalEntry = JournalEntry::find($actual->entry->id);
+        $this->assertNotNull($journalEntry);
+
+        // Lock the entry
+        $lockData = [
+            'id' => $actual->entry->id,
+            'lock' => true,
+            'revision' => $actual->entry->revision,
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/entry/lock', $lockData
+        );
+        $actual = $this->isSuccessful($response);
+
+        // Attempt to delete the entry
+        $deleteData = [
+            'id' => $actual->entry->id,
+            'revision' => $actual->entry->revision,
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/entry/delete', $deleteData
+        );
+        $this->isFailure($response);
+
+        // Unlock the entry
+        $lockData = [
+            'id' => $actual->entry->id,
+            'lock' => false,
+            'revision' => $actual->entry->revision,
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/entry/lock', $lockData
+        );
+        $actual = $this->isSuccessful($response);
+
+        // Try to delete the entry again
+        $deleteData = [
+            'id' => $actual->entry->id,
+            'revision' => $actual->entry->revision,
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/entry/delete', $deleteData
+        );
+        $this->isSuccessful($response, 'success');
+    }
+
     public function testGet()
     {
         // First we need a ledger and transaction
@@ -335,6 +390,55 @@ class JournalEntryTest extends TestCaseWithMigrations
             $this->assertArrayHasKey($detail->accountCode, $expectDetails);
             $this->assertEquals($expectDetails[$detail->accountCode], $detail->amount);
         }
+    }
+
+    public function testGetLocked()
+    {
+        // First we need a ledger and transaction
+        $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
+
+        [$requestData, $addResponse] = $this->addSalesTransaction();
+        $addActual = $this->isSuccessful($addResponse);
+
+        // Lock the entry
+        $lockData = [
+            'id' => $addActual->entry->id,
+            'lock' => true,
+            'revision' => $addActual->entry->revision,
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/entry/lock', $lockData
+        );
+        $actual = $this->isSuccessful($response);
+
+        // Expect that a get request still works
+        $fetchData = [
+            'id' => $addActual->entry->id
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/entry/get', $fetchData
+        );
+        $this->isSuccessful($response);
+    }
+
+    public function testLockBad()
+    {
+        // First we need a ledger and transaction
+        $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
+
+        [$requestData, $addResponse] = $this->addSalesTransaction();
+        $addActual = $this->isSuccessful($addResponse);
+
+        // Send a bad lock request with no flag
+        $lockData = [
+            'id' => $addActual->entry->id,
+            'revision' => $addActual->entry->revision,
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/entry/lock', $lockData
+        );
+        $this->isFailure($response);
+
     }
 
     public function testUpdate()
@@ -387,6 +491,36 @@ class JournalEntryTest extends TestCaseWithMigrations
             }
         }
         $this->assertCount(0, $expectByCode);
+    }
+
+    public function testUpdateLocked()
+    {
+        // First we need a ledger and transaction
+        $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
+
+        [$requestData, $addResponse] = $this->addSalesTransaction();
+        $addActual = $this->isSuccessful($addResponse);
+
+        // Lock the entry
+        $lockData = [
+            'id' => $addActual->entry->id,
+            'lock' => true,
+            'revision' => $addActual->entry->revision,
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/entry/lock', $lockData
+        );
+        $actual = $this->isSuccessful($response);
+
+        // Expect an update to fail.
+        $requestData['id'] = $addActual->entry->id;
+        $requestData['revision'] = $actual->entry->revision;
+        $requestData['description'] = 'Oops, that was a rental!';
+        $requestData['details'][1]['code'] = '4240';
+        $response = $this->json(
+            'post', 'api/ledger/entry/update', $requestData
+        );
+        $this->isFailure($response);
     }
 
 }

@@ -133,6 +133,7 @@ class JournalEntryController extends Controller
             // Get the Journal entry
             $journalEntry = $this->fetch($message->id);
             $journalEntry->checkRevision($message->revision ?? null);
+            $journalEntry->checkUnlocked();
 
             // We need the currency for balance adjustments.
             $this->getCurrency($journalEntry->currency);
@@ -230,6 +231,32 @@ class JournalEntryController extends Controller
         }
     }
 
+    public function lock(Entry $message): JournalEntry
+    {
+        $message->validate(Message::OP_LOCK);
+        $errors = [];
+        $inTransaction = false;
+        try {
+            DB::beginTransaction();
+            $inTransaction = true;
+
+            $journalEntry = $this->fetch($message->id);
+            $journalEntry->checkRevision($message->revision ?? null);
+            $journalEntry->locked = $message->lock;
+            $journalEntry->save();
+            DB::commit();
+            $inTransaction = false;
+            $journalEntry->refresh();
+        } catch (Exception $exception) {
+            if ($inTransaction) {
+                DB::rollBack();
+            }
+            throw $exception;
+        }
+
+        return $journalEntry;
+    }
+
     /**
      * Process a query request.
      *
@@ -257,6 +284,7 @@ class JournalEntryController extends Controller
      * @param int $opFlag
      * @return JournalEntry|null
      * @throws Breaker
+     * @throws Exception
      */
     public function run(Entry $message, int $opFlag): ?JournalEntry
     {
@@ -269,6 +297,8 @@ class JournalEntryController extends Controller
                 return null;
             case Message::OP_GET:
                 return $this->get($message);
+            case Message::OP_LOCK:
+                return $this->lock($message);
             case Message::OP_UPDATE:
                 return $this->update($message);
             default:
@@ -288,11 +318,13 @@ class JournalEntryController extends Controller
         $this->validateEntry($message,Message::OP_UPDATE);
         $inTransaction = false;
         try {
-            $journalEntry = $this->fetch($message->id);
-            $journalEntry->checkRevision($message->revision ?? null);
-
             DB::beginTransaction();
             $inTransaction = true;
+
+            $journalEntry = $this->fetch($message->id);
+            $journalEntry->checkRevision($message->revision ?? null);
+            $journalEntry->checkUnlocked();
+
             $journalEntry->fillFromMessage($message);
             $this->updateDetails($journalEntry, $message);
             $journalEntry->save();

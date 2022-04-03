@@ -44,7 +44,7 @@ class JournalEntryApiController
             } else {
                 $message = Entry::fromArray($request->all(), $opFlags);
                 $journalEntry = $controller->run($message, $opFlags);
-                if ($opFlags & Message::OP_DELETE) {
+                if ($opFlags & (Message::OP_DELETE)) {
                     $response['success'] = true;
                 } else {
                     $response['entry'] = $journalEntry->toResponse($opFlags);
