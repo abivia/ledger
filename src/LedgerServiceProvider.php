@@ -7,10 +7,16 @@ use Abivia\Ledger\Console\ImportFeatureTests;
 use Abivia\Ledger\Console\Templates;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class LedgerServiceProvider extends ServiceProvider
 {
     private int $migrationCount;
+    private static array $migrations = [
+        'LedgerCreateTables',
+        'LedgerAddAccountTaxCode',
+        'JournalEntryAddLockedFlag',
+    ];
 
     public function boot()
     {
@@ -23,20 +29,19 @@ class LedgerServiceProvider extends ServiceProvider
             $migrateFrom = $base . 'database/migrations/';
 
             // Export migrations
-            $this->migrationCount = 2;
-            if (!class_exists('CreatePostsTable')) {
-                $this->publishes(
-                    [
-                        $migrateFrom . 'LedgerCreateTables.stub.php' =>
-                            $this->migratePath('ledger_create_tables'),
-                        $migrateFrom . 'LedgerAddAccountTaxCode.stub.php' =>
-                            $this->migratePath('ledger_add_account_tax_code'),
-                        $migrateFrom . 'JournalEntryAddLockedFlag.stub.php' =>
-                            $this->migratePath('journal_entry_add_locked'),
-                    ],
-                    'migrations'
-                );
+            $this->migrationCount = count(self::$migrations);
+
+            $published = $this->getExistingMigrations();
+            $publishes = [];
+            foreach (self::$migrations as $migrationClass) {
+                $baseFile = Str::snake($migrationClass);
+                if (!isset($published[$baseFile])) {
+                    $publishes[$migrateFrom . $migrationClass . '.stub.php'] =
+                        $this->migratePath($baseFile);
+                }
             }
+            $this->publishes($publishes, 'migrations');
+
             $this->publishes(
                 [$base . 'config/config.php' => config_path('ledger.php')],
                 'config'
@@ -47,6 +52,21 @@ class LedgerServiceProvider extends ServiceProvider
                 Templates::class
             ]);
         }
+    }
+
+    private function getExistingMigrations(): array
+    {
+        $migrations = [];
+        foreach (scandir(database_path('migrations/')) as $file) {
+            if (preg_match(
+                '![0-9]{4}_[0-9]{2}_[0-9]{2}_[0-9]{6}_(.*?)\.php!',
+                $file, $matches
+            )) {
+                $migrations[$matches[1]] = true;
+            }
+        }
+
+        return $migrations;
     }
 
     private function migratePath(string $file): string
