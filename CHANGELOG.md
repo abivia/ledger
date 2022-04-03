@@ -1,3 +1,9 @@
+## 1.5.1
+
+### Bugs:
+
+- Publishing an updated version was creating redundant migrations.
+
 ## 1.5.0
 
 ### Changes:
