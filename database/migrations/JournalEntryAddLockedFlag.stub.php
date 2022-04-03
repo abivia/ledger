@@ -29,7 +29,7 @@ class JournalEntryAddLockedFlag extends Migration
     {
         // Account definitions (chart of accounts)
         Schema::table('journal_entries', function (Blueprint $table) {
-            // The account code for reporting / regulatory purposes.
+            // Lock flag to prevent update/delete operations.
             $table->tinyInteger('locked')
                 ->default(false)
                 ->after('reviewed');
