@@ -9,6 +9,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Create cache before composer
+        run: |
+          mkdir vendor
+          mkdir vendor/orchestra
+          mkdir vendor/orchestra/testbench-core
+          mkdir vendor/orchestra/testbench-core/laravel
+          mkdir vendor/orchestra/testbench-core/laravel/bootstrap
+          mkdir vendor/orchestra/testbench-core/laravel/bootstrap/cache
+          chmod -R 777 vendor/orchestra/testbench-core/laravel/bootstrap/cache
       - name: Install dependencies
         uses: php-actions/composer@v6
         with:
@@ -18,7 +27,7 @@ jobs:
         run: |
           mkdir bootstrap
           mkdir bootstrap/cache
-          chmod -R 777 storage bootstrap/cache
+          chmod -R 777 storage
       - name: Create Database
         run: |
           touch tests/testbase.sqlite
