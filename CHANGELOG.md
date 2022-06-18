@@ -1,3 +1,14 @@
+## 1.6.0
+
+### Bugs:
+
+- Abivia\Ledger\Messages\Detail::validate set debit/credit to '' instead of using unset().
+
+### Changes:
+
+- Abivia\Ledger\Messages\Detail::normalizeAmount now takes a null argument
+- Added CI for running tests.
+
 ## 1.5.1
 
 ### Bugs:
@@ -10,6 +21,7 @@
 
 - Added a `locked` flag to Journal Entries and a lock (/unlock) operation to the
 journal entry API. Delete and update transactions will fail when an entry is locked.
+
 
 ## 1.4.0
 

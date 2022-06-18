@@ -6,8 +6,9 @@ namespace Abivia\Ledger\Messages;
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Merge;
 use Abivia\Ledger\Models\LedgerAccount;
-use Abivia\Ledger\Messages\Message;
+use ErrorException;
 use Exception;
+use ValueError;
 
 /**
  * Account detail in a journal entry.
@@ -76,7 +77,7 @@ class Detail extends Message
     /**
      * Property get.
      * @param $name
-     * @return string|null
+     * @return int|null
      */
     public function __get($name)
     {
@@ -129,12 +130,66 @@ class Detail extends Message
     /**
      * Make the amount have the requested number of decimal places.
      *
-     * @param int $decimals
+     * @param ?int $decimals
      * @return string
+     * @throws Breaker
      */
-    public function normalizeAmount(int $decimals): string
+    public function normalizeAmount(?int $decimals = null): string
     {
-        $this->amount = bcadd('0', $this->amount, $decimals);
+        try {
+            $multiplier = '1';
+            if (
+                isset($this->credit)
+                && bccomp($this->credit, '0', self::MAX_DECIMALS) === 0
+            ) {
+                unset($this->credit);
+            }
+            if (
+                isset($this->debit)
+                && bccomp($this->debit, '0', self::MAX_DECIMALS) === 0
+            ) {
+                unset($this->debit);
+            }
+            if (isset($this->amount)) {
+                if (isset($this->credit) || isset($this->debit)) {
+                    throw Breaker::withCode(
+                        Breaker::BAD_REQUEST,
+                        [__('Transaction cannot have amount and debit/credit..')]
+                    );
+                }
+            } else {
+                if (isset($this->credit) === isset($this->debit)) {
+                    throw Breaker::withCode(
+                        Breaker::BAD_REQUEST,
+                        [__('Exactly one of amount, debit, or credit must be set and non-zero.')]
+                    );
+                } elseif (isset($this->debit)) {
+                    $this->amount = $this->debit;
+                    $multiplier = '-1';
+                    unset($this->debit);
+                } elseif (isset($this->credit)) {
+                    $this->amount = $this->credit;
+                    unset($this->credit);
+                }
+            }
+            $this->amount = bcmul($multiplier, $this->amount, $decimals ?? self::MAX_DECIMALS);
+            if ($decimals === null) {
+                $this->amount = rtrim($this->amount, '0');
+            }
+        } catch (ErrorException $exception) {
+            // PHP 7.4 throws this
+            throw Breaker::withCode(
+                Breaker::BAD_REQUEST,
+                [__('Transaction amount must be numeric.')]
+            );
+        } catch (ValueError $exception) {
+            // PHP 8+ throws this
+            throw Breaker::withCode(
+                Breaker::BAD_REQUEST,
+                [__('Transaction amount must be numeric.')]
+            );
+
+        }
 
         return $this->amount;
     }
@@ -155,27 +210,11 @@ class Detail extends Message
         } else {
             $errors[] = __('the account code property is required');
         }
-        $multiplier = '1';
-        if (isset($this->amount)) {
-            if (isset($this->credit) || isset($this->debit)) {
-                $errors[] = __('Transaction cannot have amount and debit/credit..');
-            }
-        } else {
-            if (isset($this->credit) === isset($this->debit)) {
-                $errors[] = __('Exactly one of debit or credit must be set.');
-            } elseif (isset($this->debit)) {
-                $this->amount = $this->debit;
-                $multiplier = '-1';
-                $this->debit = '';
-            } elseif (isset($this->credit)) {
-                $this->amount = $this->credit;
-                $this->credit = '';
-            }
+        try {
+            $this->normalizeAmount();
+        } catch (Breaker $exception) {
+            Merge::arrays($errors, $exception->getErrors());
         }
-        if (!preg_match('/^[+-]?[0-9]*\.?[0-9]*$/', $this->amount)) {
-            $errors[] = __('Transaction amount must be numeric');
-        }
-        $this->amount = rtrim(bcmul($multiplier, $this->amount, self::MAX_DECIMALS), '0');
         $this->signTest = bccomp($this->amount, '0', self::MAX_DECIMALS);
         if ($this->signTest === 0) {
             $errors[] = __('Transaction amount must be nonzero');

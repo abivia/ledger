@@ -13,6 +13,7 @@
 /tests/Seeders/tqa.sql
 /tests/testbase.sqlite-journal
 /vendor
+composer.lock
 docker-compose.override.yml
 Homestead.json
 Homestead.yaml

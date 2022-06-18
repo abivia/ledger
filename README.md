@@ -1,5 +1,7 @@
 # General Ledger and Journal Package/API for Laravel
 
+Tests: [php 8.0](https://github.com/abivia/ledger/actions/workflows/php80.yml/badge.svg) [php 8.1](https://github.com/abivia/ledger/actions/workflows/php81.yml/badge.svg)
+
 Ledger is a full-featured implementation of the core of any good accounting system, a double-entry
 journal and general ledger. It is not a complete accounting solution, but rather the minimum for
 keeping track of financial transactions. Ledger features a JSON API that provides access to all
