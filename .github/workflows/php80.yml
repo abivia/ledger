@@ -3,7 +3,7 @@ name: CI
 on: [push]
 
 jobs:
-  build:
+  php80:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,4 +21,4 @@ jobs:
         run: |
           touch tests/testbase.sqlite
       - name: Run tests
-        run: vendor/bin/phpunit --stop-on-failure
+        run: vendor/bin/phpunit

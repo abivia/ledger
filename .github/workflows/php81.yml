@@ -1,0 +1,24 @@
+name: CI
+
+on: [push]
+
+jobs:
+  php81:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        uses: php-actions/composer@v6
+        with:
+          php_version: "8.1"
+          php_extensions: bcmath json pdo
+      - name: Directory Permissions
+        run: |
+          chmod -R 777 storage
+          sudo chmod -R 777 vendor/orchestra/testbench-core/laravel
+      - name: Create Database
+        run: |
+          touch tests/testbase.sqlite
+      - name: Run tests
+        run: vendor/bin/phpunit
