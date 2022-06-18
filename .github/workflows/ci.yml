@@ -27,7 +27,7 @@ jobs:
         run: |
           mkdir bootstrap
           mkdir bootstrap/cache
-          chmod -R 777 storage
+          chmod -R 777 storage bootstrap/cache
       - name: Create Database
         run: |
           touch tests/testbase.sqlite
