@@ -4,7 +4,6 @@ namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Merge;
-use Abivia\Ledger\Messages\Message;
 
 class Domain extends Message
 {
@@ -15,7 +14,6 @@ class Domain extends Message
         'extra',
         ['revision', self::OP_DELETE | self::OP_UPDATE],
         ['toCode', self::OP_UPDATE],
-        'uuid',
     ];
 
     /**
