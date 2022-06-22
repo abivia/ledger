@@ -13,7 +13,7 @@ class SubJournal extends Message
         'code', 'extra',
         ['revision', self::OP_DELETE | self::OP_UPDATE],
         ['toCode', self::OP_UPDATE],
-        'uuid',
+        //'uuid',
     ];
 
     /**
