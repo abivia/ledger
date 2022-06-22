@@ -2,6 +2,7 @@
 
 namespace Abivia\Ledger\Models;
 
+use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Revision;
 use Abivia\Ledger\Messages\Reference;
 use Abivia\Ledger\Traits\HasRevisions;
@@ -45,7 +46,8 @@ class JournalReference extends Model
                 $instance->{$property} = $message->{$property};
             }
         }
-        $instance->domainUuid = $message->domain->uuid;
+        $domain = LedgerDomain::findWith($message->domain)->first();
+        $instance->domainUuid = $domain->domainUuid;
         $instance->save();
         $instance->refresh();
 
