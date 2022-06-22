@@ -114,6 +114,9 @@ class Entry extends Message
         }
         if ($opFlags & (self::OP_ADD | self::OP_UPDATE)) {
             if (isset($data['reference'])) {
+                if (!is_array($data['reference'])) {
+                    $data['reference'] = ['uuid' => $data['reference']];
+                }
                 $entry->reference = Reference::fromArray($data['reference'], $opFlags);
             }
             if (isset($data['transDate'])) {
