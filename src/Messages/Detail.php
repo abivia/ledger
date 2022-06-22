@@ -119,6 +119,9 @@ class Detail extends Message
             $detail->account->code = $data['uuid'];
         }
         if (isset($data['reference'])) {
+            if (!is_array($data['reference'])) {
+                $data['reference'] = ['uuid' => $data['reference']];
+            }
             $detail->reference = Reference::fromArray($data['reference'], $opFlags);
         }
         if ($opFlags & self::F_VALIDATE) {
