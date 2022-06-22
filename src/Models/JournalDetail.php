@@ -5,6 +5,7 @@ namespace Abivia\Ledger\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -27,9 +28,37 @@ class JournalDetail extends Model
 
     public $timestamps = false;
 
+    /**
+     * Get the Account associated with this Detail.
+     * @return BelongsTo
+     */
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(
+            LedgerAccount::class, 'ledgerUuid', 'ledgerUuid'
+        );
+    }
+
+    /**
+     * Get the balances for the account connected to this detail.
+     * @return HasMany
+     */
     public function balances(): HasMany
     {
-        return $this->hasMany(LedgerBalance::class, 'ledgerUuid', 'ledgerUuid');
+        return $this->hasMany(
+            LedgerBalance::class, 'ledgerUuid', 'ledgerUuid'
+        );
+    }
+
+    /**
+     * Get the Journal entry that contains this detail.
+     * @return BelongsTo
+     */
+    public function entry(): BelongsTo
+    {
+        return $this->belongsTo(
+            JournalEntry::class, 'journalEntryId', 'journalEntryId'
+        );
     }
 
     public function toResponse(): array
