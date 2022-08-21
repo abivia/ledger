@@ -9,6 +9,7 @@ use Abivia\Ledger\Helpers\Revision;
 trait HasRevisions
 {
     /**
+     * Throw a Breaker exception if the request revision doesn't match the stored value.
      * @param ?string $revision
      * @throws Breaker
      */

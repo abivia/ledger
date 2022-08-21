@@ -89,11 +89,21 @@ class JournalEntry extends Model
         }
     }
 
+    /**
+     * Relationship to fetch the related JournalDetail records.
+     *
+     * @return HasMany
+     */
     public function details(): HasMany
     {
         return $this->hasMany(JournalDetail::class, 'journalEntryId', 'journalEntryId');
     }
 
+    /**
+     * Store details from an Entry message into this JournalEntry.
+     * @param Entry $message
+     * @return $this
+     */
     public function fillFromMessage(Entry $message): self
     {
         foreach ($this->fillable as $property) {
@@ -114,6 +124,10 @@ class JournalEntry extends Model
         return $this;
     }
 
+    /**
+     * Relationship to fetch any related JournalReferences.
+     * @return HasManyThrough
+     */
     public function references(): HasManyThrough
     {
         return $this->hasManyThrough(

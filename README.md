@@ -46,5 +46,6 @@ JSON API, set middleware, and a path prefix to the API.
 
 ## Donations welcome
 
-If you're getting something out of Ledger, why not slip us a few bucks to help out?
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/P5P47JJXZ)
+If you're getting something out of Ledger, you can sponsor us in any amount you wish using Liberapay
+[![Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/abivia/donate).
+Liberapay is itself run on donations and charges no fees beyond bank charges.

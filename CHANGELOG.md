@@ -1,3 +1,14 @@
+## 1.6.1
+
+### Bugs:
+- JournalReference::createFromMessage wasn't looking up the domain.
+
+### Changes:
+
+- Message creation now allows a reference as a string UUID (Detail and Entry messages)
+- Add account property to JournalDetail model to retrieve the parent account.
+- Add entry property to JournalDetail model to retrieve the parent Entry.
+
 ## 1.6.0
 
 ### Bugs:

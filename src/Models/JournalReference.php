@@ -2,7 +2,6 @@
 
 namespace Abivia\Ledger\Models;
 
-use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Revision;
 use Abivia\Ledger\Messages\Reference;
 use Abivia\Ledger\Traits\HasRevisions;
@@ -38,6 +37,9 @@ class JournalReference extends Model
     protected $keyType = 'string';
     protected $primaryKey = 'journalReferenceUuid';
 
+    /**
+     * @throws Exception
+     */
     public static function createFromMessage(Reference $message): self
     {
         $instance = new static();
@@ -46,8 +48,8 @@ class JournalReference extends Model
                 $instance->{$property} = $message->{$property};
             }
         }
-        $domain = LedgerDomain::findWith($message->domain)->first();
-        $instance->domainUuid = $domain->domainUuid;
+        $instance->domainUuid = $message->domain->uuid
+            ?? LedgerDomain::findWith($message->domain)->first()->domainUuid;
         $instance->save();
         $instance->refresh();
 
@@ -75,6 +77,9 @@ class JournalReference extends Model
         return $finder;
     }
 
+    /**
+     * @throws Exception
+     */
     public function toResponse(): array
     {
         $response = ['uuid' => $this->journalReferenceUuid];
