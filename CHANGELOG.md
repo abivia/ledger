@@ -1,3 +1,8 @@
+## 1.6.2
+
+### Bugs:
+- Fix accidental removal of PHP 8.0 from composer.json
+
 ## 1.6.1
 
 ### Bugs:
