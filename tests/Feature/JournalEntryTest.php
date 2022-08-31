@@ -58,11 +58,11 @@ class JournalEntryTest extends TestCaseWithMigrations
             'details' => [
                 [
                     'code' => '1310',
-                    'debit' => '520.00'
+                    'debit' => '520.71'
                 ],
                 [
                     'code' => '4110',
-                    'credit' => '520.00'
+                    'credit' => '520.71'
                 ],
             ]
         ];
@@ -82,15 +82,15 @@ class JournalEntryTest extends TestCaseWithMigrations
             'details' => [
                 [
                     'code' => '4110',
-                    'amount' => '-520.00'
+                    'amount' => '-520.71'
                 ],
                 [
                     'code' => '1120',
-                    'amount' => '500.00'
+                    'amount' => '500.60'
                 ],
                 [
                     'code' => '2250',
-                    'amount' => '20.00'
+                    'amount' => '20.11'
                 ],
             ]
         ];
@@ -150,9 +150,9 @@ class JournalEntryTest extends TestCaseWithMigrations
             )->first();
             $this->assertNotNull($ledgerBalance);
             if ($ledgerAccount->code === '1310') {
-                $this->assertEquals('-520.00', $ledgerBalance->balance);
+                $this->assertEquals('-520.71', $ledgerBalance->balance);
             } else {
-                $this->assertEquals('520.00', $ledgerBalance->balance);
+                $this->assertEquals('520.71', $ledgerBalance->balance);
             }
         }
     }
@@ -182,10 +182,10 @@ class JournalEntryTest extends TestCaseWithMigrations
         $this->assertEquals('CORP', $ledgerDomain->code);
 
         $expectByCode = [
-            '1310' => '-520.00',
+            '1310' => '-520.71',
             '4110' => '0.00',
-            '1120' => '500.00',
-            '2250' => '20.00',
+            '1120' => '500.60',
+            '2250' => '20.11',
         ];
         // Check all balances in the ledger
         foreach (LedgerAccount::all() as $ledgerAccount) {
@@ -193,7 +193,9 @@ class JournalEntryTest extends TestCaseWithMigrations
             foreach ($ledgerAccount->balances as $ledgerBalance) {
                 $this->assertEquals('CAD', $ledgerBalance->currency);
                 $this->assertEquals(
-                    $expectByCode[$ledgerAccount->code], $ledgerBalance->balance
+                    $expectByCode[$ledgerAccount->code],
+                    $ledgerBalance->balance,
+                    "Code $ledgerAccount->code"
                 );
                 unset($expectByCode[$ledgerAccount->code]);
             }
@@ -383,8 +385,8 @@ class JournalEntryTest extends TestCaseWithMigrations
         $this->assertEquals('CAD', $entry->currency);
         $this->assertEquals($requestData['description'], $entry->description);
         $expectDetails = [
-            '1310' => '-520.00',
-            '4110' => '520.00',
+            '1310' => '-520.71',
+            '4110' => '520.71',
         ];
         foreach ($entry->details as $detail) {
             $this->assertArrayHasKey($detail->accountCode, $expectDetails);
@@ -473,9 +475,9 @@ class JournalEntryTest extends TestCaseWithMigrations
         $this->assertEquals('CORP', $ledgerDomain->code);
 
         $expectByCode = [
-            '1310' => '-520.00',
+            '1310' => '-520.71',
             '4110' => '0.00',
-            '4240' => '520.00',
+            '4240' => '520.71',
         ];
         // Check all balances in the ledger
         foreach (LedgerAccount::all() as $ledgerAccount) {
