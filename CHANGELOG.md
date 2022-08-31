@@ -1,3 +1,11 @@
+## 1.6.3
+
+### Bugs:
+- Fix rounding error in journal entry.
+
+### Changes:
+- Improve error message when account not found in journal entry.
+
 ## 1.6.2
 
 ### Bugs:
