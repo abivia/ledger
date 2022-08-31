@@ -400,9 +400,14 @@ class JournalEntryController extends Controller
             $ledgerAccount = $detail->findAccount();
             if ($ledgerAccount === null) {
                 $errors[] = __(
-                    'Detail line :line has an invalid account.',
-                    compact('line')
+                    'Detail line :line has an invalid account :account/:uuid.',
+                    [
+                        'line' => $line,
+                        'account' => $detail->account->code ?? 'null',
+                        'uuid' => $detail->account->uuid ?? 'null'
+                    ]
                 );
+                continue;
             }
             if (!$postToCategory && $ledgerAccount->category) {
                 $errors[] = __(
@@ -432,7 +437,7 @@ class JournalEntryController extends Controller
                 }
                 $detail->reference->lookup();
             }
-            $balance = bcadd($balance, $detail->normalizeAmount($precision));
+            $balance = bcadd($balance, $detail->normalizeAmount($precision), $precision);
         }
         if (bccomp($balance, '0') !== 0) {
             $errors[] = __('Entry amounts are out of balance by :balance.', compact('balance'));
