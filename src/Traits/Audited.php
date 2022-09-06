@@ -12,7 +12,7 @@ trait Audited
     {
         /** @noinspection PhpPossiblePolymorphicInvocationInspection */
         Log::channel(config('ledger.log'))
-            ->withContext(['user' => Auth::user()])
+            ->withContext(['user' => Auth::user()->id ?? null])
             ->info(self::class, ['message' => json_encode($message)]);
     }
 

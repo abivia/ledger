@@ -1,3 +1,8 @@
+## 1.6.4
+
+### Bugs:
+- Audit log now just includes the User ID (if any), not the whole user object.
+
 ## 1.6.3
 
 ### Bugs:
