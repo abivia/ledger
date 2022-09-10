@@ -2,8 +2,8 @@
 
 namespace Abivia\Ledger;
 
-use Abivia\Ledger\Console\Install;
 use Abivia\Ledger\Console\ImportFeatureTests;
+use Abivia\Ledger\Console\Install;
 use Abivia\Ledger\Console\Templates;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -11,14 +11,18 @@ use Illuminate\Support\Str;
 
 class LedgerServiceProvider extends ServiceProvider
 {
-    private int $migrationCount;
-    private static array $migrations = [
-        'LedgerCreateTablesV2' => true,
-        'LedgerCreateTables' => false,
-        'LedgerAddAccountTaxCode' => false,
-        'JournalEntryAddLockedFlag' => false,
-        'JournalEntryAddClearingFlag' => false,
+    private static array $branches = [
+        'LedgerCreateTables' => [
+            'LedgerCreateTables',
+            'LedgerAddAccountTaxCode',
+            'JournalEntryAddLockedFlag',
+            'JournalEntryAddClearingFlag',
+        ],
+        'LedgerCreateTablesV2' => [
+            'LedgerCreateTablesV2',
+        ],
     ];
+    private int $migrationCount;
 
     public function boot()
     {
@@ -31,20 +35,20 @@ class LedgerServiceProvider extends ServiceProvider
             $migrateFrom = $base . 'database/migrations/';
 
             // Export migrations
-            $this->migrationCount = count(self::$migrations);
+            $this->migrationCount = count(self::$branches);
 
             $published = $this->getExistingMigrations();
             $publishes = [];
-            foreach (self::$migrations as $migrationClass => $isBreaking) {
-                $baseFile = Str::snake($migrationClass);
-                if (!isset($published[$baseFile])) {
+
+            $branch = $this->getWorkingBranch($published);
+            foreach (self::$branches[$branch] as $migrationClass) {
+                $migrationFile = Str::snake($migrationClass);
+                if (!isset($published[$migrationFile])) {
                     $publishes[$migrateFrom . $migrationClass . '.stub.php'] =
-                        $this->migratePath($baseFile);
-                }
-                if ($isBreaking) {
-                    break;
+                        $this->migratePath($migrationFile);
                 }
             }
+
             $this->publishes($publishes, 'migrations');
 
             $this->publishes(
@@ -72,6 +76,18 @@ class LedgerServiceProvider extends ServiceProvider
         }
 
         return $migrations;
+    }
+
+    private function getWorkingBranch(array $published): string
+    {
+        foreach (self::$branches as $branch => $migrations) {
+            $baseFile = Str::snake($branch);
+            if (isset($published[$baseFile])) {
+                return $branch;
+            }
+        }
+
+        return $branch;
     }
 
     private function migratePath(string $file): string
