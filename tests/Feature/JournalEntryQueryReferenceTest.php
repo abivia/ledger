@@ -9,8 +9,8 @@ use Abivia\Ledger\Messages\EntryQuery;
 use Abivia\Ledger\Messages\Reference;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Tests\TestCaseWithMigrations;
+use Abivia\Ledger\Tests\ValidatesJson;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Abivia\Ledger\Tests\TestCase;
 
 /**
  * Test entry queries incorporating a Journal Reference
@@ -22,6 +22,8 @@ class JournalEntryQueryReferenceTest extends TestCaseWithMigrations
     use CommonChecks;
     use CreateLedgerTrait;
     use RefreshDatabase;
+    use ValidatesJson;
+
     private array $referenceUses = [];
     private array $references = [];
 
@@ -49,6 +51,8 @@ class JournalEntryQueryReferenceTest extends TestCaseWithMigrations
                 'post', 'api/ledger/entry/query', $fetchData
             );
             $actual = $this->isSuccessful($response);
+            // Check the response against our schema
+            $this->validateResponse($actual, 'entry-response');
             $entries = $actual->entries;
             if (count($entries) !== 25) {
                 $this->assertCount($count, $entries);

@@ -3,6 +3,7 @@
 namespace Abivia\Ledger\Tests\Feature;
 
 use Abivia\Ledger\Tests\TestCaseWithMigrations;
+use Abivia\Ledger\Tests\ValidatesJson;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /**
@@ -13,6 +14,7 @@ class LedgerAccountQueryTest extends TestCaseWithMigrations
     use CommonChecks;
     use CreateLedgerTrait;
     use RefreshDatabase;
+    use ValidatesJson;
 
     public function setUp(): void
     {
@@ -36,6 +38,8 @@ class LedgerAccountQueryTest extends TestCaseWithMigrations
                 'post', 'api/ledger/account/query', $requestData
             );
             $actual = $this->isSuccessful($response);
+            // Check the response against our schema
+            $this->validateResponse($actual, 'accountquery-response');
             $accounts = $actual->accounts;
             ++$pages;
             $totalAccounts += count($accounts);

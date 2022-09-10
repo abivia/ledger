@@ -5,6 +5,7 @@ namespace Abivia\Ledger\Tests\Feature;
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Tests\TestCase;
 use Abivia\Ledger\Tests\TestCaseWithMigrations;
+use Abivia\Ledger\Tests\ValidatesJson;
 use Exception;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -16,6 +17,7 @@ class LedgerBalanceTest extends TestCaseWithMigrations
     use CommonChecks;
     use CreateLedgerTrait;
     use RefreshDatabase;
+    use ValidatesJson;
 
     public function setUp(): void
     {
@@ -59,6 +61,8 @@ class LedgerBalanceTest extends TestCaseWithMigrations
             'post', 'api/ledger/balance/get', $requestData
         );
         $actual = $this->isSuccessful($response);
+        // Check the response against our schema
+        $this->validateResponse($actual, 'balance-response');
         $this->assertEquals('-3000.00', $actual->balance->amount);
 
         // Get an account with no balance
@@ -108,7 +112,9 @@ class LedgerBalanceTest extends TestCaseWithMigrations
         $response = $this->json(
             'post', 'api/ledger/balance/get', $requestData
         );
-        $this->isFailure($response);
+        $actual = $this->isFailure($response);
+        // Check the response against our schema
+        $this->validateResponse($actual, 'balance-response');
     }
 
 }

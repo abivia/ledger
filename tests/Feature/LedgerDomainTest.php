@@ -8,6 +8,7 @@ use Abivia\Ledger\Messages\Create;
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Models\LedgerName;
 use Abivia\Ledger\Tests\TestCaseWithMigrations;
+use Abivia\Ledger\Tests\ValidatesJson;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /**
@@ -18,6 +19,7 @@ class LedgerDomainTest extends TestCaseWithMigrations
     use CommonChecks;
     use CreateLedgerTrait;
     use RefreshDatabase;
+    use ValidatesJson;
 
     public array $baseRequest = [
         'code' => 'ENG',
@@ -49,7 +51,9 @@ class LedgerDomainTest extends TestCaseWithMigrations
         $response = $this->postJson(
             'api/ledger/domain/add', ['nonsense' => true]
         );
-        $this->isFailure($response);
+        $actual = $this->isFailure($response);
+        // Check the response against our schema
+        $this->validateResponse($actual, 'domain-response');
     }
 
     public function testAdd()
@@ -62,6 +66,8 @@ class LedgerDomainTest extends TestCaseWithMigrations
             'post', 'api/ledger/domain/add', $this->baseRequest
         );
         $actual = $this->isSuccessful($response);
+        // Check the response against our schema
+        $this->validateResponse($actual, 'domain-response');
         $this->hasRevisionElements($actual->domain);
         $this->hasAttributes(['code', 'currency', 'names'], $actual->domain);
         $this->assertEquals('ENG', $actual->domain->code);
@@ -103,7 +109,9 @@ class LedgerDomainTest extends TestCaseWithMigrations
         $response = $this->json(
             'post', 'api/ledger/domain/delete', $requestData
         );
-        $this->isSuccessful($response, 'success');
+        $actual = $this->isSuccessful($response, 'success');
+        // Check the response against our schema
+        $this->validateResponse($actual, 'domain-response');
 
         // Confirm that a fetch fails
         $response = $this->json(

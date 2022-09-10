@@ -6,6 +6,7 @@ use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Root\Flex;
 use Abivia\Ledger\Tests\TestCase;
 use Abivia\Ledger\Tests\TestCaseWithMigrations;
+use Abivia\Ledger\Tests\ValidatesJson;
 use Exception;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -17,6 +18,7 @@ class LedgerAccountTest extends TestCaseWithMigrations
     use CommonChecks;
     use CreateLedgerTrait;
     use RefreshDatabase;
+    use ValidatesJson;
 
     protected function addAccount(string $code, string $parentCode, bool $debit)
     {
@@ -71,6 +73,8 @@ class LedgerAccountTest extends TestCaseWithMigrations
             'post', 'api/ledger/account/add', $requestData
         );
         $actual = $this->isSuccessful($response);
+        // Check the response against our schema
+        $this->validateResponse($actual, 'account-response');
         $this->hasRevisionElements($actual->account);
         $this->hasAttributes(['uuid', 'code', 'names'], $actual->account);
         $this->assertEquals('1010', $actual->account->code);
@@ -115,6 +119,8 @@ class LedgerAccountTest extends TestCaseWithMigrations
             'post', 'api/ledger/account/add', $requestData
         );
         $actual = $this->isFailure($response);
+        // Check the response against our schema
+        $this->validateResponse($actual, 'entry-response');
     }
 
     public function testAddDuplicate()
@@ -586,13 +592,15 @@ class LedgerAccountTest extends TestCaseWithMigrations
         $response = $this->json(
             'post', 'api/ledger/account/delete', $requestData
         );
-        $this->isSuccessful($response, 'success');
+        $actual =$this->isSuccessful($response, 'success');
+        // Check the response against our schema
+        $this->validateResponse($actual, 'entry-response');
 
         // Confirm that a fetch fails
         $response = $this->json(
             'post', 'api/ledger/account/get', $requestData
         );
-        $this->isFailure($response);
+        $actual = $this->isFailure($response);
     }
 
     public function testDeleteSubAccounts()

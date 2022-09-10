@@ -9,6 +9,7 @@ use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Models\LedgerBalance;
 use Abivia\Ledger\Models\LedgerDomain;
 use Abivia\Ledger\Tests\TestCaseWithMigrations;
+use Abivia\Ledger\Tests\ValidatesJson;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -20,12 +21,7 @@ class JournalEntryTest extends TestCaseWithMigrations
     use CommonChecks;
     use CreateLedgerTrait;
     use RefreshDatabase;
-
-    public function setUp(): void
-    {
-        parent::setUp();
-        self::$expectContent = 'entry';
-    }
+    use ValidatesJson;
 
     protected function addAccount(string $code, string $parentCode)
     {
@@ -49,7 +45,8 @@ class JournalEntryTest extends TestCaseWithMigrations
         return $this->isSuccessful($response, 'account');
     }
 
-    protected function addSalesTransaction() {
+    protected function addSalesTransaction()
+    {
         // Add a transaction, sales to A/R
         $requestData = [
             'currency' => 'CAD',
@@ -73,7 +70,8 @@ class JournalEntryTest extends TestCaseWithMigrations
         return [$requestData, $response];
     }
 
-    protected function addSplitTransaction() {
+    protected function addSplitTransaction()
+    {
         // Add a transaction, sales to A/R
         $requestData = [
             'currency' => 'CAD',
@@ -101,19 +99,39 @@ class JournalEntryTest extends TestCaseWithMigrations
         return [$requestData, $response];
     }
 
-    /**
-     * Create a valid ledger
-     *
-     * @return void
-     * @throws \Exception
-     */
-    public function testCreate(): void
+    private function getClearingTransaction()
     {
-        $response = $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
+        // Clearing transaction
+        return [
+            'clearing' => true,
+            'currency' => 'CAD',
+            'description' => 'Multiple debits and credits.',
+            'date' => '2021-11-12',
+            'details' => [
+                [
+                    'code' => '1720',
+                    'debit' => '22.45'
+                ],
+                [
+                    'code' => '1730',
+                    'credit' => '22.45'
+                ],
+                [
+                    'code' => '1740',
+                    'debit' => '170.33'
+                ],
+                [
+                    'code' => '1750',
+                    'credit' => '170.33'
+                ],
+            ]
+        ];
+    }
 
-        $this->isSuccessful($response, 'ledger');
-
-        //$this->dumpLedger();
+    public function setUp(): void
+    {
+        parent::setUp();
+        self::$expectContent = 'entry';
     }
 
     public function testAdd()
@@ -155,6 +173,83 @@ class JournalEntryTest extends TestCaseWithMigrations
                 $this->assertEquals('520.71', $ledgerBalance->balance);
             }
         }
+    }
+
+    public function testAddClearing()
+    {
+        // First we need a ledger
+        $response = $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
+
+        $this->isSuccessful($response, 'ledger');
+
+        $requestData = $this->getClearingTransaction();
+        $response = $this->json(
+            'post', 'api/ledger/entry/add', $requestData
+        );
+        $actual = $this->isSuccessful($response);
+        $this->hasRevisionElements($actual->entry);
+
+        // Check that we really did do everything that was supposed to be done.
+        $journalEntry = JournalEntry::find($actual->entry->id);
+        $this->assertNotNull($journalEntry);
+        $this->assertTrue(
+            $journalEntry->transDate->equalTo(new Carbon($requestData['date']))
+        );
+        $this->assertEquals('CAD', $journalEntry->currency);
+        $this->assertEquals($requestData['description'], $journalEntry->description);
+        $ledgerDomain = LedgerDomain::find($journalEntry->domainUuid);
+        $this->assertNotNull($ledgerDomain);
+        $this->assertEquals('CORP', $ledgerDomain->code);
+
+        /** @var JournalDetail $detail */
+        $expectBalance = [
+            '1720' => '-22.45',
+            '1730' => '22.45',
+            '1740' => '-170.33',
+            '1750' => '170.33',
+        ];
+        foreach ($journalEntry->details as $detail) {
+            $ledgerAccount = LedgerAccount::find($detail->ledgerUuid);
+            $this->assertNotNull($ledgerAccount);
+            $ledgerBalance = LedgerBalance::where([
+                    ['ledgerUuid', '=', $detail->ledgerUuid],
+                    ['domainUuid', '=', $ledgerDomain->domainUuid],
+                    ['currency', '=', $journalEntry->currency]]
+            )->first();
+            $this->assertNotNull($ledgerBalance);
+            $this->assertEquals(
+                $expectBalance[$ledgerAccount->code],
+                $ledgerBalance->balance
+            );
+        }
+    }
+
+    public function testAddMultipleCreditsAndDebits()
+    {
+        // First we need a ledger
+        $response = $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
+
+        $this->isSuccessful($response, 'ledger');
+
+        $requestData = $this->getClearingTransaction();
+        $requestData['clearing'] = false;
+        $response = $this->json(
+            'post', 'api/ledger/entry/add', $requestData
+        );
+        $actual = $this->isFailure($response);
+    }
+
+    public function testAddSchema()
+    {
+        // First we need a ledger
+        $response = $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
+
+        $this->isSuccessful($response, 'ledger');
+
+        [$requestData, $response] = $this->addSalesTransaction();
+        $actual = $this->isSuccessful($response);
+        // Check the response against our schema
+        $this->validateResponse($actual, 'entry-response');
     }
 
     public function testAddSplit()
@@ -256,6 +351,50 @@ class JournalEntryTest extends TestCaseWithMigrations
 
     }
 
+    public function testAddUnbalanced()
+    {
+        // First we need a ledger
+        $response = $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
+
+        $this->isSuccessful($response, 'ledger');
+
+        // Add a transaction, sales to A/R
+        $requestData = [
+            'currency' => 'CAD',
+            'description' => 'I am unbalanced!',
+            'date' => '2021-11-12',
+            'details' => [
+                [
+                    'code' => '1310',
+                    'debit' => '520.71'
+                ],
+                [
+                    'code' => '4110',
+                    'credit' => '50.24'
+                ],
+            ]
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/entry/add', $requestData
+        );
+        $this->isFailure($response);
+    }
+
+    /**
+     * Create a valid ledger
+     *
+     * @return void
+     * @throws \Exception
+     */
+    public function testCreate(): void
+    {
+        $response = $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
+
+        $this->isSuccessful($response, 'ledger');
+
+        //$this->dumpLedger();
+    }
+
     public function testDelete()
     {
         // First we need a ledger and transaction
@@ -279,6 +418,8 @@ class JournalEntryTest extends TestCaseWithMigrations
             'post', 'api/ledger/entry/delete', $deleteData
         );
         $this->isSuccessful($response, 'success');
+        // Check the response against our schema
+        $this->validateResponse($actual, 'entry-response');
 
         // Confirm that records are deleted and balances corrected.
         $journalEntryDeleted = JournalEntry::find($actual->entry->id);
@@ -423,6 +564,26 @@ class JournalEntryTest extends TestCaseWithMigrations
         $this->isSuccessful($response);
     }
 
+    public function testGetSchema()
+    {
+        // First we need a ledger and transaction
+        $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
+
+        [$requestData, $addResponse] = $this->addSalesTransaction();
+        $addActual = $this->isSuccessful($addResponse);
+
+        // Get the created data by ID
+        $fetchData = [
+            'id' => $addActual->entry->id
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/entry/get', $fetchData
+        );
+        $fetched = $this->isSuccessful($response);
+        // Check the response against our schema
+        $this->validateResponse($addActual, 'entry-response');
+    }
+
     public function testLockBad()
     {
         // First we need a ledger and transaction
@@ -522,7 +683,9 @@ class JournalEntryTest extends TestCaseWithMigrations
         $response = $this->json(
             'post', 'api/ledger/entry/update', $requestData
         );
-        $this->isFailure($response);
+        $actual = $this->isFailure($response);
+        // Check the response against our schema
+        $this->validateResponse($actual, 'entry-response');
     }
 
 }

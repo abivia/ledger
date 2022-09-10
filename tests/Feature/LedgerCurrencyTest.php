@@ -4,6 +4,7 @@ namespace Abivia\Ledger\Tests\Feature;
 
 
 use Abivia\Ledger\Tests\TestCaseWithMigrations;
+use Abivia\Ledger\Tests\ValidatesJson;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /**
@@ -14,6 +15,7 @@ class LedgerCurrencyTest extends TestCaseWithMigrations
     use CommonChecks;
     use CreateLedgerTrait;
     use RefreshDatabase;
+    use ValidatesJson;
 
     public function setUp(): void
     {
@@ -26,7 +28,9 @@ class LedgerCurrencyTest extends TestCaseWithMigrations
         $response = $this->postJson(
             'api/ledger/currency/add', ['nonsense' => true]
         );
-        $this->isFailure($response);
+        $actual = $this->isFailure($response);
+        // Check the response against our schema
+        $this->validateResponse($actual, 'currency-response');
     }
 
     public function testAdd()
@@ -43,6 +47,8 @@ class LedgerCurrencyTest extends TestCaseWithMigrations
             'post', 'api/ledger/currency/add', $requestData
         );
         $actual = $this->isSuccessful($response);
+        // Check the response against our schema
+        $this->validateResponse($actual, 'currency-response');
         $this->hasRevisionElements($actual->currency);
         $this->hasAttributes(['code', 'decimals'], $actual->currency);
         $this->assertEquals('FUD', $actual->currency->code);
@@ -89,6 +95,8 @@ class LedgerCurrencyTest extends TestCaseWithMigrations
             'post', 'api/ledger/currency/delete', $requestData
         );
         $actual = $this->isSuccessful($response, 'success');
+        // Check the response against our schema
+        $this->validateResponse($actual, 'currency-response');
 
         // Confirm that a fetch fails
         $requestData = [

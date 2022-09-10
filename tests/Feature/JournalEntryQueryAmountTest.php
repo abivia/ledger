@@ -6,17 +6,16 @@ namespace Abivia\Ledger\Tests\Feature;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Http\Controllers\JournalEntryController;
-use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Messages\Detail;
 use Abivia\Ledger\Messages\EntityRef;
 use Abivia\Ledger\Messages\Entry;
 use Abivia\Ledger\Messages\EntryQuery;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Tests\TestCaseWithMigrations;
+use Abivia\Ledger\Tests\ValidatesJson;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Abivia\Ledger\Tests\TestCase;
 
 
 /**
@@ -29,6 +28,7 @@ class JournalEntryQueryAmountTest extends TestCaseWithMigrations
     use CommonChecks;
     use CreateLedgerTrait;
     use RefreshDatabase;
+    use ValidatesJson;
 
     private array $references = [];
     private array $referenceUses = [];
@@ -168,6 +168,7 @@ class JournalEntryQueryAmountTest extends TestCaseWithMigrations
             'post', 'api/ledger/entry/query', $fetchData
         );
         $actual = $this->isSuccessful($response);
+        $this->validateResponse($actual, 'entryquery-response');
         $this->assertCount(0, $actual->entries);
 
         $fetchData['amount'] = ['2.10', '2.20'];
@@ -182,6 +183,7 @@ class JournalEntryQueryAmountTest extends TestCaseWithMigrations
             'post', 'api/ledger/entry/query', $fetchData
         );
         $actual = $this->isSuccessful($response);
+        $this->validateResponse($actual, 'entryquery-response');
         $this->assertCount(10, $actual->entries);
 
         $fetchData['amount'] = ['8.00', '11.00'];
