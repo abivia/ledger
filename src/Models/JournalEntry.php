@@ -21,6 +21,7 @@ use Illuminate\Support\Collection;
  * Records a transaction between accounts.
  *
  * @property array $arguments Translation arguments for the description.
+ * @property bool $clearing Set when this is a clearing transaction.
  * @property Carbon $created_at Record creation timestamp.
  * @property string $createdBy Record creation entity.
  * @property string $currency The currency for this transaction.
@@ -51,6 +52,7 @@ class JournalEntry extends Model
 
     protected $casts = [
         'arguments' => 'array',
+        'clearing' => 'boolean',
         'locked' => 'boolean',
         'opening' => 'boolean',
         'reviewed' => 'boolean',
@@ -59,9 +61,14 @@ class JournalEntry extends Model
     ];
     protected $dateFormat = 'Y-m-d H:i:s.u';
 
+    /**
+     * @var string The date format for response messages.
+     */
+    static protected $dateFormatJson = 'Y-m-d\TH:i:s.u\Z';
+
     protected $fillable = [
-        'arguments', 'createdBy', 'currency', 'description', 'domainUuid', 'extra',
-        'journalReferenceUuid', 'language', 'locked', 'opening', 'reviewed',
+        'arguments', 'clearing','createdBy', 'currency', 'description', 'domainUuid',
+        'extra', 'journalReferenceUuid', 'language', 'locked', 'opening', 'reviewed',
         'transDate', 'updatedBy'
     ];
     protected $keyType = 'int';
@@ -149,7 +156,7 @@ class JournalEntry extends Model
     {
         $response = [];
         $response['id'] = $this->journalEntryId;
-        $response['date'] = $this->transDate->format($this->dateFormat);
+        $response['date'] = $this->transDate->format(static::$dateFormatJson);
         if ($opFlags & Message::OP_GET) {
             if (isset($this->subJournalUuid)) {
                 /** @noinspection PhpDynamicAsStaticMethodCallInspection */
@@ -169,7 +176,9 @@ class JournalEntry extends Model
             if ($this->journalReferenceUuid !== null) {
                 $response['reference'] = $this->journalReferenceUuid;
             }
+            $response['clearing'] = $this->clearing;
             $response['reviewed'] = $this->reviewed;
+            $response['locked'] = $this->locked;
             $response['currency'] = $this->currency;
             $response['details'] = [];
             /** @var JournalDetail $detail */

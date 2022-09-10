@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 
-class JournalEntryAddLockedFlag extends Migration
+class JournalEntryAddClearingFlag extends Migration
 {
     /**
      * Reverse the migrations.
@@ -15,7 +15,7 @@ class JournalEntryAddLockedFlag extends Migration
     public function down()
     {
         Schema::table('journal_entries', function (Blueprint $table) {
-            $table->dropColumn('locked');
+            $table->dropColumn('clearing');
         });
     }
 
@@ -29,9 +29,9 @@ class JournalEntryAddLockedFlag extends Migration
         // Account definitions (chart of accounts)
         Schema::table('journal_entries', function (Blueprint $table) {
             // Lock flag to prevent update/delete operations.
-            $table->tinyInteger('locked')
+            $table->tinyInteger('clearing')
                 ->default(false)
-                ->after('reviewed');
+                ->after('opening');
         });
 
     }

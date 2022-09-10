@@ -16,7 +16,13 @@ class Entry extends Message
      */
     public array $arguments = [];
 
+    /**
+     * @var bool This is explicitly a clearing transaction (multiple debit/credits).
+     */
+    public bool $clearing = false;
+
     protected static array $copyable = [
+        ['clearing', self::OP_ADD | self::OP_UPDATE],
         ['currency', self::OP_ADD],
         ['description', self::OP_ADD | self::OP_UPDATE],
         [['descriptionArgs', 'arguments'], self::OP_ADD | self::OP_UPDATE],
@@ -210,11 +216,11 @@ class Entry extends Message
                         'Entry must have at least one debit and credit'
                     );
                 }
-                if ($creditCount > 1 && $debitCount > 1) {
+                if (!$this->clearing && $creditCount > 1 && $debitCount > 1) {
                     $errors[] = __(
                         "Entry can't have multiple debits and multiple credits"
+                        . " unless it is a clearing transaction."
                     );
-
                 }
             }
         }
