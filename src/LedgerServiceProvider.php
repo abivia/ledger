@@ -13,9 +13,11 @@ class LedgerServiceProvider extends ServiceProvider
 {
     private int $migrationCount;
     private static array $migrations = [
-        'LedgerCreateTables',
-        'LedgerAddAccountTaxCode',
-        'JournalEntryAddLockedFlag',
+        'LedgerCreateTablesV2' => true,
+        'LedgerCreateTables' => false,
+        'LedgerAddAccountTaxCode' => false,
+        'JournalEntryAddLockedFlag' => false,
+        'JournalEntryAddClearingFlag' => false,
     ];
 
     public function boot()
@@ -33,11 +35,14 @@ class LedgerServiceProvider extends ServiceProvider
 
             $published = $this->getExistingMigrations();
             $publishes = [];
-            foreach (self::$migrations as $migrationClass) {
+            foreach (self::$migrations as $migrationClass => $isBreaking) {
                 $baseFile = Str::snake($migrationClass);
                 if (!isset($published[$baseFile])) {
                     $publishes[$migrateFrom . $migrationClass . '.stub.php'] =
                         $this->migratePath($baseFile);
+                }
+                if ($isBreaking) {
+                    break;
                 }
             }
             $this->publishes($publishes, 'migrations');
