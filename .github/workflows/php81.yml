@@ -20,5 +20,6 @@ jobs:
       - name: Create Database
         run: |
           touch tests/testbase.sqlite
+          touch tests/.skipschemachecks
       - name: Run tests
         run: vendor/bin/phpunit
