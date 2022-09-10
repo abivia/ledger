@@ -1,3 +1,14 @@
+## 1.7.0
+
+### Changes:
+- Added clearing transactions.
+- Started validating results against our JSON schemas.
+- Significant cleanup and restructuring of JSON schemas.
+- Consolidated migrations for a new installation.
+
+### Bugs:
+- Removed redundant messages when returning an error from several API requests
+
 ## 1.6.4
 
 ### Bugs:
