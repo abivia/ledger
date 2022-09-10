@@ -414,7 +414,7 @@ class LedgerAccount extends Model
         if ($this->code !== '') {
             $response['code'] = $this->code;
         }
-        if ($this->taxCode !== '') {
+        if ($this->taxCode !== '' && $this->taxCode !== null) {
             $response['taxCode'] = $this->taxCode;
         }
         if ($this->parentUuid !== null) {
