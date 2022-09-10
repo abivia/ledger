@@ -40,7 +40,6 @@ class LedgerCurrencyApiController
                 $response['currency'] = $ledgerCurrency->toResponse();
             }
         } catch (Breaker $exception) {
-            $this->errors[] = $exception->getErrors();
             $this->warning($exception);
             $response['errors'] = $this->errors;
         } catch (QueryException $exception) {
