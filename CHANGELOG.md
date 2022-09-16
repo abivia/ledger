@@ -1,3 +1,8 @@
+## 1.7.1
+
+### Bugs:
+- Incorrect field in ReportController::getCached(). Thanks @alexgoogole!
+
 ## 1.7.0
 
 ### Changes:
