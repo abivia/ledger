@@ -28,6 +28,7 @@
     "require-dev": {
         "ext-pdo_sqlite": "*",
         "doctrine/dbal": "^3.2",
+        "nunomaduro/phpinsights": "^2.6",
         "opis/json-schema": "^2.2",
         "orchestra/testbench": "^6.0",
         "phpunit/phpunit": "^9.5.8"
@@ -52,7 +53,10 @@
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     },
     "minimum-stability": "dev",
     "prefer-stable": true

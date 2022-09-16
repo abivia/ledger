@@ -82,17 +82,23 @@ class LedgerAccount extends Model
     protected $fillable = [
         'category', 'code', 'credit', 'debit', 'extra', 'parentUuid', 'taxCode'
     ];
-
-    public $incrementing = false;
-    protected $keyType = 'string';
-
     /**
-     * @var array|string[] Attributes that can be copied directly into a message
+     * @var array<string> Attributes that can be copied directly into a message
      */
     protected static array $inMessage = [
         'category', 'closed', 'code', 'credit', 'debit', 'extra', 'taxCode'
     ];
-
+    /**
+     * @var bool Override incrementing primary key.
+     */
+    public $incrementing = false;
+    /**
+     * @var string Specifies the primary key type.
+     */
+    protected $keyType = 'string';
+    /**
+     * @var string Specifies the primary key name.
+     */
     protected $primaryKey = 'ledgerUuid';
 
     private static ?LedgerAccount $root = null;
@@ -114,7 +120,11 @@ class LedgerAccount extends Model
         return $this->hasMany(LedgerBalance::class, 'ledgerUuid', 'ledgerUuid');
     }
 
-    private static function baseRuleSet()
+    /**
+     * Initialize rules from a default rule set.
+     * @return void
+     */
+    private static function baseRuleSet(): void
     {
         self::$bootRules = new LedgerRules();
     }
@@ -175,7 +185,7 @@ class LedgerAccount extends Model
     /**
      * Get a list of this account ID and all subaccount IDs.
      *
-     * @return string[]
+     * @return array<string>
      */
     public function getSubAccountList(): array
     {
@@ -187,6 +197,13 @@ class LedgerAccount extends Model
         }
 
         return $idList;
+    }
+
+    public static function loadRoot(): void
+    {
+        self::$root = LedgerAccount::with('names')
+            ->where('code', '')
+            ->first();
     }
 
     public function matchesEntity(EntityRef $ref): bool
@@ -201,13 +218,6 @@ class LedgerAccount extends Model
         return $match;
     }
 
-    public static function loadRoot()
-    {
-        self::$root = LedgerAccount::with('names')
-            ->where('code', '')
-            ->first();
-    }
-
     public function names(): HasMany
     {
         return $this->hasMany(LedgerName::class, 'ownerUuid', 'ledgerUuid');
@@ -219,7 +229,7 @@ class LedgerAccount extends Model
      *
      * @param EntityRef $start
      * @param ?EntityRef $lookFor
-     * @return LedgerAccount[] Account parents from $start up to the root.
+     * @return array<LedgerAccount> Account parents from $start up to the root.
      * @throws Breaker If a circular reference is found.
      * @throws Exception
      */
@@ -251,7 +261,7 @@ class LedgerAccount extends Model
                     Breaker::RULE_VIOLATION,
                     [__(
                         "Adding :start to :ref would cause a circular reference.",
-                        ['start' =>$start, 'ref' => $lookFor]
+                        ['start' => $start, 'ref' => $lookFor]
                     )]
                 );
             }
@@ -272,6 +282,22 @@ class LedgerAccount extends Model
         }
 
         return $parents;
+    }
+
+    /**
+     * Merge data into the rule set.
+     * @return LedgerRules The current rule set.
+     */
+    public static function resetRules(): LedgerRules
+    {
+        self::$root = null;
+        self::loadRoot();
+        if (self::$root === null) {
+            self::baseRuleSet();
+            return self::$bootRules;
+        }
+
+        return self::$root->flex->rules;
     }
 
     /**
@@ -315,6 +341,7 @@ class LedgerAccount extends Model
     }
 
     /**
+     * Save and return the root settings, if they exist.
      * @return LedgerAccount|null
      */
     public static function saveRoot(): ?LedgerAccount
@@ -326,30 +353,17 @@ class LedgerAccount extends Model
         return self::$root;
     }
 
-    /** @noinspection PhpUnused */
-    public function setFlexAttribute($value)
+    /**
+     * @phpcsSuppress ForbiddenSetterSniff
+     * @noinspection PhpUnused
+     */
+    public function setFlexAttribute($value): void
     {
         if ($value === null) {
             $this->attributes['flex'] = null;
         } else {
             $this->attributes['flex'] = json_encode($value);
         }
-    }
-
-    /**
-     * Merge data into the rule set.
-     * @return LedgerRules
-     */
-    public static function resetRules(): LedgerRules
-    {
-        self::$root = null;
-        self::loadRoot();
-        if (self::$root === null) {
-            self::baseRuleSet();
-            return self::$bootRules;
-        }
-
-        return self::$root->flex->rules;
     }
 
     /**
@@ -377,7 +391,8 @@ class LedgerAccount extends Model
         return self::$root->flex->rules;
     }
 
-    public static function systemDateFormat(): string {
+    public static function systemDateFormat(): string
+    {
         $dummy = new self();
         return $dummy->getDateFormat();
     }
@@ -404,8 +419,9 @@ class LedgerAccount extends Model
     }
 
     /**
+     * Convert to an array suitable for returning as a response.
      * @param array $options
-     * @return array
+     * @return array<mixed> Properties to be sent in the response.
      * @throws Exception
      */
     public function toResponse(array $options = []): array
@@ -439,10 +455,11 @@ class LedgerAccount extends Model
     }
 
     /**
-     * @param string $operator
-     * @param EntityRef $entityRef
-     * @param Builder|null $query
-     * @return Builder
+     * Add or create a where clause for accounts matching an EntityRef.
+     * @param string $operator The SQL operator to ise.
+     * @param EntityRef $entityRef The entity to apply the operator to.
+     * @param Builder|null $query An existing query.
+     * @return Builder The query builder.
      * @throws Exception
      */
     public static function whereEntity(

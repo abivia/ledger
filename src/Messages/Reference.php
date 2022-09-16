@@ -64,10 +64,12 @@ class Reference extends Message
         if ($journalReference === null) {
             throw Breaker::withCode(
                 Breaker::BAD_REQUEST,
-                [__(
+                [
+                    __(
                     'Reference :code does not exist.',
                     ['code' => $this->code ?? '[undefined]']
-                )]
+                    )
+                ]
             );
         }
         if (!isset($this->journalReferenceUuid)) {

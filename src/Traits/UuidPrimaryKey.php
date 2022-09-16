@@ -14,8 +14,6 @@ trait UuidPrimaryKey
             if (!$model->{$model->primaryKey}) {
                 $model->{$model->primaryKey} = Str::uuid();
             }
-            $debug = $model->{$model->primaryKey};
-            $stopHere = 0;
         });
     }
 
