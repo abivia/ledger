@@ -84,7 +84,7 @@ class ReportController extends Controller
                 ->where('journalEntryId', '>', $candidate->journalEntryId)
                 ->where('transDate', '<=', $message->toDate);
             if (isset($message->fromDate)) {
-                $entryQuery = $entryQuery->where('fromDate', '>=', $message->fromDate);
+                $entryQuery = $entryQuery->where('transDate', '>=', $message->fromDate);
             }
             if ($entryQuery->count() == 0) {
                 return unserialize(
