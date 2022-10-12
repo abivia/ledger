@@ -1,3 +1,7 @@
+## 1.7.2
+
+- A query in the trial balance report failed to add a table prefix. Thanks, @alexgoogole!
+
 ## 1.7.1
 
 ### Bugs:
