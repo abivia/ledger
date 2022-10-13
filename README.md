@@ -2,6 +2,11 @@
 
 Tests: ![php 8.0](https://github.com/abivia/ledger/actions/workflows/php80.yml/badge.svg) ![php 8.1](https://github.com/abivia/ledger/actions/workflows/php81.yml/badge.svg)
 
+Ledger lets you track anything related to money in your application with a
+single package while making your CFO happy at the same time. No matter if
+your app is handling memberships for a small club or supporting a multinational
+enterprise, Ledger can handle it.
+
 Ledger is a full-featured implementation of the core of any good accounting system, a double-entry
 journal and general ledger. It is not a complete accounting solution, but rather the minimum for
 keeping track of financial transactions. Ledger features a JSON API that provides access to all
