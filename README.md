@@ -1,4 +1,4 @@
-# General Ledger and Journal Package/API for Laravel
+# General Ledger and Journal Accounting Package for Laravel with JSON API
 
 Tests: ![php 8.0](https://github.com/abivia/ledger/actions/workflows/php80.yml/badge.svg) ![php 8.1](https://github.com/abivia/ledger/actions/workflows/php81.yml/badge.svg)
 
