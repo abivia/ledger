@@ -26,9 +26,25 @@ class Report extends Message
     /**
      * @var array Option defaults for each report
      */
-    public static array $reportNames = [
+    protected static array $defaultReportNames = [
         'trialBalance' => ['depth' => 0]
     ];
+
+    /**
+     * Return allowed report names
+     * @return array
+     */
+    protected static function reportNames(): array
+    {
+        $configs = config('ledger.messages.reports');
+
+        if (!$configs) {
+            return static::$defaultReportNames;
+        }
+
+        return $configs;
+    }
+
     /**
      * @inheritDoc
      */
@@ -60,10 +76,11 @@ class Report extends Message
     {
         if (!isset($this->name)) {
             throw Breaker::withCode(
-                Breaker::BAD_REQUEST, __('Report request name not found.')
+                Breaker::BAD_REQUEST,
+                __('Report request name not found.')
             );
         }
-        if (!isset(self::$reportNames[$this->name])) {
+        if (!isset(static::reportNames()[$this->name])) {
             throw Breaker::withCode(
                 Breaker::BAD_REQUEST,
                 __('Report :name not found.', ['name' => $this->name])

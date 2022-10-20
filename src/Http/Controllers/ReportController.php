@@ -9,6 +9,7 @@ use Abivia\Ledger\Models\LedgerDomain;
 use Abivia\Ledger\Models\LedgerReport;
 use Abivia\Ledger\Models\ReportAccount;
 use Abivia\Ledger\Models\ReportData;
+use Abivia\Ledger\Reports\AbstractReport;
 use Illuminate\Support\Collection;
 
 class ReportController extends Controller
@@ -18,7 +19,7 @@ class ReportController extends Controller
         LedgerReport::create(
             [
                 'currency' => $message->currency,
-                'domainUuid' =>$message->domain->uuid,
+                'domainUuid' => $message->domain->uuid,
                 'fromDate' => $message->fromDate ?? null,
                 'journalEntryId' => $reportData->journalEntryId,
                 'name' => $message->name,
@@ -26,6 +27,31 @@ class ReportController extends Controller
                 'toDate' => $message->toDate,
             ]
         );
+    }
+
+    /**
+     * Make reporter class from config or build by namespace
+     * @param string $reportName
+     * @return AbstractReport
+     */
+    protected function makeReporter(string $reportName): AbstractReport
+    {
+        $mapping = config('ledger.reports');
+
+        if (!$mapping) {
+            $className = 'Abivia\\Ledger\\Reports\\' . ucfirst($reportName) . 'Report';
+            return new $className();
+        }
+
+        if (!key_exists($reportName, $mapping)) {
+            throw Breaker::withCode(
+                Breaker::BAD_REQUEST,
+                __('Report `:name` not registred.', ['name' => $reportName])
+            );
+        }
+
+        $reporter = $mapping[$reportName];
+        return new $reporter();
     }
 
     /**
@@ -48,8 +74,8 @@ class ReportController extends Controller
             }
             $message->domain->uuid = $ledgerDomain->domainUuid;
         }
-        $className = 'Abivia\\Ledger\\Reports\\' . ucfirst($message->name) . 'Report';
-        $reporter = new $className();
+
+        $reporter = $this->makeReporter($message->name);
         $reportData = $this->getCached($message) ?? $reporter->collect($message);
         $this->cache($message, $reportData);
 
@@ -97,5 +123,4 @@ class ReportController extends Controller
         }
         return null;
     }
-
 }
