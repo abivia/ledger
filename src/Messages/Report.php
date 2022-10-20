@@ -26,7 +26,7 @@ class Report extends Message
     /**
      * @var array Option defaults for each report
      */
-    protected static array $defaultReportNames = [
+    public static array $reportNames = [
         'trialBalance' => ['depth' => 0]
     ];
 
@@ -34,15 +34,15 @@ class Report extends Message
      * Return allowed report names
      * @return array
      */
-    protected static function reportNames(): array
+    protected static function isReportExist(string $reportName): bool
     {
-        $configs = config('ledger.messages.reports');
+        $allowedReports = config('ledger.reports');
 
-        if (!$configs) {
-            return static::$defaultReportNames;
+        if (!$allowedReports) {
+            return key_exists($reportName, static::$reportNames);
         }
 
-        return $configs;
+        return key_exists($reportName, $allowedReports);
     }
 
     /**
@@ -80,7 +80,7 @@ class Report extends Message
                 __('Report request name not found.')
             );
         }
-        if (!isset(static::reportNames()[$this->name])) {
+        if (!static::isReportExist($this->name)) {
             throw Breaker::withCode(
                 Breaker::BAD_REQUEST,
                 __('Report :name not found.', ['name' => $this->name])
