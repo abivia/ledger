@@ -3,6 +3,8 @@
 namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
+use Illuminate\Http\Request;
+use const JSON_BIGINT_AS_STRING;
 
 
 abstract class Message
@@ -92,6 +94,21 @@ abstract class Message
      * @throws Breaker On error, e.g. required data is missing or on validation.
      */
     public abstract static function fromArray(array $data, int $opFlags = 0): self;
+
+    /**
+     * Create a message from the request payload, bypassing some middleware.
+     * @param Request $request
+     * @param int $opFlags
+     * @return static
+     * @throws Breaker
+     */
+    public static function fromRequest(Request $request, int $opFlags = 0): self
+    {
+        $content = json_decode(
+            $request->getContent(), true, 512, JSON_BIGINT_AS_STRING
+        );
+        return static::fromArray($content, $opFlags);
+    }
 
     /**
      * Convert a method name to an operation bitmask.

@@ -8,7 +8,6 @@ use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Models\LedgerCurrency;
 use Abivia\Ledger\Models\LedgerDomain;
 use Carbon\Carbon;
-use Exception;
 use Illuminate\Database\Eloquent\Builder;
 
 class EntryQuery extends Message {
@@ -120,7 +119,6 @@ class EntryQuery extends Message {
      *
      * @return Builder
      * @throws Breaker
-     * @throws Exception
      */
     public function query(): Builder
     {
@@ -157,7 +155,7 @@ class EntryQuery extends Message {
      * @return void
      * @throws Breaker
      */
-    private function queryAmount(Builder $query)
+    private function queryAmount(Builder $query): void
     {
         $ledgerCurrency = LedgerCurrency::findOrBreaker($this->currency);
         $query->where('currency', $this->currency);
@@ -205,7 +203,7 @@ class EntryQuery extends Message {
      * @param Builder $query
      * @return void
      */
-    private function queryDate(Builder $query)
+    private function queryDate(Builder $query): void
     {
         // Apply the date range
         $dateFormat = LedgerAccount::systemDateFormat();
@@ -227,7 +225,7 @@ class EntryQuery extends Message {
      * @param Builder $query
      * @return void
      */
-    private function queryDomain(Builder $query)
+    private function queryDomain(Builder $query): void
     {
         // Apply the domain
         $query->where('domainUuid', '=', $this->domain->uuid);
@@ -240,7 +238,7 @@ class EntryQuery extends Message {
      * @return void
      * @throws Breaker
      */
-    private function queryPagination(Builder $query)
+    private function queryPagination(Builder $query): void
     {
         // Add pagination
         if (isset($this->after)) {
@@ -262,7 +260,7 @@ class EntryQuery extends Message {
      * @param Builder $query
      * @return void
      */
-    private function queryReference(Builder $query)
+    private function queryReference(Builder $query): void
     {
         // If there's a reference qualify the results with it
         if (isset($this->reference)) {

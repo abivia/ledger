@@ -35,14 +35,14 @@ class LedgerAccountApiController
             );
             $controller = new LedgerAccountController();
             if ($opFlags & Message::OP_QUERY) {
-                $message = AccountQuery::fromArray($request->all(), $opFlags);
+                $message = AccountQuery::fromRequest($request, $opFlags);
                 $accounts = [];
                 foreach ($controller->query($message, $opFlags) as $entry) {
                     $accounts[] = $entry->toResponse([]);
                 }
                 $response['accounts'] = $accounts;
             } else {
-                $message = Account::fromArray($request->all(), $opFlags);
+                $message = Account::fromRequest($request, $opFlags);
                 $ledgerAccount = $controller->run($message, $opFlags);
                 if ($opFlags & Message::OP_DELETE) {
                     $response['success'] = true;

@@ -13,37 +13,14 @@ class Report extends Message
         'currency', 'name'
     ];
     public string $currency;
-    public Carbon $fromDate;
     /**
      * @var EntityRef Ledger domain. If not provided the default is used.
      */
     public EntityRef $domain;
-
+    public Carbon $fromDate;
     public string $name;
     public array $options = [];
     public Carbon $toDate;
-
-    /**
-     * @var array Option defaults for each report
-     */
-    public static array $reportNames = [
-        'trialBalance' => ['depth' => 0]
-    ];
-
-    /**
-     * Return allowed report names
-     * @return array
-     */
-    protected static function isReportExist(string $reportName): bool
-    {
-        $allowedReports = config('ledger.reports');
-
-        if (!$allowedReports) {
-            return key_exists($reportName, static::$reportNames);
-        }
-
-        return key_exists($reportName, $allowedReports);
-    }
 
     /**
      * @inheritDoc
@@ -70,6 +47,26 @@ class Report extends Message
     }
 
     /**
+     * Get the class for a report, or null if no class exists.
+     * @param string $reportName
+     * @return string|null
+     */
+    public static function getClass(string $reportName): ?string
+    {
+        $mapping = config('ledger.reports');
+
+        if (!$mapping) {
+            // No custom mapping provided, use a standard class name
+            $reporter = 'Abivia\\Ledger\\Reports\\' . ucfirst($reportName) . 'Report';
+        } elseif (isset($mapping[$reportName])) {
+            $reporter = $mapping[$reportName];
+        } else {
+            $reporter = null;
+        }
+        return $reporter;
+    }
+
+    /**
      * @inheritDoc
      */
     public function validate(int $opFlags = 0): self
@@ -80,10 +77,10 @@ class Report extends Message
                 __('Report request name not found.')
             );
         }
-        if (!static::isReportExist($this->name)) {
+        if (!static::getClass($this->name) === null) {
             throw Breaker::withCode(
                 Breaker::BAD_REQUEST,
-                __('Report :name not found.', ['name' => $this->name])
+                __('Report :name not registered.', ['name' => $this->name])
             );
         }
         $rules = LedgerAccount::rules();
@@ -105,7 +102,10 @@ class Report extends Message
         } else {
             $this->options['language'] = [];
         }
-        $this->options['language'][] = LedgerAccount::rules()->language->default;
+        $fallback = LedgerAccount::rules()->language->default;
+        if (!in_array($fallback, $this->options['language'])) {
+            $this->options['language'][] = $fallback;
+        }
 
         return $this;
     }

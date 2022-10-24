@@ -35,14 +35,14 @@ class JournalEntryApiController
             );
             $controller = new JournalEntryController();
             if ($opFlags & Message::OP_QUERY) {
-                $message = EntryQuery::fromArray($request->all(), $opFlags);
+                $message = EntryQuery::fromRequest($request, $opFlags);
                 $entries = [];
                 foreach ($controller->query($message, $opFlags) as $entry) {
                     $entries[] = $entry->toResponse(Message::OP_GET);
                 }
                 $response['entries'] = $entries;
             } else {
-                $message = Entry::fromArray($request->all(), $opFlags);
+                $message = Entry::fromRequest($request, $opFlags);
                 $journalEntry = $controller->run($message, $opFlags);
                 if ($opFlags & (Message::OP_DELETE)) {
                     $response['success'] = true;

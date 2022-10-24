@@ -2,9 +2,11 @@
 
 namespace Abivia\Ledger\Models;
 
+use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Revision;
 use Abivia\Ledger\Messages\EntityRef;
 use Abivia\Ledger\Messages\SubJournal as JournalMessage;
+use Abivia\Ledger\Traits\CommonResponseProperties;
 use Abivia\Ledger\Traits\HasRevisions;
 use Abivia\Ledger\Traits\UuidPrimaryKey;
 use Carbon\Carbon;
@@ -29,7 +31,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class SubJournal extends Model
 {
-    use HasFactory, HasRevisions, UuidPrimaryKey;
+    use CommonResponseProperties, HasFactory, HasRevisions, UuidPrimaryKey;
 
     protected $casts = [
         'revision' => 'datetime',
@@ -57,7 +59,7 @@ class SubJournal extends Model
     /**
      * @param EntityRef $entityRef
      * @return Builder
-     * @throws Exception
+     * @throws Breaker
      * @noinspection PhpIncompatibleReturnTypeInspection
      * @noinspection PhpDynamicAsStaticMethodCallInspection
      */
@@ -68,7 +70,10 @@ class SubJournal extends Model
         } elseif (isset($entityRef->code)) {
             $finder = self::where('code', $entityRef->code);
         } else {
-            throw new Exception('Journal reference must have either code or uuid entries');
+            throw Breaker::withCode(
+                Breaker::INVALID_DATA,
+                [__('Journal reference must have either code or uuid entries')]
+            );
         }
 
         return $finder;
@@ -83,18 +88,8 @@ class SubJournal extends Model
     {
         $response = ['uuid' => $this->subJournalUuid];
         $response['code'] = $this->code;
-        $response['names'] = [];
-        foreach ($this->names as $name) {
-            $response['names'][] = $name->toResponse();
-        }
-        if ($this->extra !== null) {
-            $response['extra'] = $this->extra;
-        }
-        $response['revision'] = Revision::create($this->revision, $this->updated_at);
-        $response['createdAt'] = $this->created_at;
-        $response['updatedAt'] = $this->updated_at;
 
-        return $response;
+        return $this->commonResponses($response);
     }
 
 }

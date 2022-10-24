@@ -1,5 +1,21 @@
+## 1.8.0
+
+### Changes:
+- Ability to add or limit reports via config (thanks @ivanmazep!)
+- Implementation of report options on API requests. Trial balance report can now limit how
+many levels of subaccount detail are returned; application can limit max depth.
+- Converted some exceptions to throw a Breaker instead. Added CONFIG_ERROR
+code, thrown when the report configuration is invalid.
+- Breaker::withCode now accepts a string for the error argument in addition to an array.
+- The trial balance report now returns the domain with the name localized.
+- API requests now decode the JSON directly, avoiding middleware.
+- Added the decimal, negative, and thousands options to the trial balance report
+- Removed the unused `opFlags` argument from ReportAccount::fromArray() and deprecated
+the equally unused ReportAccount::validate().
+
 ## 1.7.2
 
+### Bugs:
 - A query in the trial balance report failed to add a table prefix. Thanks, @alexgoogole!
 
 ## 1.7.1

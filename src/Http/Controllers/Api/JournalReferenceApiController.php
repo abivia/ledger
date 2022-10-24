@@ -32,7 +32,7 @@ class JournalReferenceApiController
             $opFlag = Message::toOpFlags(
                 $operation, ['add' => Message::F_API, 'disallow' => Message::OP_CREATE]
             );
-            $message = Reference::fromArray($request->all(), $opFlag);
+            $message = Reference::fromRequest($request, $opFlag);
             $controller = new JournalReferenceController();
             $journalReference = $controller->run($message, $opFlag);
             if ($opFlag & Message::OP_DELETE) {

@@ -17,6 +17,7 @@ class Breaker extends Exception
     public const BAD_REVISION = 5;
     public const INVALID_DATA = 6;
     public const INTEGRITY_ERROR = 7;
+    public const CONFIG_ERROR = 8;
 
     protected array $errors;
 
@@ -25,6 +26,7 @@ class Breaker extends Exception
         self::BAD_ACCOUNT => 'Account invalid or not found.',
         self::BAD_REQUEST => 'Bad request.',
         self::BAD_REVISION => 'Outdated or invalid revision token.',
+        self::CONFIG_ERROR => 'Internal configuration error.',
         self::INTEGRITY_ERROR => 'Ledger data is inconsistent.',
         self::INVALID_DATA => 'Error in data source.',
         self::NOT_IMPLEMENTED => 'Feature is not yet implemented.',
@@ -72,24 +74,28 @@ class Breaker extends Exception
     /**
      * Replace the error list with a new list.
      *
-     * @param string[] $errors
+     * @param array<string>|string $errors
      * @return void
      */
-    public function setErrors(array $errors)
+    public function setErrors(mixed $errors)
     {
-        $this->errors = $errors;
+        if (is_array($errors)) {
+            $this->errors = $errors;
+        } else {
+            $this->errors = [$errors];
+        }
     }
 
     /**
      * Generate a new instance using a predefined code.
      *
      * @param int $code The underlying error condition
-     * @param array $errors An array of supplemental error text
+     * @param array<string>|string $errors One or a list of supplemental error texts.
      * @param Throwable|null $previous Any related exception
      *
      * @return static
      */
-    public static function withCode(int $code, array $errors = [], Throwable $previous = null): self
+    public static function withCode(int $code, mixed $errors = [], Throwable $previous = null): self
     {
         $message = __(self::$messages[$code] ?? self::$messages[0]);
         $exception = new static($message, $code, $previous);

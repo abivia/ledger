@@ -3,7 +3,6 @@
 namespace Abivia\Ledger\Reports;
 
 use Abivia\Ledger\Exceptions\Breaker;
-use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Messages\Report;
 use Abivia\Ledger\Models\JournalDetail;
 use Abivia\Ledger\Models\JournalEntry;
@@ -11,6 +10,7 @@ use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Models\LedgerBalance;
 use Abivia\Ledger\Models\LedgerCurrency;
 use Abivia\Ledger\Models\LedgerDomain;
+use Abivia\Ledger\Models\LedgerName;
 use Abivia\Ledger\Models\ReportAccount;
 use Abivia\Ledger\Models\ReportData;
 use Exception;
@@ -22,32 +22,34 @@ class TrialBalanceReport extends AbstractReport
 {
     private Collection $accounts;
     /**
-     * @var string[][]
+     * @var string[][] A sparse list of sub-accounts for each account, indexed by code.
      */
     private array $byParent;
+
+    private array $config = [
+        'maxDepth' => PHP_INT_MAX,
+    ];
 
     /**
      * @var int The number of decimal places in the requested currency
      */
     private int $decimals;
 
+    public function __construct($config = [])
+    {
+        $this->config = array_merge($this->config, $config);
+    }
+
     /**
      * Get the raw data required to generate the report.
      *
      * @throws Breaker
-     * @throws Exception
      */
     public function collect(Report $message): ReportData
     {
-        $message->validate(0);
-        /** @var LedgerDomain $ledgerDomain */
-        $ledgerDomain = LedgerDomain::findWith($message->domain)->first();
-        if ($ledgerDomain === null) {
-            throw Breaker::withCode(
-                Breaker::BAD_REQUEST,
-                __('Domain :code not found.', ['code' => $message->domain->code])
-            );
-        }
+        $message->validate();
+        $ledgerDomain = $this->loadDomain($message);
+
         $reportData = new ReportData();
         $reportData->request = $message;
         $reportData->journalEntryId = JournalEntry::query()->max('journalEntryId');
@@ -92,7 +94,7 @@ class TrialBalanceReport extends AbstractReport
         $reportData->accounts = [];
         $zero = bcadd('0', '0', $ledgerCurrency->decimals);
         foreach ($ledgerAccounts as $ledgerAccount) {
-            $account = ReportAccount::fromArray($ledgerAccount->attributesToArray(), Message::OP_ADD);
+            $account = ReportAccount::fromArray($ledgerAccount->attributesToArray());
             $uuid = $account->ledgerUuid;
             $account->currency = $message->currency;
             $account->balance = $balances->has($uuid)
@@ -114,6 +116,27 @@ class TrialBalanceReport extends AbstractReport
     }
 
     /**
+     * Get the domain and make sure the uuid is set.
+     * @param Report $message
+     * @return LedgerDomain
+     * @throws Breaker
+     */
+    private function loadDomain(Report $message): LedgerDomain
+    {
+        /** @var LedgerDomain $ledgerDomain */
+        $ledgerDomain = LedgerDomain::findWith($message->domain)->first();
+        if ($ledgerDomain === null) {
+            throw Breaker::withCode(
+                Breaker::BAD_REQUEST,
+                __('Domain :code not found.', ['code' => $message->domain->code])
+            );
+        }
+        $message->domain->uuid = $ledgerDomain->domainUuid;
+
+        return $ledgerDomain;
+    }
+
+    /**
      * Use a report's raw data to prepare report accounts.
      * @param ReportData $reportData
      * @return Collection
@@ -121,16 +144,27 @@ class TrialBalanceReport extends AbstractReport
      */
     public function prepare(ReportData $reportData): Collection
     {
+        $options = $reportData->request->options;
         $result = collect(['request' => $reportData->request]);
         $this->accounts = collect($reportData->accounts)->keyBy('code');
         $this->decimals = $reportData->decimals;
         $this->rollUp();
 
-        $format = $reportData->message->options['format'] ?? '';
-        if ($format === 'raw') {
+        // Apply any depth limit
+        $depth = $options['depth'] ?? PHP_INT_MAX;
+        $depth = min($depth, $this->config['maxDepth']);
+        if ($depth !== PHP_INT_MAX) {
+            /** @var ReportAccount $account */
+            foreach ($this->accounts as $account) {
+                if ($account->depth > $depth) {
+                    $this->accounts->forget($account->code);
+                }
+            }
+        }
+
+        if (($options['format'] ?? '') === 'raw') {
             return $this->accounts;
         }
-        $languages = $reportData->request->options['language'];
 
         // Do a simple report
         /**
@@ -140,19 +174,27 @@ class TrialBalanceReport extends AbstractReport
         foreach ($this->accounts as $account) {
             /** @noinspection PhpDynamicAsStaticMethodCallInspection */
             $ledgerAccount = LedgerAccount::find($account->ledgerUuid);
-            unset($account->name);
-            $names = $ledgerAccount->names->keyBy('language');
-            foreach ($languages as $language) {
-                if (isset($names[$language])) {
-                    $account->name = $names[$language]->name;
-                }
-            }
-            if (!isset($account->name)) {
-                $account->name = $names->first()->name;
-            }
-            $account->setReportTotals($this->decimals);
+            $account->name = $ledgerAccount->nameIn($options['language']);
+            $account->setReportTotals(
+                $this->decimals,
+                $options['decimal'] ?? '.',
+                $options['negative'] ?? '-',
+                $options['thousands'] ?? ''
+            );
         }
         $result->put('accounts', $this->accounts);
+        // Return domain information
+        $domain = $reportData->request->domain;
+        $result -> put(
+            'domain',
+            [
+                'code' => $domain->code,
+                'uuid' => $domain->uuid,
+                'name' => LedgerName::localize(
+                    $domain->uuid, $options['language']
+                )
+            ]
+        );
 
         return $result;
     }
@@ -162,7 +204,7 @@ class TrialBalanceReport extends AbstractReport
      * @return void
      * @throws Exception
      */
-    private function rollUp()
+    private function rollUp(): void
     {
         // Make a list of sub-accounts for each parent.
         $this->byParent = [];
@@ -199,9 +241,10 @@ class TrialBalanceReport extends AbstractReport
      * @param int $depth Levels of nesting below the ledger root.
      * @return void
      */
-    private function rollUpAccount(string $code, int $depth)
+    private function rollUpAccount(string $code, int $depth): void
     {
         $this->accounts[$code]->depth = $depth;
+        // If this account has sub-accounts drill down to get accumulated totals.
         if (isset($this->byParent[$code])) {
             $sum = '0';
             foreach ($this->byParent[$code] as $child) {

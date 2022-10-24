@@ -67,6 +67,12 @@ class JournalReferenceController extends Controller
         return $journalReference;
     }
 
+    /**
+     * Verify that the message refers to a valid domain.
+     * @param Reference $message
+     * @return void
+     * @throws Breaker
+     */
     private function checkDomain(Reference $message)
     {
         if (!isset($message->domain->uuid)) {

@@ -32,7 +32,7 @@ class SubJournalApiController
             $opFlag = Message::toOpFlags(
                 $operation, ['add' => Message::F_API, 'disallow' => Message::OP_CREATE]
             );
-            $message = SubJournal::fromArray($request->all(), $opFlag);
+            $message = SubJournal::fromRequest($request, $opFlag);
             $controller = new SubJournalController();
             $subJournal = $controller->run($message, $opFlag);
             if ($opFlag & Message::OP_DELETE) {
