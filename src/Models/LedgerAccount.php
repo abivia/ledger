@@ -10,6 +10,7 @@ use Abivia\Ledger\Messages\Account;
 use Abivia\Ledger\Messages\EntityRef;
 use Abivia\Ledger\Root\Flex;
 use Abivia\Ledger\Root\Rules\LedgerRules;
+use Abivia\Ledger\Traits\CommonResponseProperties;
 use Abivia\Ledger\Traits\HasRevisions;
 use Abivia\Ledger\Traits\UuidPrimaryKey;
 use Carbon\Carbon;
@@ -43,7 +44,7 @@ use stdClass;
  */
 class LedgerAccount extends Model
 {
-    use HasFactory, HasRevisions, UuidPrimaryKey;
+    use CommonResponseProperties, HasFactory, HasNames, HasRevisions, UuidPrimaryKey;
 
     const CODE_SIZE = 32;
     /**
@@ -216,11 +217,6 @@ class LedgerAccount extends Model
             $match = false;
         }
         return $match;
-    }
-
-    public function names(): HasMany
-    {
-        return $this->hasMany(LedgerName::class, 'ownerUuid', 'ledgerUuid');
     }
 
     /**
@@ -436,22 +432,12 @@ class LedgerAccount extends Model
         if ($this->parentUuid !== null) {
             $response['parentUuid'] = $this->parentUuid;
         }
-        $response['names'] = [];
-        foreach ($this->names as $name) {
-            $response['names'][] = $name->toResponse();
-        }
         $response['category'] = $this->category;
         $response['debit'] = $this->debit;
         $response['credit'] = $this->credit;
         $response['closed'] = $this->closed;
-        if ($this->extra !== null) {
-            $response['extra'] = $this->extra;
-        }
-        $response['revision'] = Revision::create($this->revision, $this->updated_at);
-        $response['createdAt'] = $this->created_at;
-        $response['updatedAt'] = $this->updated_at;
 
-        return $response;
+        return $this->commonResponses($response);
     }
 
     /**

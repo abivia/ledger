@@ -33,25 +33,26 @@ class ReportController extends Controller
      * Make reporter class from config or build by namespace
      * @param string $reportName
      * @return AbstractReport
+     * @throws Breaker
      */
     protected function makeReporter(string $reportName): AbstractReport
     {
-        $mapping = config('ledger.reports');
-
-        if (!$mapping) {
-            $className = 'Abivia\\Ledger\\Reports\\' . ucfirst($reportName) . 'Report';
-            return new $className();
-        }
-
-        if (!key_exists($reportName, $mapping)) {
+        $reporter = Report::getClass($reportName);
+        if ($reporter === null) {
             throw Breaker::withCode(
                 Breaker::BAD_REQUEST,
-                __('Report `:name` not registred.', ['name' => $reportName])
+                __('Report `:name` not registered.', ['name' => $reportName])
             );
         }
+        if (!class_exists($reporter)) {
+            throw Breaker::withCode(
+                Breaker::CONFIG_ERROR,
+                __('Report `:name` is misconfigured.', ['name' => $reportName])
+            );
+        }
+        $options = config('ledger.reportApiOptions');
 
-        $reporter = $mapping[$reportName];
-        return new $reporter();
+        return new $reporter($options[$reportName] ?? []);
     }
 
     /**
@@ -63,7 +64,7 @@ class ReportController extends Controller
     public function generate(Report $message): Collection
     {
         $message->validate(0);
-        if (!isset($message->domain->uuid)) {
+        if (!isset($message->domain->uuid) || !isset($message->currency)) {
             /** @var LedgerDomain $ledgerDomain */
             $ledgerDomain = LedgerDomain::findWith($message->domain)->first();
             if ($ledgerDomain === null) {
@@ -73,6 +74,9 @@ class ReportController extends Controller
                 );
             }
             $message->domain->uuid = $ledgerDomain->domainUuid;
+            if (!isset($message->currency)) {
+                $message->currency = $ledgerDomain->currencyDefault;
+            }
         }
 
         $reporter = $this->makeReporter($message->name);
@@ -123,4 +127,5 @@ class ReportController extends Controller
         }
         return null;
     }
+
 }

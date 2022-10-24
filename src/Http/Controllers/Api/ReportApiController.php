@@ -21,7 +21,6 @@ class ReportApiController
      * Perform a domain operation.
      *
      * @param Request $request
-     * @param string $operation
      * @return array
      */
     public function run(Request $request): array
@@ -29,7 +28,7 @@ class ReportApiController
         $this->errors = [];
         $response = [];
         try {
-            $message = Report::fromArray($request->all(), Message::F_API | Message::OP_QUERY);
+            $message = Report::fromRequest($request, Message::F_API | Message::OP_QUERY);
             $controller = new ReportController();
             $report = $controller->generate($message);
 

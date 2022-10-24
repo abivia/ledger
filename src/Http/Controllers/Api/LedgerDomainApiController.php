@@ -32,7 +32,7 @@ class LedgerDomainApiController
             $opFlag = Message::toOpFlags(
                 $operation, ['add' => Message::F_API, 'disallow' => Message::OP_CREATE]
             );
-            $message = Domain::fromArray($request->all(), $opFlag);
+            $message = Domain::fromRequest($request, $opFlag);
             $controller = new LedgerDomainController();
             $ledgerDomain = $controller->run($message, $opFlag);
             if ($opFlag & Message::OP_DELETE) {

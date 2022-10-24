@@ -5,6 +5,7 @@ namespace Abivia\Ledger\Models;
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Revision;
 use Abivia\Ledger\Messages\Currency;
+use Abivia\Ledger\Traits\CommonResponseProperties;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
@@ -24,7 +25,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class LedgerCurrency extends Model
 {
-    use HasFactory;
+    use CommonResponseProperties, HasFactory;
 
     const AMOUNT_SIZE = 32;
     const CODE_SIZE = 16;
@@ -106,11 +107,8 @@ class LedgerCurrency extends Model
             'code' => $this->code,
             'decimals' =>$this->decimals,
         ];
-        $response['revision'] = Revision::create($this->revision, $this->updated_at);
-        $response['createdAt'] = $this->created_at;
-        $response['updatedAt'] = $this->updated_at;
 
-        return $response;
+        return $this->commonResponses($response, ['extra', 'names']);
     }
 
 }

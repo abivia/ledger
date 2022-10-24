@@ -91,6 +91,103 @@ class TrialBalanceReportTest extends TestCaseWithMigrations
 
         $request = [
             'name' => 'trialBalance',
+            'toDate' => '2001-02-28',
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/report', $request
+        );
+        $actual = $this->isSuccessful($response, 'report');
+        $this->assertCount(138, $actual->report->accounts);
+    }
+
+    public function testApiBadReport()
+    {
+        $this->loadRandomBaseline();
+
+        $request = [
+            'name' => 'thisReport%nameSucks',
+            'currency' => 'CAD',
+            'toDate' => '2001-02-28',
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/report', $request
+        );
+        $this->isFailure($response);
+    }
+
+    public function testApiDepthLimited()
+    {
+        $this->loadRandomBaseline();
+
+        $request = [
+            'name' => 'trialBalance',
+            'currency' => 'CAD',
+            'options' => ['depth' => 2],
+            'toDate' => '2001-02-28',
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/report', $request
+        );
+        $actual = $this->isSuccessful($response, 'report');
+        $this->assertCount(36, $actual->report->accounts);
+        $bal = '0.00';
+        foreach ($actual->report->accounts as $account) {
+            $bal = bcadd($bal, $account->total, 2);
+        }
+        $this->assertEquals('0.00', $bal);
+    }
+
+    public function testApiFormattedAccounting()
+    {
+        $this->loadRandomBaseline();
+
+        $request = [
+            'name' => 'trialBalance',
+            'currency' => 'CAD',
+            'options' => [
+                'decimal' => '.', 'negative' => '(', 'thousands' => ','
+            ],
+            'toDate' => '2001-02-28',
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/report', $request
+        );
+        $actual = $this->isSuccessful($response, 'report');
+        $this->assertCount(138, $actual->report->accounts);
+        $this->assertEquals(
+            '(1,176.92)',
+            $actual->report->accounts[3]->debitBalance
+        );
+    }
+
+    public function testApiFormattedEuropean()
+    {
+        $this->loadRandomBaseline();
+
+        $request = [
+            'name' => 'trialBalance',
+            'currency' => 'CAD',
+            'options' => ['decimal' => ',', 'thousands' => ' '],
+            'toDate' => '2001-02-28',
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/report', $request
+        );
+        $actual = $this->isSuccessful($response, 'report');
+        $this->assertCount(138, $actual->report->accounts);
+        $this->assertEquals(
+            '-1 176,92',
+            $actual->report->accounts[3]->debitBalance
+        );
+    }
+
+    public function testApiWithDomain()
+    {
+        $this->loadRandomBaseline();
+
+        $request = [
+            'name' => 'trialBalance',
+            'domain' => 'CORP',
             'currency' => 'CAD',
             'toDate' => '2001-02-28',
         ];

@@ -23,7 +23,7 @@ class RootApiController
             RootController::checkNoLedgerExists();
             $controller = new RootController();
 
-            $message = Create::fromArray($request->all(), Message::OP_ADD | Message::OP_CREATE);
+            $message = Create::fromRequest($request, Message::OP_ADD | Message::OP_CREATE);
             $ledgerAccount = $controller->create($message);
 
             // Add the ledger information to the response

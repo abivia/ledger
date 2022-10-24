@@ -35,6 +35,19 @@ class LedgerName extends Model
         'language', 'name', 'ownerUuid'
     ];
 
+    public static function createFromMessage(Name $message): self
+    {
+        $instance = new static();
+        foreach ($instance->fillable as $property) {
+            if (isset($message->{$property})) {
+                $instance->{$property} = $message->{$property};
+            }
+        }
+        $instance->save();
+        $instance->refresh();
+
+        return $instance;
+    }
 
     public static function getWildcard(string $ownerUuid, string $wildcard): Builder
     {
@@ -50,18 +63,31 @@ class LedgerName extends Model
         return $query;
     }
 
-    public static function createFromMessage(Name $message): self
+    /**
+     * Get the name of a specific UUID in the first matching language.
+     * @param string $ownerUuid
+     * @param array $languages
+     * @return string
+     */
+    public static function localize(string $ownerUuid, array $languages): string
     {
-        $instance = new static();
-        foreach ($instance->fillable as $property) {
-            if (isset($message->{$property})) {
-                $instance->{$property} = $message->{$property};
+        $matches = static::where('ownerUuid', $ownerUuid)
+            ->whereIn('language', $languages)
+            ->get();
+        foreach ($languages as $language) {
+            $hit = $matches->firstWhere('language', $language);
+            if ($hit != null) {
+                return $hit->name;
             }
         }
-        $instance->save();
-        $instance->refresh();
-
-        return $instance;
+        // Look for localizations of the requested languages, in order
+        foreach ($languages as $language) {
+            $hit = static::getWildcard($ownerUuid, "$language*")->first();
+            if ($hit != null) {
+                return $hit->name;
+            }
+        }
+        return '';
     }
 
     public function toMessage(): Name

@@ -2,8 +2,10 @@
 
 namespace Abivia\Ledger\Models;
 
+use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Revision;
 use Abivia\Ledger\Messages\Reference;
+use Abivia\Ledger\Traits\CommonResponseProperties;
 use Abivia\Ledger\Traits\HasRevisions;
 use Abivia\Ledger\Traits\UuidPrimaryKey;
 use Carbon\Carbon;
@@ -26,7 +28,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class JournalReference extends Model
 {
-    use HasFactory, HasRevisions, UuidPrimaryKey;
+    use CommonResponseProperties, HasFactory, HasRevisions, UuidPrimaryKey;
 
     protected $casts = [
         'revision' => 'datetime',
@@ -38,7 +40,7 @@ class JournalReference extends Model
     protected $primaryKey = 'journalReferenceUuid';
 
     /**
-     * @throws Exception
+     * @throws Breaker
      */
     public static function createFromMessage(Reference $message): self
     {
@@ -84,14 +86,8 @@ class JournalReference extends Model
     {
         $response = ['uuid' => $this->journalReferenceUuid];
         $response['code'] = $this->code;
-        if ($this->extra !== null) {
-            $response['extra'] = $this->extra;
-        }
-        $response['revision'] = Revision::create($this->revision, $this->updated_at);
-        $response['createdAt'] = $this->created_at;
-        $response['updatedAt'] = $this->updated_at;
 
-        return $response;
+        return $this->commonResponses($response, ['names']);
     }
 
 }

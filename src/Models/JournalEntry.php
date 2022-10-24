@@ -7,6 +7,7 @@ use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Revision;
 use Abivia\Ledger\Messages\Entry;
 use Abivia\Ledger\Messages\Message;
+use Abivia\Ledger\Traits\CommonResponseProperties;
 use Abivia\Ledger\Traits\HasRevisions;
 use Carbon\Carbon;
 use Exception;
@@ -44,7 +45,7 @@ use Illuminate\Support\Collection;
  */
 class JournalEntry extends Model
 {
-    use HasFactory, HasRevisions;
+    use CommonResponseProperties, HasFactory, HasRevisions;
 
     protected $attributes = [
         'opening' => false,
@@ -157,6 +158,7 @@ class JournalEntry extends Model
         $response = [];
         $response['id'] = $this->journalEntryId;
         $response['date'] = $this->transDate->format(static::$dateFormatJson);
+        $except = ['names'];
         if ($opFlags & Message::OP_GET) {
             if (isset($this->subJournalUuid)) {
                 /** @noinspection PhpDynamicAsStaticMethodCallInspection */
@@ -169,9 +171,6 @@ class JournalEntry extends Model
                 $response['descriptionArgs'] = $this->arguments;
             }
             $response['language'] = $this->language;
-            if (isset($this->extra) && $this->extra !== '') {
-                $response['extra'] = $this->extra;
-            }
             $response['opening'] = $this->opening;
             if ($this->journalReferenceUuid !== null) {
                 $response['reference'] = $this->journalReferenceUuid;
@@ -186,12 +185,11 @@ class JournalEntry extends Model
             foreach ($this->details as $detail) {
                 $response['details'][] = $detail->toResponse();
             }
+        } else {
+            $except[] = 'extra';
         }
-        $response['revision'] = Revision::create($this->revision, $this->updated_at);
-        $response['createdAt'] = $this->created_at;
-        $response['updatedAt'] = $this->updated_at;
 
-        return $response;
+        return $this->commonResponses($response, $except);
     }
 
 }

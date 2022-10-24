@@ -36,7 +36,7 @@ class LedgerBalanceApiController
                     'disallow' => (Message::OP_ADD | Message::OP_DELETE | Message::OP_UPDATE)
                 ]
             );
-            $message = Balance::fromArray($request->all(), $opFlags);
+            $message = Balance::fromRequest($request, $opFlags);
             $controller = new LedgerBalanceController();
             $ledgerBalance = $controller->run($message, $opFlags);
             if ($ledgerBalance === null) {

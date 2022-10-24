@@ -51,6 +51,8 @@ JSON API, set middleware, and a path prefix to the API.
 
 ## Donations welcome
 
+Abivia is a small business. Even small donations go a long way.
+
 If you're getting something out of Ledger, you can sponsor us in any amount you wish using Liberapay
 [![Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/abivia/donate).
 Liberapay is itself run on donations and charges no fees beyond bank charges.

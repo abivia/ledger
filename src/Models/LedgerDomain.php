@@ -2,9 +2,10 @@
 
 namespace Abivia\Ledger\Models;
 
-use Abivia\Ledger\Helpers\Revision;
+use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Messages\Domain;
 use Abivia\Ledger\Messages\EntityRef;
+use Abivia\Ledger\Traits\CommonResponseProperties;
 use Abivia\Ledger\Traits\HasRevisions;
 use Abivia\Ledger\Traits\UuidPrimaryKey;
 use Carbon\Carbon;
@@ -12,7 +13,6 @@ use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Domains assigned within the ledger.
@@ -31,7 +31,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class LedgerDomain extends Model
 {
-    use HasFactory, HasRevisions, UuidPrimaryKey;
+    use CommonResponseProperties, HasFactory, HasNames, HasRevisions, UuidPrimaryKey;
 
     protected $casts = [
         'revision' => 'datetime',
@@ -61,9 +61,9 @@ class LedgerDomain extends Model
     /**
      * @param EntityRef $entityRef
      * @return Builder
-     * @throws Exception
      * @noinspection PhpIncompatibleReturnTypeInspection
      * @noinspection PhpDynamicAsStaticMethodCallInspection
+     * @throws Breaker
      */
     public static function findWith(EntityRef $entityRef): Builder
     {
@@ -72,34 +72,27 @@ class LedgerDomain extends Model
         } elseif (isset($entityRef->code)) {
             $finder = self::where('code', $entityRef->code);
         } else {
-            throw new Exception('Domain reference must have either code or uuid entries');
+            throw Breaker::withCode(
+                Breaker::INVALID_DATA,
+                [__('Domain reference must have either code or uuid entries')]
+            );
         }
 
         return $finder;
     }
 
-    public function names(): HasMany
-    {
-        return $this->hasMany(LedgerName::class, 'ownerUuid', 'domainUuid');
-    }
-
-    public function toResponse()
+    /**
+     * Create a response array.
+     * @return string[]
+     * @throws Exception
+     */
+    public function toResponse(): array
     {
         $response = ['uuid' => $this->domainUuid];
         $response['code'] = $this->code;
         $response['currency'] = $this->currencyDefault;
-        $response['names'] = [];
-        foreach ($this->names as $name) {
-            $response['names'][] = $name->toResponse();
-        }
-        if ($this->extra !== null) {
-            $response['extra'] = $this->extra;
-        }
-        $response['revision'] = Revision::create($this->revision, $this->updated_at);
-        $response['createdAt'] = $this->created_at;
-        $response['updatedAt'] = $this->updated_at;
 
-        return $response;
+        return $this->commonResponses($response);
     }
 
 }

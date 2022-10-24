@@ -77,7 +77,7 @@ class JournalEntryController extends Controller
      * @param Entry $message
      * @return void
      */
-    private function addDetails(JournalEntry $journalEntry, Entry $message)
+    private function addDetails(JournalEntry $journalEntry, Entry $message): void
     {
         foreach ($message->details as $detail) {
             $journalDetail = new JournalDetail();
@@ -158,7 +158,7 @@ class JournalEntryController extends Controller
      * @param JournalEntry $journalEntry
      * @return void
      */
-    private function deleteDetails(JournalEntry $journalEntry)
+    private function deleteDetails(JournalEntry $journalEntry): void
     {
         $journalDetails = JournalDetail::with(
             ['balances' => function ($query) use ($journalEntry) {
@@ -231,10 +231,16 @@ class JournalEntryController extends Controller
         }
     }
 
+    /**
+     * Place a lock on a journal entry.
+     *
+     * @param Entry $message
+     * @return JournalEntry
+     * @throws Breaker
+     */
     public function lock(Entry $message): JournalEntry
     {
         $message->validate(Message::OP_LOCK);
-        $errors = [];
         $inTransaction = false;
         try {
             DB::beginTransaction();
@@ -348,7 +354,7 @@ class JournalEntryController extends Controller
      * @param Entry $message
      * @return void
      */
-    protected function updateDetails(JournalEntry $journalEntry, Entry $message)
+    protected function updateDetails(JournalEntry $journalEntry, Entry $message): void
     {
         // Remove existing details, undoing balance changes
         $this->deleteDetails($journalEntry);
@@ -361,7 +367,6 @@ class JournalEntryController extends Controller
      * @param Entry $message
      * @param int $opFlag
      * @throws Breaker
-     * @throws Exception
      */
     private function validateEntry(Entry $message, int $opFlag)
     {

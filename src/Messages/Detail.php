@@ -90,7 +90,7 @@ class Detail extends Message
     /**
      * Find the ledger account associated with this detail record.
      *
-     * @throws Exception
+     * @throws Breaker
      */
     public function findAccount(): ?LedgerAccount
     {

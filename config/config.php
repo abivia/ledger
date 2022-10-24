@@ -1,6 +1,5 @@
 <?php
 
-use Abivia\Ledger\Reports\TrialBalanceReport;
 
 return [
     'api' => true,
@@ -8,7 +7,20 @@ return [
     'log' => env('LEDGER_LOG_CHANNEL', env('LOG_CHANNEL')),
     'middleware' => ['api'],
     'prefix' => 'api/ledger',
-    'reports' => [
-        'trialBalance' => TrialBalanceReport::class,
-    ],
+    // To pass API-specific options to a report, use the reportApiOptions
+    // setting. Example:
+    // 'reportApiOptions' => [
+    //     'trialBalance' => [
+    //         'maxDepth' => 3,
+    //     ],
+    // ],
+    //
+    // Extended reports with the reports setting. Reports is an array indexed by
+    // report name that references the reporting class (which should extend
+    // `Abivia\Ledger\Reports\AbstractReport`). If there is a reports setting,
+    // it must list all reports available to the JSON API. Any reports omitted
+    // from this list (e.g. trialBalance) will be inaccessible to the JSON API.
+    // 'reports' => [
+    //     'trialBalance' => Abivia\Ledger\Reports\TrialBalanceReport::class,
+    // ],
 ];
