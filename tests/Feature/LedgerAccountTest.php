@@ -214,6 +214,29 @@ class LedgerAccountTest extends TestCaseWithMigrations
     }
 
     /**
+     * Create a valid ledger
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testCreateNoRules(): void
+    {
+        $response = $this->createLedger(['rules']);
+
+        $this->isSuccessful($response, 'ledger');
+
+        LedgerAccount::loadRoot();
+        $root = LedgerAccount::root();
+        $this->assertTrue($root->category);
+        /** @var Flex $flex */
+        $flex = $root->flex;
+        $this->assertEquals('CORP', $flex->rules->domain->default);
+        $this->assertEquals('en', $flex->rules->language->default);
+        $this->assertEquals(25, $flex->rules->pageSize);
+        $this->assertEquals([], $flex->rules->sections);
+    }
+
+    /**
      * Create a more complex ledger and test parent links
      *
      * @return void

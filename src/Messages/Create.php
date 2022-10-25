@@ -5,7 +5,6 @@ namespace Abivia\Ledger\Messages;
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Merge;
 use Abivia\Ledger\Helpers\Package;
-use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Root\Rules\Section;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\App;
@@ -236,7 +235,7 @@ class Create extends Message
                 $create->transDate = new Carbon($data['date']);
             }
             // Convert the array into a stdClass
-            $ruleArray = $data['rules'] ?? [];
+            $ruleArray = $data['rules'] ?? (object)[];
             $create->rules = json_decode(json_encode($ruleArray));
         }
         catch (TypeError $exception) {
