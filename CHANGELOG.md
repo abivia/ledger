@@ -1,7 +1,17 @@
+## 1.8.1
+
+### Changes:
+- Added new LedgerAccountTest::testCreateNoRules to catch missing pageSize
+and missing ledger rules errors.
+
+### Bugs:
+- If no default page size was set, account/query would return an error (thanks @lewrw!).
+- If no rules were specified on ledger creation, an error resulted.
+ 
 ## 1.8.0
 
 ### Changes:
-- Ability to add or limit reports via config (thanks @ivanmazep!)
+- Ability to add or limit reports via config (thanks @ivanmazep!).
 - Implementation of report options on API requests. Trial balance report can now limit how
 many levels of subaccount detail are returned; application can limit max depth.
 - Converted some exceptions to throw a Breaker instead. Added CONFIG_ERROR
