@@ -50,7 +50,7 @@ class LedgerRules implements Hydratable
     /**
      * @var int Default page size for paginated requests.
      */
-    public int $pageSize = 100;
+    public int $pageSize = 25;
 
     /**
      * @var Section[] Reporting section definitions.

@@ -64,8 +64,11 @@ class AccountQuery extends Message {
     {
         // Limit results on API calls
         if ($opFlags & self::F_API) {
-            if (!isset($this->limit)) {
-                $this->limit = LedgerAccount::rules()->pageSize;
+            $limit = LedgerAccount::rules()->pageSize;
+            if (isset($this->limit)) {
+                $this->limit = min($this->limit, $limit);
+            } else {
+                $this->limit = $limit;
             }
         }
         return $this;
