@@ -58,6 +58,22 @@ class TrialBalanceReportTest extends TestCaseWithMigrations
     }
 
     /**
+     * Regression test for GitHub issue #9.
+     *
+     * @return ReportData
+     * @throws \Abivia\Ledger\Exceptions\Breaker
+     */
+    public function testCollectEmptyJournal()
+    {
+        $this->createLedger(['template']);
+        $request = $this->getRequest();
+        $report = new TrialBalanceReport();
+        $reportData = $report->collect($request);
+        $this->assertCount(1, $reportData->accounts);
+        return $reportData;
+    }
+
+    /**
      * @depends testCollect
      * @return void
      */

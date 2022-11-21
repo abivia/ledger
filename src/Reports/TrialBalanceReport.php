@@ -52,7 +52,7 @@ class TrialBalanceReport extends AbstractReport
 
         $reportData = new ReportData();
         $reportData->request = $message;
-        $reportData->journalEntryId = JournalEntry::query()->max('journalEntryId');
+        $reportData->journalEntryId = JournalEntry::query()->max('journalEntryId') ?? 0;
 
         // Grab the table names
         $detailTable = (new JournalDetail)->getTable();
