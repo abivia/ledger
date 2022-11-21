@@ -25,7 +25,7 @@ class Entry extends Message
         ['clearing', self::OP_ADD | self::OP_UPDATE],
         ['currency', self::OP_ADD],
         ['description', self::OP_ADD | self::OP_UPDATE],
-        [['descriptionArgs', 'arguments'], self::OP_ADD | self::OP_UPDATE],
+        [['arguments', 'descriptionArgs'], self::OP_ADD | self::OP_UPDATE],
         //['domain', self::OP_ADD],
         ['extra', self::OP_ADD | self::OP_UPDATE],
         ['id', self::OP_DELETE | self::OP_GET | self::OP_LOCK | self::OP_UPDATE],

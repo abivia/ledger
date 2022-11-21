@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * Line item in a journal entry.
  *
+ * @property LedgerAccount $account linked account
  * @property string $amount The detail amount as a BCD string.
  * @property LedgerBalance[] $balances Balance records for this detail.
  * @property int $journalDetailId Primary key.

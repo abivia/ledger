@@ -175,6 +175,45 @@ class JournalEntryTest extends TestCaseWithMigrations
         }
     }
 
+    public function testAddNamedArguments()
+    {
+        // First we need a ledger
+        $response = $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
+
+        $this->isSuccessful($response, 'ledger');
+
+        // Add a transaction, sales to A/R
+        $requestData = [
+            'currency' => 'CAD',
+            'description' => 'Sold the :product!',
+            'descriptionArgs' => [
+                'product' => 'widget',
+            ],
+            'date' => '2021-11-12',
+            'details' => [
+                [
+                    'code' => '1310',
+                    'debit' => '520.71'
+                ],
+                [
+                    'code' => '4110',
+                    'credit' => '520.71'
+                ],
+            ]
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/entry/add', $requestData
+        );
+        $actual = $this->isSuccessful($response);
+        $this->hasRevisionElements($actual->entry);
+
+        // Check that we really did do everything that was supposed to be done.
+        $journalEntry = JournalEntry::find($actual->entry->id);
+        $this->assertNotNull($journalEntry);
+        $this->assertEquals($requestData['description'], $journalEntry->description);
+        $this->assertEquals($requestData['descriptionArgs'], $journalEntry->arguments);
+    }
+
     public function testAddClearing()
     {
         // First we need a ledger
