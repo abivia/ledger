@@ -1,3 +1,13 @@
+## 1.8.2
+
+### Bugs:
+- Description arguments in Entry messages were not correctly handled.
+- Running a trial balance report on an empty journal generated an error. Thanks to @RoNDz for
+finding this (Issue #9).
+
+### Changes:
+- New test case for Issue 9.
+
 ## 1.8.1
 
 ### Changes:

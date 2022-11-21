@@ -28,6 +28,11 @@ That's the only minimal part. Ledger features:
 
 Full documentation is available [here](https://ledger.abivia.com/).
 
+## Updates and Chat
+
+We've moved from Twitter to [Mastodon](https://fosstodon.org/@abivia). Come join us!
+
+
 ## Quick start
 
 ### Installation and Configuration
