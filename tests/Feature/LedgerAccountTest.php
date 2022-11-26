@@ -123,6 +123,52 @@ class LedgerAccountTest extends TestCaseWithMigrations
         $this->validateResponse($actual, 'entry-response');
     }
 
+    public function testAddBadName()
+    {
+        // First we need a ledger
+        $this->createLedger();
+
+        // Add an account
+        $requestData = [
+            'code' => '1010',
+            'parent' => [
+                'code' => '1000',
+            ],
+            'name' => 'Cash in Bank',
+            'names' => [
+                [
+                    'name' => 'Cash Stash',
+                    'language' => 'en-YO',
+                ]
+            ],
+            "debit" => true,
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/account/add', $requestData
+        );
+        $actual = $this->isSuccessful($response);
+
+        // Try adding an account with the same name in en-Yo
+        $requestData = [
+            'code' => '1020',
+            'parent' => [
+                'code' => '1000',
+            ],
+            'name' => 'Cash near the Bank',
+            'names' => [
+                [
+                    'name' => 'Cash Stash',
+                    'language' => 'en-YO',
+                ]
+            ],
+            "debit" => true,
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/account/add', $requestData
+        );
+        $actual = $this->isFailure($response);
+    }
+
     public function testAddDuplicate()
     {
         // First we need a ledger
@@ -787,6 +833,32 @@ class LedgerAccountTest extends TestCaseWithMigrations
         );
         $result = $this->isSuccessful($response);
         $this->assertCount(2, $result->account->names);
+    }
+
+    public function testUpdateBadName()
+    {
+        // First we need a ledger
+        $this->createLedger();
+
+        // Add some accounts
+        $account1010 = $this->addAccount('1010', '1000', true);
+        $account1020 = $this->addAccount('1020', '1000', true);
+
+        // Try giving the second account the same name as the first
+        $requestData = [
+            'revision' => $account1010->account->revision,
+            'code' => '1010',
+            'names' => [
+                [
+                    'name' => "Account 1020 with parent 1000",
+                    'language' => 'en',
+                ]
+            ]
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/account/update', $requestData
+        );
+        $result = $this->isFailure($response);
     }
 
     public function testUpdateCode()

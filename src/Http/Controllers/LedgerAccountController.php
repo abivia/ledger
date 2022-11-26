@@ -19,6 +19,7 @@ use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Traits\Audited;
 use Abivia\Ledger\Traits\ControllerResultHandler;
 use Exception;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use stdClass;
@@ -363,20 +364,29 @@ class LedgerAccountController extends Controller
      * @param LedgerAccount $ledgerAccount
      * @param Account $message
      * @return void
+     * @throws Breaker
      */
     protected function updateNames(LedgerAccount $ledgerAccount, Account $message)
     {
         foreach ($message->names as $name) {
-            /** @var LedgerName $ledgerName */
-            /** @noinspection PhpUndefinedMethodInspection */
-            $ledgerName = $ledgerAccount->names->firstWhere('language', $name->language);
-            if ($ledgerName === null) {
-                $ledgerName = new LedgerName();
-                $ledgerName->ownerUuid = $ledgerAccount->ledgerUuid;
-                $ledgerName->language = $name->language;
+            // Check for duplicate names in other Ledger accounts
+            $dupCount = LedgerAccount::where('ledgerUuid', '!=', $ledgerAccount->ledgerUuid)
+                ->whereHas('names', function (Builder $query) use ($name) {
+                    $query->where('language', $name->language)
+                        ->where('name', $name->name);
+                })
+                ->count();
+            if ($dupCount !== 0) {
+                throw Breaker::withCode(
+                    Breaker::RULE_VIOLATION,
+                    __(
+                        "An account with the same name already exists for account"
+                        . " :code in language :language",
+                        ['code' => $ledgerAccount->code, 'language' => $name->language]
+                    )
+                );
             }
-            $ledgerName->name = $name->name;
-            $ledgerName->save();
+            $name->applyTo($ledgerAccount);
         }
     }
 

@@ -74,6 +74,42 @@ class LedgerDomainTest extends TestCaseWithMigrations
         $this->assertEquals('CAD', $actual->domain->currency);
     }
 
+    public function testAddBadName()
+    {
+        //Create a ledger
+        $this->createLedger();
+
+        // Add a domain
+        $response = $this->json(
+            'post', 'api/ledger/domain/add', $this->baseRequest
+        );
+        // Now try to add a different domain with the same name
+        $badRequest = [
+            'code' => 'BAD',
+            'names' => [
+                [
+                    'name' => 'This is ok',
+                    'language' => 'en'
+                ],
+                [
+                    // This is an error
+                    'name' => 'Nerds',
+                    'language' => 'en-JOCK'
+                ],
+                [
+                    // Also an error
+                    'name' => 'la machination',
+                    'language' => 'fr'
+                ],
+            ],
+            'currency' => 'CAD'
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/domain/add', $badRequest
+        );
+        $actual = $this->isFailure($response);
+    }
+
     public function testAddDuplicate()
     {
         // First we need a ledger
@@ -199,6 +235,54 @@ class LedgerDomainTest extends TestCaseWithMigrations
         // Make sure the default domain has been updated
         $rules = LedgerAccount::rules();
         $this->assertEquals(Create::DEFAULT_DOMAIN, $rules->domain->default);
+    }
+
+    public function testUpdateBadName()
+    {
+        //Create a ledger
+        $this->createLedger();
+
+        // Add a domain
+        $this->json(
+            'post', 'api/ledger/domain/add', $this->baseRequest
+        );
+
+        // Add a new domain
+        $badRequest = [
+            'code' => 'DUP',
+            'names' => [
+                [
+                    'name' => 'This is ok',
+                    'language' => 'en'
+                ],
+                [
+                    'name' => 'Misbehaving Nerds',
+                    'language' => 'en-JOCK'
+                ],
+            ],
+            'currency' => 'CAD'
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/domain/add', $badRequest
+        );
+        $actual = $this->isSuccessful($response);
+
+        // Now try to set the en-JOCK name of the second domain to that of the first
+        $requestData = [
+            'revision' => $actual->domain->revision,
+            'code' => 'DUP',
+            'names' => [
+                [
+                    'name' => 'Nerds',
+                    'language' => 'en-JOCK'
+                ],
+            ],
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/domain/update', $requestData
+        );
+        $this->isFailure($response);
+
     }
 
     public function testUpdateNameDelete()

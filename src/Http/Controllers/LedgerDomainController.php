@@ -14,6 +14,7 @@ use Abivia\Ledger\Messages\Domain;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Traits\Audited;
 use Exception;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -54,10 +55,7 @@ class LedgerDomainController extends Controller
             $inTransaction = true;
             $ledgerDomain = LedgerDomain::createFromMessage($message);
             // Create the name records
-            foreach ($message->names as $name) {
-                $name->ownerUuid = $ledgerDomain->domainUuid;
-                LedgerName::createFromMessage($name);
-            }
+            $this->updateNames($ledgerDomain, $message);
             DB::commit();
             //$ledgerDomain->refresh();
             $inTransaction = false;
@@ -249,8 +247,23 @@ class LedgerDomainController extends Controller
      */
     protected function updateNames(LedgerDomain $ledgerDomain, Domain $message)
     {
-        /** @var Name $name */
         foreach ($message->names as $name) {
+            $dupCount = LedgerDomain::where('domainUuid', '!=', $ledgerDomain->domainUuid)
+                ->whereHas('names', function (Builder $query) use ($name) {
+                    $query->where('language', $name->language)
+                        ->where('name', $name->name);
+                })
+                ->count();
+            if ($dupCount !== 0) {
+                throw Breaker::withCode(
+                    Breaker::RULE_VIOLATION,
+                    __(
+                        "A domain with the same name already exists for account"
+                        . " :code in language :language",
+                        ['code' => $ledgerDomain->code, 'language' => $name->language]
+                    )
+                );
+            }
             $name->applyTo($ledgerDomain);
         }
     }

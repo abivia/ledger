@@ -33,7 +33,7 @@ class AddController extends LedgerAccountController
         $this->errors = [];
         try {
             $this->validateContext($message);
-            // check for duplicate
+            // Check for duplicate account code
             /** @noinspection PhpDynamicAsStaticMethodCallInspection */
             if (LedgerAccount::where('code', $message->code)->first() !== null) {
                 throw Breaker::withCode(
@@ -45,10 +45,7 @@ class AddController extends LedgerAccountController
             $inTransaction = true;
             $ledgerAccount = LedgerAccount::createFromMessage($message);
             // Create the name records
-            foreach ($message->names as $name) {
-                $name->ownerUuid = $ledgerAccount->ledgerUuid;
-                LedgerName::createFromMessage($name);
-            }
+            $this->updateNames($ledgerAccount, $message);
             DB::commit();
             $ledgerAccount->refresh();
             $inTransaction = false;

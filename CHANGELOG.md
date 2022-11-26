@@ -1,3 +1,12 @@
+## 1.8.3
+
+### Bugs:
+- It was possible to give two ledger accounts the same name in the same language.
+- It was possible to give two ledger domains the same name in the same language.
+
+### Changes:
+- Updated tests to catch the duplicate naming problem.
+
 ## 1.8.2
 
 ### Bugs:
