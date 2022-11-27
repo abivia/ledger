@@ -421,7 +421,7 @@ class RootController extends LedgerAccountController
             }
         }
         // Validate or set the default domain
-        $defaultDomain = LedgerAccount::rules()->domain->default ?? null;
+        $defaultDomain = LedgerAccount::rules(required: false)->domain->default ?? null;
         if ($defaultDomain !== null) {
             if (!isset($this->domains[$defaultDomain])) {
                 throw Breaker::withCode(
@@ -555,8 +555,9 @@ class RootController extends LedgerAccountController
             }
             foreach ($template['accounts'] as $account) {
                 try {
+                    // Pass OP_CREATE because we're in the boot process
                     $message = Account::fromArray(
-                        $account, Message::OP_ADD | Message::F_VALIDATE
+                        $account, Message::OP_ADD | Message::OP_CREATE | Message::F_VALIDATE
                     );
                 } catch (Breaker $exception) {
                     $errors = $exception->getErrors();
