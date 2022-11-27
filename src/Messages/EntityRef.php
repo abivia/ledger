@@ -57,7 +57,8 @@ class EntityRef extends Message
         $entityRef = new static();
         $entityRef->copy($data, $opFlags);
         if ($opFlags & self::F_VALIDATE) {
-            $codeFormat = LedgerAccount::rules()->account->codeFormat ?? '';
+            $codeFormat = LedgerAccount::rules($opFlags & self::OP_CREATE)
+                ->account->codeFormat ?? '';
             $entityRef->validate($opFlags, $codeFormat);
         }
 

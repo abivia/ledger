@@ -43,7 +43,8 @@ class ReportApiController
             $this->dbException($exception);
             $response['errors'] = $this->errors;
         } catch (Exception $exception) {
-            $this->unexpectedException($exception);
+            $response['errors'] = $this->errors;
+            $response['errors'][] = $this->unexpectedException($exception);
         }
         $response['time'] = new Carbon();
 

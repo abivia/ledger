@@ -102,7 +102,7 @@ class Report extends Message
         } else {
             $this->options['language'] = [];
         }
-        $fallback = LedgerAccount::rules()->language->default;
+        $fallback = $rules->language->default;
         if (!in_array($fallback, $this->options['language'])) {
             $this->options['language'][] = $fallback;
         }

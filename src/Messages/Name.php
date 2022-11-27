@@ -4,7 +4,6 @@ namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Models\LedgerAccount;
-use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Models\LedgerName;
 use Illuminate\Database\Eloquent\Model;
 
@@ -107,7 +106,10 @@ class Name extends Message
                 Breaker::RULE_VIOLATION, [__("Must include name property.")]
             );
         }
-        $this->language ??= LedgerAccount::rules($opFlags & Message::OP_CREATE)->language->default;
+        $rules = LedgerAccount::rules(
+            bootable: $opFlags & self::OP_CREATE
+        );
+        $this->language ??= $rules->language->default;
         if ($this->language === '') {
             throw Breaker::withCode(
                 Breaker::RULE_VIOLATION, [__("Language cannot be empty.")]
@@ -116,7 +118,7 @@ class Name extends Message
         // If the name is empty here, then this is an update.
         if (
             $this->name === ''
-            && $this->language === LedgerAccount::rules()->language->default
+            && $this->language === $rules->language->default
         ) {
             throw Breaker::withCode(
                 Breaker::RULE_VIOLATION,

@@ -34,7 +34,8 @@ class RootApiController
         } catch (QueryException $exception) {
             $this->dbException($exception);
         } catch (Exception $exception) {
-            $this->unexpectedException($exception);
+            $response['errors'] = $this->errors;
+            $response['errors'][] = $this->unexpectedException($exception);
         }
 
         if (count($this->errors)) {
