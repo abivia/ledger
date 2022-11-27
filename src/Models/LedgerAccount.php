@@ -121,15 +121,6 @@ class LedgerAccount extends Model
         return $this->hasMany(LedgerBalance::class, 'ledgerUuid', 'ledgerUuid');
     }
 
-    /**
-     * Initialize rules from a default rule set.
-     * @return void
-     */
-    private static function baseRuleSet(): void
-    {
-        self::$bootRules = new LedgerRules();
-    }
-
     public static function createFromMessage(Account $message): self
     {
         $instance = new static();
@@ -220,6 +211,18 @@ class LedgerAccount extends Model
     }
 
     /**
+     * Throw a missing root error.
+     * @return void
+     * @throws Breaker
+     */
+    private static function noRootError(): void
+    {
+        throw Breaker::withCode(
+            Breaker::RULE_VIOLATION, __('Ledger has not been initialized.')
+        );
+    }
+
+    /**
      * Get the path to the root for an account, optionally checking for an external
      * circular reference.
      *
@@ -289,7 +292,7 @@ class LedgerAccount extends Model
         self::$root = null;
         self::loadRoot();
         if (self::$root === null) {
-            self::baseRuleSet();
+            self::$bootRules = new LedgerRules();
             return self::$bootRules;
         }
 
@@ -299,14 +302,14 @@ class LedgerAccount extends Model
     /**
      * Get the ledger root singleton, loading it if required.
      *
-     * @throws Exception If there is no root.
+     * @throws Breaker If there is no root.
      */
     public static function root(): LedgerAccount
     {
         if (self::$root === null) {
             self::loadRoot();
             if (self::$root === null) {
-                throw new Exception(__('Ledger root is not defined.'));
+                self::noRootError();
             }
         }
 
@@ -316,24 +319,32 @@ class LedgerAccount extends Model
     /**
      * Get the current rule set. During ledger creation, this is a set of bootstrap rules.
      *
-     * @param bool $bootable
+     * @param bool $bootable True if a base rule set should be returned if no root exists.
+     * @param bool $required True if a root rule set must exist (throws Breaker instead of
+     * returning null).
      * @return LedgerRules|null
+     * @throws Breaker
      */
-    public static function rules(bool $bootable = false): ?LedgerRules
+    public static function rules(bool $bootable = false, bool $required = true): ?LedgerRules
     {
         if (self::$root === null) {
             self::loadRoot();
             if (self::$root === null) {
                 if (!$bootable) {
+                    if ($required) {
+                        self::noRootError();
+                    }
                     return null;
                 }
-                if (!isset(self::$bootRules)) {
-                    self::baseRuleSet();
-                }
+                self::$bootRules ??= new LedgerRules();
                 return self::$bootRules;
             }
         }
-        return self::$root->flex->rules;
+        $rules = self::$root->flex->rules;
+        if ($rules === null) {
+            self::noRootError();
+        }
+        return $rules;
     }
 
     /**
@@ -373,7 +384,7 @@ class LedgerAccount extends Model
             self::loadRoot();
             if (self::$root === null) {
                 if (!isset(self::$bootRules)) {
-                    self::baseRuleSet();
+                    self::$bootRules = new LedgerRules();
                 }
                 Merge::objects(self::$bootRules, $data);
                 return self::$bootRules;
