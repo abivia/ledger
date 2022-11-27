@@ -46,6 +46,7 @@ class LedgerAccountTest extends TestCaseWithMigrations
     public function setUp(): void
     {
         parent::setUp();
+        LedgerAccount::resetRules();
         self::$expectContent = 'account';
     }
 
@@ -196,6 +197,29 @@ class LedgerAccountTest extends TestCaseWithMigrations
         );
         $actual = $this->isFailure($response);
         //print_r($actual);
+    }
+
+    public function testAddNoLedger()
+    {
+        // Add an account
+        $requestData = [
+            'code' => '1010',
+            'parent' => [
+                'code' => '1000',
+            ],
+            'name' => 'Cash in Bank',
+            'names' => [
+                [
+                    'name' => 'Cash Stash',
+                    'language' => 'en-YO',
+                ]
+            ],
+            "debit" => true,
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/account/add', $requestData
+        );
+        $actual = $this->isFailure($response);
     }
 
     public function testAddToEmpty()

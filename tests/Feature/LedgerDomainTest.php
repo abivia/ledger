@@ -43,6 +43,7 @@ class LedgerDomainTest extends TestCaseWithMigrations
     public function setUp(): void
     {
         parent::setUp();
+        LedgerAccount::resetRules();
         self::$expectContent = 'domain';
     }
 
@@ -124,6 +125,15 @@ class LedgerDomainTest extends TestCaseWithMigrations
             'post', 'api/ledger/domain/add', $this->baseRequest
         );
         $this->isFailure($response);
+    }
+
+    public function testAddNoLedger()
+    {
+        // Add a domain
+        $response = $this->json(
+            'post', 'api/ledger/domain/add', $this->baseRequest
+        );
+        $actual = $this->isFailure($response);
     }
 
     public function testDelete()

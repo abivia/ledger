@@ -8,6 +8,7 @@ use Abivia\Ledger\Http\Controllers\JournalEntryController;
 use Abivia\Ledger\Messages\EntryQuery;
 use Abivia\Ledger\Messages\Reference;
 use Abivia\Ledger\Messages\Message;
+use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Abivia\Ledger\Tests\ValidatesJson;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -30,6 +31,7 @@ class JournalEntryQueryReferenceTest extends TestCaseWithMigrations
     public function setUp(): void
     {
         parent::setUp();
+        LedgerAccount::resetRules();
         self::$expectContent = 'entries';
         // Create a ledger and a set of transactions.
         $this->createLedger(

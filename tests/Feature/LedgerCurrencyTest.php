@@ -3,6 +3,7 @@
 namespace Abivia\Ledger\Tests\Feature;
 
 
+use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Abivia\Ledger\Tests\ValidatesJson;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,6 +21,7 @@ class LedgerCurrencyTest extends TestCaseWithMigrations
     public function setUp(): void
     {
         parent::setUp();
+        LedgerAccount::resetRules();
         self::$expectContent = 'currency';
     }
 
@@ -53,6 +55,19 @@ class LedgerCurrencyTest extends TestCaseWithMigrations
         $this->hasAttributes(['code', 'decimals'], $actual->currency);
         $this->assertEquals('FUD', $actual->currency->code);
         $this->assertEquals(4, $actual->currency->decimals);
+    }
+
+    public function testAddNoLedger()
+    {
+        // Add a currency
+        $requestData = [
+            'code' => 'fud',
+            'decimals' => 4
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/currency/add', $requestData
+        );
+        $actual = $this->isFailure($response);
     }
 
     public function testAddDuplicate()

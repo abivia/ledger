@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Abivia\Ledger\Tests\Feature;
 
+use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Abivia\Ledger\Tests\ValidatesJson;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -31,6 +32,7 @@ class JournalReferenceTest extends TestCaseWithMigrations
     public function setUp(): void
     {
         parent::setUp();
+        LedgerAccount::resetRules();
         self::$expectContent = 'reference';
         $this->baseRequest['extra'] = json_encode($this->baseRequest['extra']);
     }
@@ -76,6 +78,15 @@ class JournalReferenceTest extends TestCaseWithMigrations
             'post', 'api/ledger/reference/add', $this->baseRequest
         );
         $this->isFailure($response);
+    }
+
+    public function testAddNoLedger()
+    {
+        // Add a domain
+        $response = $this->json(
+            'post', 'api/ledger/reference/add', $this->baseRequest
+        );
+        $actual = $this->isFailure($response);
     }
 
     public function testDelete()

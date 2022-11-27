@@ -37,6 +37,7 @@ class JournalEntryQueryTest extends TestCaseWithMigrations
     public function setUp(): void
     {
         parent::setUp();
+        LedgerAccount::resetRules();
         self::$expectContent = 'entries';
         // Create a ledger and a set of transactions.
         $this->createLedger(

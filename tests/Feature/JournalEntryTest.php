@@ -48,21 +48,7 @@ class JournalEntryTest extends TestCaseWithMigrations
     protected function addSalesTransaction()
     {
         // Add a transaction, sales to A/R
-        $requestData = [
-            'currency' => 'CAD',
-            'description' => 'Sold the first thing!',
-            'date' => '2021-11-12',
-            'details' => [
-                [
-                    'code' => '1310',
-                    'debit' => '520.71'
-                ],
-                [
-                    'code' => '4110',
-                    'credit' => '520.71'
-                ],
-            ]
-        ];
+        $requestData = $this->getSalesTransaction('520.71');
         $response = $this->json(
             'post', 'api/ledger/entry/add', $requestData
         );
@@ -128,9 +114,30 @@ class JournalEntryTest extends TestCaseWithMigrations
         ];
     }
 
+    protected function getSalesTransaction(string $amount): array
+    {
+        // Add a transaction, sales to A/R
+        return [
+            'currency' => 'CAD',
+            'description' => 'Sold the first thing!',
+            'date' => '2021-11-12',
+            'details' => [
+                [
+                    'code' => '1310',
+                    'debit' => $amount
+                ],
+                [
+                    'code' => '4110',
+                    'credit' => $amount
+                ],
+            ]
+        ];
+    }
+
     public function setUp(): void
     {
         parent::setUp();
+        LedgerAccount::resetRules();
         self::$expectContent = 'entry';
     }
 
@@ -156,6 +163,7 @@ class JournalEntryTest extends TestCaseWithMigrations
         $ledgerDomain = LedgerDomain::find($journalEntry->domainUuid);
         $this->assertNotNull($ledgerDomain);
         $this->assertEquals('CORP', $ledgerDomain->code);
+        $this->assertNull($journalEntry->subJournalUuid);
 
         /** @var JournalDetail $detail */
         foreach ($journalEntry->details as $detail) {
@@ -175,50 +183,25 @@ class JournalEntryTest extends TestCaseWithMigrations
         }
     }
 
-    public function testAddNamedArguments()
+    public function testAddBadDomain()
     {
         // First we need a ledger
         $response = $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
-
         $this->isSuccessful($response, 'ledger');
 
-        // Add a transaction, sales to A/R
-        $requestData = [
-            'currency' => 'CAD',
-            'description' => 'Sold the :product!',
-            'descriptionArgs' => [
-                'product' => 'widget',
-            ],
-            'date' => '2021-11-12',
-            'details' => [
-                [
-                    'code' => '1310',
-                    'debit' => '520.71'
-                ],
-                [
-                    'code' => '4110',
-                    'credit' => '520.71'
-                ],
-            ]
-        ];
+        $requestData = $this->getSalesTransaction('600.00');
+        $requestData['domain'] = 'BOGUS';
         $response = $this->json(
             'post', 'api/ledger/entry/add', $requestData
         );
-        $actual = $this->isSuccessful($response);
-        $this->hasRevisionElements($actual->entry);
+        $this->isFailure($response);
 
-        // Check that we really did do everything that was supposed to be done.
-        $journalEntry = JournalEntry::find($actual->entry->id);
-        $this->assertNotNull($journalEntry);
-        $this->assertEquals($requestData['description'], $journalEntry->description);
-        $this->assertEquals($requestData['descriptionArgs'], $journalEntry->arguments);
     }
 
     public function testAddClearing()
     {
         // First we need a ledger
         $response = $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
-
         $this->isSuccessful($response, 'ledger');
 
         $requestData = $this->getClearingTransaction();
@@ -275,6 +258,51 @@ class JournalEntryTest extends TestCaseWithMigrations
         $response = $this->json(
             'post', 'api/ledger/entry/add', $requestData
         );
+        $actual = $this->isFailure($response);
+    }
+
+    public function testAddNamedArguments()
+    {
+        // First we need a ledger
+        $response = $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
+
+        $this->isSuccessful($response, 'ledger');
+
+        // Add a transaction, sales to A/R
+        $requestData = [
+            'currency' => 'CAD',
+            'description' => 'Sold the :product!',
+            'descriptionArgs' => [
+                'product' => 'widget',
+            ],
+            'date' => '2021-11-12',
+            'details' => [
+                [
+                    'code' => '1310',
+                    'debit' => '520.71'
+                ],
+                [
+                    'code' => '4110',
+                    'credit' => '520.71'
+                ],
+            ]
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/entry/add', $requestData
+        );
+        $actual = $this->isSuccessful($response);
+        $this->hasRevisionElements($actual->entry);
+
+        // Check that we really did do everything that was supposed to be done.
+        $journalEntry = JournalEntry::find($actual->entry->id);
+        $this->assertNotNull($journalEntry);
+        $this->assertEquals($requestData['description'], $journalEntry->description);
+        $this->assertEquals($requestData['descriptionArgs'], $journalEntry->arguments);
+    }
+
+    public function testAddNoLedger()
+    {
+        [$requestData, $response] = $this->addSalesTransaction();
         $actual = $this->isFailure($response);
     }
 
@@ -388,6 +416,74 @@ class JournalEntryTest extends TestCaseWithMigrations
         $detail = $journalEntry->details()->skip(1)->first();
         $this->assertEquals($ref->journalReferenceUuid, $detail->journalReferenceUuid);
 
+    }
+
+    public function testAddSubJournal()
+    {
+        // First we need a ledger
+        $response = $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
+        $this->isSuccessful($response, 'ledger');
+
+        // Add a sub-journal
+        $subJournalRequest = [
+            'code' => 'SJ',
+            'names' => [
+                [
+                    'name' => 'Sales Journal',
+                    'language' => 'en'
+                ]
+            ]
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/journal/add', $subJournalRequest
+        );
+        $this->isSuccessful($response, 'journal');
+
+
+        [$requestData, $response] = $this->addSalesTransaction();
+        $actual = $this->isSuccessful($response);
+
+        // Add the journal to the request and change the amounts
+        $requestData = $this->getSalesTransaction('600.00');
+        $requestData['journal'] = 'SJ';
+        $subResponse = $this->json(
+            'post', 'api/ledger/entry/add', $requestData
+        );
+        $subActual = $this->isSuccessful($subResponse);
+
+        // Check that the entries went to separate journals.
+        $journalEntry = JournalEntry::find($actual->entry->id);
+        $this->assertNotNull($journalEntry);
+        $subJournalEntry = JournalEntry::find($subActual->entry->id);
+        $this->assertNull($journalEntry->subJournalUuid);
+        $this->assertNotNull($subJournalEntry->subJournalUuid);
+
+        $ledgerDomain = LedgerDomain::find($journalEntry->domainUuid);
+
+        /** @var JournalDetail $detail */
+        foreach ($journalEntry->details as $detail) {
+            $ledgerAccount = LedgerAccount::find($detail->ledgerUuid);
+            $this->assertNotNull($ledgerAccount);
+            $ledgerBalance = LedgerBalance::where([
+                    ['ledgerUuid', '=', $detail->ledgerUuid],
+                    ['domainUuid', '=', $ledgerDomain->domainUuid],
+                    ['currency', '=', $journalEntry->currency]]
+            )->first();
+            $this->assertNotNull($ledgerBalance);
+            if ($ledgerAccount->code === '1310') {
+                $this->assertEquals('-1120.71', $ledgerBalance->balance);
+            } else {
+                $this->assertEquals('1120.71', $ledgerBalance->balance);
+            }
+        }
+
+        // Make sure the API returns the sub-journal
+        $fetchData = ['id' => $subJournalEntry->journalEntryId];
+        $subResponse = $this->json(
+            'post', 'api/ledger/entry/get', $fetchData
+        );
+        $subActual = $this->isSuccessful($subResponse);
+        $this->assertEquals('SJ', $subActual->entry->journal);
     }
 
     public function testAddUnbalanced()

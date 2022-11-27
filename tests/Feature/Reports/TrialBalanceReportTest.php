@@ -3,6 +3,7 @@
 namespace Abivia\Ledger\Tests\Feature\Reports;
 
 use Abivia\Ledger\Messages\Report;
+use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Models\ReportAccount;
 use Abivia\Ledger\Models\ReportData;
 use Abivia\Ledger\Reports\TrialBalanceReport;
@@ -43,6 +44,7 @@ class TrialBalanceReportTest extends TestCaseWithMigrations
     public function setUp(): void
     {
         parent::setUp();
+        LedgerAccount::resetRules();
         self::$expectContent = 'TBD';
     }
 

@@ -2,6 +2,7 @@
 
 namespace Abivia\Ledger\Tests\Feature;
 
+use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -16,6 +17,7 @@ class RootTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
+        LedgerAccount::resetRules();
         self::$expectContent = 'templates';
     }
 

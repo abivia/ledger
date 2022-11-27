@@ -3,6 +3,7 @@
 
 namespace Abivia\Ledger\Tests\Feature;
 
+use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Abivia\Ledger\Tests\ValidatesJson;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -31,6 +32,7 @@ class SubJournalTest extends TestCaseWithMigrations
     public function setUp(): void
     {
         parent::setUp();
+        LedgerAccount::resetRules();
         self::$expectContent = 'journal';
     }
 
@@ -77,6 +79,15 @@ class SubJournalTest extends TestCaseWithMigrations
             'post', 'api/ledger/journal/add', $this->baseRequest
         );
         $this->isFailure($response);
+    }
+
+    public function testAddNoLedger()
+    {
+        // Add a sub-journal
+        $response = $this->json(
+            'post', 'api/ledger/journal/add', $this->baseRequest
+        );
+        $actual = $this->isFailure($response);
     }
 
     public function testDelete()

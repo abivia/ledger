@@ -2,6 +2,7 @@
 
 namespace Abivia\Ledger\Tests\Feature;
 
+use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Abivia\Ledger\Tests\ValidatesJson;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -19,6 +20,7 @@ class LedgerAccountQueryTest extends TestCaseWithMigrations
     public function setUp(): void
     {
         parent::setUp();
+        LedgerAccount::resetRules();
         self::$expectContent = 'accounts';
     }
 
@@ -51,6 +53,18 @@ class LedgerAccountQueryTest extends TestCaseWithMigrations
         $this->assertEquals(7, $pages);
         $this->assertEquals(139, $totalAccounts);
         //print_r($accounts[0]);
+    }
+
+    public function testGetNoLedger()
+    {
+        // Query for everything, paginated
+        $requestData = [
+            'limit' => 20,
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/account/query', $requestData
+        );
+        $actual = $this->isFailure($response);
     }
 
 }

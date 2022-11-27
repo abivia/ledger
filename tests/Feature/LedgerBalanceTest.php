@@ -22,6 +22,7 @@ class LedgerBalanceTest extends TestCaseWithMigrations
     public function setUp(): void
     {
         parent::setUp();
+        LedgerAccount::resetRules();
         self::$expectContent = 'balance';
     }
 

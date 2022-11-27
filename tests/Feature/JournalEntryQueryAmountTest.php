@@ -11,6 +11,7 @@ use Abivia\Ledger\Messages\EntityRef;
 use Abivia\Ledger\Messages\Entry;
 use Abivia\Ledger\Messages\EntryQuery;
 use Abivia\Ledger\Messages\Message;
+use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Abivia\Ledger\Tests\ValidatesJson;
 use Carbon\Carbon;
@@ -36,6 +37,7 @@ class JournalEntryQueryAmountTest extends TestCaseWithMigrations
     public function setUp(): void
     {
         parent::setUp();
+        LedgerAccount::resetRules();
         self::$expectContent = 'entries';
         // Create a ledger and a set of transactions.
         $this->createLedger(
