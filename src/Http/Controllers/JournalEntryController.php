@@ -393,6 +393,12 @@ class JournalEntryController extends Controller
             if ($subJournal === null) {
                 $errors[] = __('Journal :code not found.', ['code' => $message->journal->code]);
             }
+            $message->journal->uuid = $subJournal->subJournalUuid;
+        }
+
+        if ($this->ledgerDomain === null && count($errors) !== 0) {
+            // Without the currency there is no point in going further.
+            throw Breaker::withCode(Breaker::RULE_VIOLATION, $errors);
         }
 
         // Normalize the amounts and check for balance
