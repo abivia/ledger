@@ -18,7 +18,7 @@ class NameTest extends TestCase
             [
                 'name' => 'In English', 'language' => 'en',
             ],
-            Message::OP_ADD | Message::F_VALIDATE
+            Message::OP_ADD
         );
         $this->assertEquals('en', $name->language);
         $this->assertEquals('In English', $name->name);
@@ -54,7 +54,7 @@ class NameTest extends TestCase
             ['name' => 'en francais', 'language' => 'fr'],
         ];
         $names = Name::fromRequestList(
-            $source, Message::OP_ADD | Message::F_VALIDATE, 1
+            $source, Message::OP_ADD, 1
         );
         $this->assertCount(2, $names);
         foreach ($source as $name) {
@@ -65,7 +65,7 @@ class NameTest extends TestCase
         }
         try {
             Name::fromRequestList(
-                $source, Message::OP_ADD | Message::F_VALIDATE, 3
+                $source, Message::OP_ADD, 3
             );
             $this->fail('Did not see expected exception.');
         } catch (Breaker $exception) {
