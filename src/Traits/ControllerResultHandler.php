@@ -38,12 +38,13 @@ trait ControllerResultHandler
             );
     }
 
-    protected function unexpectedException(Exception $exception): void
+    protected function unexpectedException(Exception $exception): string
     {
         $this->errors[] = $exception->getMessage() . ' at '
             . $exception->getFile() . ':' . $exception->getLine();
         Log::channel(env('LEDGER_LOG_CHANNEL', 'stack'))
             ->critical('Unexpected exception', ['errors' => $this->errors]);
+        return __('An unexpected error has occurred. Check the audit log for details.');
     }
 
     protected function warning(Exception $exception)
