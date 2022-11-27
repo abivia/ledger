@@ -10,7 +10,6 @@ use Abivia\Ledger\Http\Controllers\LedgerAccount\AddController;
 use Abivia\Ledger\Http\Controllers\LedgerAccount\RootController;
 use Abivia\Ledger\Logic\AccountLogic;
 use Abivia\Ledger\Models\LedgerAccount;
-use Abivia\Ledger\Models\LedgerName;
 use Abivia\Ledger\Messages\Account;
 use Abivia\Ledger\Messages\Create;
 use Abivia\Ledger\Messages\EntityRef;
