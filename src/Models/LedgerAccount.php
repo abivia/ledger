@@ -193,9 +193,14 @@ class LedgerAccount extends Model
 
     public static function loadRoot(): void
     {
-        self::$root = LedgerAccount::with('names')
-            ->where('code', '')
-            ->first();
+        try {
+            self::$root = LedgerAccount::with('names')
+                ->where('code', '')
+                ->first();
+        } catch (Exception $ex) {
+            // Pathological case where the table doesn't exist yet.
+            self::$root = null;
+        }
     }
 
     public function matchesEntity(EntityRef $ref): bool
