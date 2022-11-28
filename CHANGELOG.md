@@ -1,3 +1,17 @@
+## 1.9.0
+
+### Bugs
+- [Issue 10](https://github.com/abivia/ledger/issues/10) exposed several cases where performing operations
+before the ledger was created resulted in confusing responses instead of an error.
+- [Issue 12](https://github.com/abivia/ledger/issues/12) The sub-journal was bing validated byt not stored
+in the journal entry.
+
+### Changes
+- ControllerResultHandler::unexpectedException() returns a generic error string suitable for
+returning to an API call, instead of void.
+- LedgerAccount::rules() has a new `required` argument that will throw a Breaker instead of
+returning null. It defaults to true.
+
 ## 1.8.3
 
 ### Bugs:
