@@ -25,7 +25,7 @@ class LedgerAccountQueryTest extends TestCaseWithMigrations
             $requestData,
             'accountquery-response',
             'accounts',
-            function(&$requestData, $resources) {
+            function (&$requestData, $resources) {
                 $requestData['after'] = ['code' => end($resources)->code];
             }
         );
@@ -50,7 +50,7 @@ class LedgerAccountQueryTest extends TestCaseWithMigrations
         ];
         [$pages, $totalAccounts] = $this->getPagedAccounts($requestData);
         $actualAccounts = LedgerAccount::count();
-        $expectedPages = intdiv($actualAccounts + $requestData['limit'] - 1, $requestData['limit']);
+        $expectedPages = (int)ceil(($actualAccounts + 1) / $requestData['limit']);
         $this->assertEquals($expectedPages, $pages);
         $this->assertEquals($actualAccounts, $totalAccounts);
         //print_r($accounts[0]);
@@ -81,7 +81,7 @@ class LedgerAccountQueryTest extends TestCaseWithMigrations
         [$pages, $totalAccounts] = $this->getPagedAccounts($requestData);
         $actualAccounts = LedgerAccount::where('code', '<=', '1999')
             ->count();
-        $expectedPages = intdiv($actualAccounts + $requestData['limit'] - 1, $requestData['limit']);
+        $expectedPages = (int)ceil(($actualAccounts + 1) / $requestData['limit']);
         $this->assertEquals($expectedPages, $pages);
         $this->assertEquals($actualAccounts, $totalAccounts);
     }
@@ -99,7 +99,7 @@ class LedgerAccountQueryTest extends TestCaseWithMigrations
         [$pages, $totalAccounts] = $this->getPagedAccounts($requestData);
         $actualAccounts = LedgerAccount::where('code', '>=', '6000')
             ->count();
-        $expectedPages = intdiv($actualAccounts + $requestData['limit'] - 1, $requestData['limit']);
+        $expectedPages = (int)ceil(($actualAccounts + 1) / $requestData['limit']);
         $this->assertEquals($expectedPages, $pages);
         $this->assertEquals($actualAccounts, $totalAccounts);
     }
@@ -118,7 +118,7 @@ class LedgerAccountQueryTest extends TestCaseWithMigrations
         [$pages, $totalAccounts] = $this->getPagedAccounts($requestData);
         $actualAccounts = LedgerAccount::whereBetween('code', ['4000', '4999'])
             ->count();
-        $expectedPages = intdiv($actualAccounts + $requestData['limit'] - 1, $requestData['limit']);
+        $expectedPages = (int)ceil(($actualAccounts + 1) / $requestData['limit']);
         $this->assertEquals($expectedPages, $pages);
         $this->assertEquals($actualAccounts, $totalAccounts);
         //print_r($accounts[0]);
