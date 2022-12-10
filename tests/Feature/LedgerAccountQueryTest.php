@@ -14,8 +14,23 @@ class LedgerAccountQueryTest extends TestCaseWithMigrations
 {
     use CommonChecks;
     use CreateLedgerTrait;
+    use PageLoader;
     use RefreshDatabase;
     use ValidatesJson;
+
+    private function getPagedAccounts(array $requestData): array
+    {
+        return $this->getPages(
+            'api/ledger/account/query',
+            $requestData,
+            'accountquery-response',
+            'accounts',
+            function(&$requestData, $resources) {
+                $requestData['after'] = ['code' => end($resources)->code];
+            }
+        );
+
+    }
 
     public function setUp(): void
     {
@@ -24,38 +39,24 @@ class LedgerAccountQueryTest extends TestCaseWithMigrations
         self::$expectContent = 'accounts';
     }
 
-    public function testGet()
+    public function testQuery()
     {
         // First we need a ledger
         $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
 
         // Query for everything, paginated
-        $pages = 0;
-        $totalAccounts = 0;
         $requestData = [
             'limit' => 20,
         ];
-        while (1) {
-            $response = $this->json(
-                'post', 'api/ledger/account/query', $requestData
-            );
-            $actual = $this->isSuccessful($response);
-            // Check the response against our schema
-            $this->validateResponse($actual, 'accountquery-response');
-            $accounts = $actual->accounts;
-            ++$pages;
-            $totalAccounts += count($accounts);
-            if (count($accounts) !== 20) {
-                break;
-            }
-            $requestData['after'] = ['code' => end($accounts)->code];
-        }
-        $this->assertEquals(7, $pages);
-        $this->assertEquals(139, $totalAccounts);
+        [$pages, $totalAccounts] = $this->getPagedAccounts($requestData);
+        $actualAccounts = LedgerAccount::count();
+        $expectedPages = intdiv($actualAccounts + $requestData['limit'] - 1, $requestData['limit']);
+        $this->assertEquals($expectedPages, $pages);
+        $this->assertEquals($actualAccounts, $totalAccounts);
         //print_r($accounts[0]);
     }
 
-    public function testGetNoLedger()
+    public function testQueryNoLedger()
     {
         // Query for everything, paginated
         $requestData = [
@@ -65,6 +66,62 @@ class LedgerAccountQueryTest extends TestCaseWithMigrations
             'post', 'api/ledger/account/query', $requestData
         );
         $actual = $this->isFailure($response);
+    }
+
+    public function testQueryRangeOpenBegin()
+    {
+        // First we need a ledger
+        $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
+
+        // Query for income accounts, paginated
+        $requestData = [
+            'limit' => 20,
+            'rangeEnding' => '1999',
+        ];
+        [$pages, $totalAccounts] = $this->getPagedAccounts($requestData);
+        $actualAccounts = LedgerAccount::where('code', '<=', '1999')
+            ->count();
+        $expectedPages = intdiv($actualAccounts + $requestData['limit'] - 1, $requestData['limit']);
+        $this->assertEquals($expectedPages, $pages);
+        $this->assertEquals($actualAccounts, $totalAccounts);
+    }
+
+    public function testQueryRangeOpenEnd()
+    {
+        // First we need a ledger
+        $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
+
+        // Query for income accounts, paginated
+        $requestData = [
+            'limit' => 20,
+            'range' => '6000',
+        ];
+        [$pages, $totalAccounts] = $this->getPagedAccounts($requestData);
+        $actualAccounts = LedgerAccount::where('code', '>=', '6000')
+            ->count();
+        $expectedPages = intdiv($actualAccounts + $requestData['limit'] - 1, $requestData['limit']);
+        $this->assertEquals($expectedPages, $pages);
+        $this->assertEquals($actualAccounts, $totalAccounts);
+    }
+
+    public function testQueryRanged()
+    {
+        // First we need a ledger
+        $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
+
+        // Query for income accounts, paginated
+        $requestData = [
+            'limit' => 20,
+            'range' => '4000',
+            'rangeEnding' => '4999',
+        ];
+        [$pages, $totalAccounts] = $this->getPagedAccounts($requestData);
+        $actualAccounts = LedgerAccount::whereBetween('code', ['4000', '4999'])
+            ->count();
+        $expectedPages = intdiv($actualAccounts + $requestData['limit'] - 1, $requestData['limit']);
+        $this->assertEquals($expectedPages, $pages);
+        $this->assertEquals($actualAccounts, $totalAccounts);
+        //print_r($accounts[0]);
     }
 
 }
