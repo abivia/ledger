@@ -3,7 +3,10 @@
 namespace Abivia\Ledger\Tests\Feature;
 
 
+use Abivia\Ledger\Http\Controllers\LedgerCurrencyController;
+use Abivia\Ledger\Messages\Currency;
 use Abivia\Ledger\Models\LedgerAccount;
+use Abivia\Ledger\Models\LedgerCurrency;
 use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Abivia\Ledger\Tests\ValidatesJson;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,7 +19,33 @@ class LedgerCurrencyTest extends TestCaseWithMigrations
     use CommonChecks;
     use CreateLedgerTrait;
     use RefreshDatabase;
+    use PageLoader;
     use ValidatesJson;
+
+    private function createCurrencies()
+    {
+        $controller = new LedgerCurrencyController();
+        for ($id = 0; $id < 30; ++$id) {
+            $data = [
+                'code' => 'C' . str_pad($id, 2, '0', STR_PAD_LEFT),
+                'decimals' => 2
+            ];
+            $controller->add(Currency::fromArray($data));
+        }
+    }
+    private function getPagedCurrencies(array $requestData): array
+    {
+        return $this->getPages(
+            'api/ledger/currency/query',
+            $requestData,
+            'currencyquery-response',
+            'currencies',
+            function(&$requestData, $resources) {
+                $requestData['after'] = end($resources)->code;
+            }
+        );
+
+    }
 
     public function setUp(): void
     {
@@ -147,6 +176,25 @@ class LedgerCurrencyTest extends TestCaseWithMigrations
             'post', 'api/ledger/currency/get', $requestData
         );
         $this->isFailure($response);
+    }
+
+    public function testQuery()
+    {
+        // First we need a ledger
+        $this->createLedger();
+
+        // Add some test currencies
+        $this->createCurrencies();
+
+        // Query for everything, paginated
+        $requestData = [
+            'limit' => 20,
+        ];
+        [$pages, $totalAccounts] = $this->getPagedCurrencies($requestData);
+        $actualAccounts = LedgerCurrency::count();
+        $expectedPages = intdiv($actualAccounts + $requestData['limit'] - 1, $requestData['limit']);
+        $this->assertEquals($expectedPages, $pages);
+        $this->assertEquals($actualAccounts, $totalAccounts);
     }
 
     /**

@@ -5,6 +5,7 @@ namespace Abivia\Ledger\Http\Controllers\Api;
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Http\Controllers\LedgerCurrencyController;
 use Abivia\Ledger\Messages\Currency;
+use Abivia\Ledger\Messages\CurrencyQuery;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Traits\ControllerResultHandler;
 use Exception;
@@ -28,16 +29,25 @@ class LedgerCurrencyApiController
         $this->errors = [];
         $response = [];
         try {
-            $opFlag = Message::toOpFlags(
+            $opFlags = Message::toOpFlags(
                 $operation, ['add' => Message::F_API, 'disallow' => Message::OP_CREATE]
             );
-            $message = Currency::fromRequest($request, $opFlag);
+            $message = Currency::fromRequest($request, $opFlags);
             $controller = new LedgerCurrencyController();
-            $ledgerCurrency = $controller->run($message, $opFlag);
-            if ($opFlag & Message::OP_DELETE) {
-                $response['success'] = true;
+            if ($opFlags & Message::OP_QUERY) {
+                $message = CurrencyQuery::fromRequest($request, $opFlags);
+                $currencies = [];
+                foreach ($controller->query($message, $opFlags) as $entry) {
+                    $currencies[] = $entry->toResponse([]);
+                }
+                $response['currencies'] = $currencies;
             } else {
-                $response['currency'] = $ledgerCurrency->toResponse();
+                $ledgerCurrency = $controller->run($message, $opFlags);
+                if ($opFlags & Message::OP_DELETE) {
+                    $response['success'] = true;
+                } else {
+                    $response['currency'] = $ledgerCurrency->toResponse();
+                }
             }
         } catch (Breaker $exception) {
             $this->warning($exception);
