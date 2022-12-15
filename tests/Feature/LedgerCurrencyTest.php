@@ -18,8 +18,8 @@ class LedgerCurrencyTest extends TestCaseWithMigrations
 {
     use CommonChecks;
     use CreateLedgerTrait;
-    use RefreshDatabase;
     use PageLoader;
+    use RefreshDatabase;
     use ValidatesJson;
 
     private function createCurrencies()
@@ -33,6 +33,7 @@ class LedgerCurrencyTest extends TestCaseWithMigrations
             $controller->add(Currency::fromArray($data));
         }
     }
+
     private function getPagedCurrencies(array $requestData): array
     {
         return $this->getPages(
@@ -40,7 +41,7 @@ class LedgerCurrencyTest extends TestCaseWithMigrations
             $requestData,
             'currencyquery-response',
             'currencies',
-            function(&$requestData, $resources) {
+            function (&$requestData, $resources) {
                 $requestData['after'] = end($resources)->code;
             }
         );
@@ -52,16 +53,6 @@ class LedgerCurrencyTest extends TestCaseWithMigrations
         parent::setUp();
         LedgerAccount::resetRules();
         self::$expectContent = 'currency';
-    }
-
-    public function testBadRequest()
-    {
-        $response = $this->postJson(
-            'api/ledger/currency/add', ['nonsense' => true]
-        );
-        $actual = $this->isFailure($response);
-        // Check the response against our schema
-        $this->validateResponse($actual, 'currency-response');
     }
 
     public function testAdd()
@@ -86,19 +77,6 @@ class LedgerCurrencyTest extends TestCaseWithMigrations
         $this->assertEquals(4, $actual->currency->decimals);
     }
 
-    public function testAddNoLedger()
-    {
-        // Add a currency
-        $requestData = [
-            'code' => 'fud',
-            'decimals' => 4
-        ];
-        $response = $this->json(
-            'post', 'api/ledger/currency/add', $requestData
-        );
-        $actual = $this->isFailure($response);
-    }
-
     public function testAddDuplicate()
     {
         // First we need a ledger
@@ -113,6 +91,29 @@ class LedgerCurrencyTest extends TestCaseWithMigrations
             'post', 'api/ledger/currency/add', $requestData
         );
         $actual = $this->isFailure($response);
+    }
+
+    public function testAddNoLedger()
+    {
+        // Add a currency
+        $requestData = [
+            'code' => 'fud',
+            'decimals' => 4
+        ];
+        $response = $this->json(
+            'post', 'api/ledger/currency/add', $requestData
+        );
+        $actual = $this->isFailure($response);
+    }
+
+    public function testBadRequest()
+    {
+        $response = $this->postJson(
+            'api/ledger/currency/add', ['nonsense' => true]
+        );
+        $actual = $this->isFailure($response);
+        // Check the response against our schema
+        $this->validateResponse($actual, 'currency-response');
     }
 
     public function testDelete()
@@ -192,7 +193,71 @@ class LedgerCurrencyTest extends TestCaseWithMigrations
         ];
         [$pages, $totalAccounts] = $this->getPagedCurrencies($requestData);
         $actualAccounts = LedgerCurrency::count();
-        $expectedPages = intdiv($actualAccounts + $requestData['limit'] - 1, $requestData['limit']);
+        $expectedPages = (int)ceil(($actualAccounts + 1) / $requestData['limit']);
+        $this->assertEquals($expectedPages, $pages);
+        $this->assertEquals($actualAccounts, $totalAccounts);
+    }
+
+    public function testQueryRange()
+    {
+        // First we need a ledger
+        $this->createLedger();
+
+        // Add some test currencies
+        $this->createCurrencies();
+
+        // Query for a closed range, paginated
+        $requestData = [
+            'limit' => 3,
+            'range' => 'C10',
+            'rangeEnding' => 'C19',
+        ];
+        [$pages, $totalAccounts] = $this->getPagedCurrencies($requestData);
+        $actualAccounts = LedgerCurrency::whereBetween('code', ['C10', 'C19'])
+            ->count();
+        $expectedPages = (int)ceil(($actualAccounts + 1) / $requestData['limit']);
+        $this->assertEquals($expectedPages, $pages);
+        $this->assertEquals($actualAccounts, $totalAccounts);
+    }
+
+    public function testQueryRangeOpenBegin()
+    {
+        // First we need a ledger
+        $this->createLedger();
+
+        // Add some test currencies
+        $this->createCurrencies();
+
+        // Query for a closed range, paginated
+        $requestData = [
+            'limit' => 5,
+            'rangeEnding' => 'C19',
+        ];
+        [$pages, $totalAccounts] = $this->getPagedCurrencies($requestData);
+        $actualAccounts = LedgerCurrency::where('code', '<=', 'C19')
+            ->count();
+        $expectedPages = (int)ceil(($actualAccounts + 1) / $requestData['limit']);
+        $this->assertEquals($expectedPages, $pages);
+        $this->assertEquals($actualAccounts, $totalAccounts);
+    }
+
+    public function testQueryRangeOpenEnd()
+    {
+        // First we need a ledger
+        $this->createLedger();
+
+        // Add some test currencies
+        $this->createCurrencies();
+
+        // Query for a closed range, paginated
+        $requestData = [
+            'limit' => 10,
+            'range' => 'C60',
+        ];
+        [$pages, $totalAccounts] = $this->getPagedCurrencies($requestData);
+        $actualAccounts = LedgerCurrency::where('code', '>=', 'C60')
+            ->count();
+        $expectedPages = (int)ceil(($actualAccounts + 1) / $requestData['limit']);
         $this->assertEquals($expectedPages, $pages);
         $this->assertEquals($actualAccounts, $totalAccounts);
     }

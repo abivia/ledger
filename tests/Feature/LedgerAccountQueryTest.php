@@ -2,6 +2,7 @@
 
 namespace Abivia\Ledger\Tests\Feature;
 
+use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Abivia\Ledger\Tests\ValidatesJson;
@@ -54,6 +55,40 @@ class LedgerAccountQueryTest extends TestCaseWithMigrations
         $this->assertEquals($expectedPages, $pages);
         $this->assertEquals($actualAccounts, $totalAccounts);
         //print_r($accounts[0]);
+    }
+
+    /**
+     * @throws Breaker
+     */
+    public function testQueryByName()
+    {
+        // First we need a ledger
+        $this->createLedger(['template'], ['template' => 'manufacturer_1.0']);
+
+        // Query for journals containing 9, paginated
+        $requestData = [
+            'limit' => 10,
+            'names' => [
+                [
+                    'name' => 'Telephone'
+                ],
+                [
+                    'name' => '%tax%',
+                    'like' => true,
+                ],
+                [
+                    'name' => '%prop%',
+                    'exclude' => true,
+                    'like' => true,
+                ],
+            ],
+        ];
+        [$pages, $totalAccounts] = $this->getPagedAccounts($requestData);
+
+        $actualAccounts = 9;
+        $expectedPages = (int)ceil(($actualAccounts + 1) / $requestData['limit']);
+        $this->assertEquals($actualAccounts, $totalAccounts);
+        $this->assertEquals($expectedPages, $pages);
     }
 
     public function testQueryNoLedger()

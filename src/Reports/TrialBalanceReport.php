@@ -55,9 +55,9 @@ class TrialBalanceReport extends AbstractReport
         $reportData->journalEntryId = JournalEntry::query()->max('journalEntryId') ?? 0;
 
         // Grab the table names
-        $detailTable = (new JournalDetail)->getTable();
-        $entryTable = (new JournalEntry)->getTable();
         $dbPrefix = DB::getTablePrefix();
+        $detailTable = $dbPrefix . (new JournalDetail)->getTable();
+        $entryTable = $dbPrefix . (new JournalEntry)->getTable();
 
         // Get the balance changes for each account between the report date and now.
         $ledgerCurrency = LedgerCurrency::findOrBreaker($message->currency);
@@ -65,7 +65,7 @@ class TrialBalanceReport extends AbstractReport
         $cast = 'decimal(' . LedgerCurrency::AMOUNT_SIZE . ", $ledgerCurrency->decimals)";
         $balanceChangeQuery = DB::table($detailTable)
             ->select(DB::raw(
-                "`$dbPrefix$detailTable`.`ledgerUuid` AS `uuid`,"
+                "`$detailTable`.`ledgerUuid` AS `uuid`,"
                 . " sum(cast(`amount` AS $cast)) AS `delta`")
             )
             ->join(

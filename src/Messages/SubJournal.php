@@ -3,6 +3,7 @@
 namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
+use Abivia\Ledger\Helpers\Merge;
 use Abivia\Ledger\Messages\Message;
 
 class SubJournal extends Message
@@ -46,6 +47,13 @@ class SubJournal extends Message
         $errors = $this->validateCodes($opFlags);
         if ($opFlags & self::OP_ADD && count($this->names) === 0) {
             $errors[] = __('at least one name property is required');
+        }
+        try {
+            foreach ($this->names as $name) {
+                $name->validate($opFlags);
+            }
+        } catch (Breaker $exception) {
+            Merge::arrays($errors, $exception->getErrors());
         }
         if ($opFlags & self::OP_UPDATE && !isset($this->revision)) {
             $errors[] = 'A revision code is required';

@@ -7,7 +7,7 @@ use Abivia\Ledger\Exceptions\Breaker;
 trait HasNames
 {
     /**
-     * @var Name[] A list of `Name` messages.
+     * @var array<Name> A list of `Name` messages.
      */
     public array $names = [];
 
@@ -22,7 +22,12 @@ trait HasNames
     {
         $errors = [];
         try {
-            if ($opFlags & (Message::OP_ADD | Message::OP_CREATE | Message::OP_UPDATE)) {
+            if (
+                $opFlags & (
+                    Message::OP_ADD | Message::OP_CREATE
+                    | Message::OP_QUERY | Message::OP_UPDATE
+                )
+            ) {
                 $nameList = $data['names'] ?? [];
                 if (isset($data['name'])) {
                     array_unshift($nameList, ['name' => $data['name']]);

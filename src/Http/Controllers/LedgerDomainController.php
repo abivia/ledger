@@ -4,17 +4,18 @@ declare(strict_types=1);
 namespace Abivia\Ledger\Http\Controllers;
 
 use Abivia\Ledger\Exceptions\Breaker;
-use Abivia\Ledger\Messages\Name;
+use Abivia\Ledger\Messages\Domain;
+use Abivia\Ledger\Messages\DomainQuery;
+use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Models\JournalEntry;
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Models\LedgerBalance;
 use Abivia\Ledger\Models\LedgerDomain;
 use Abivia\Ledger\Models\LedgerName;
-use Abivia\Ledger\Messages\Domain;
-use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Traits\Audited;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -166,16 +167,63 @@ class LedgerDomainController extends Controller
     }
 
     /**
+     * Return domains matching a Query.
+     *
+     * @param DomainQuery $message
+     * @param int $opFlags
+     * @return Collection
+     * @throws Breaker
+     */
+    public function query(DomainQuery $message, int $opFlags): Collection
+    {
+        $message->validate($opFlags);
+        if (count($message->names)) {
+            // This is somewhat perverse, but not as perverse as what Eloquent does.
+            $dbPrefix = DB::getTablePrefix();
+            $journals = $dbPrefix . (new LedgerDomain())->getTable();
+            $names = $dbPrefix . (new LedgerName())->getTable();
+            // Get a list of all the Sub-Journal codes matching our criteria
+            $codeQuery = DB::table($journals)
+                ->join($names, "$journals.domainUuid", '=', "$names.ownerUuid")
+                ->select('code')
+                ->orderBy('code')
+                ->limit($message->limit);
+            if (isset($message->after)) {
+                $codeQuery = $codeQuery->where('code', '>', $message->after);
+            }
+            $codeQuery = $codeQuery->where(function ($query) use ($message) {
+                $query = $message->selectNames($query);
+                return $message->selectCodes($query);
+            });
+            $foo = $codeQuery->toSql();
+            $codeList = $codeQuery->get();
+            $query = LedgerDomain::with('names')
+                ->whereIn('code', $codeList->pluck('code'))
+                ->orderBy('code');
+        } else {
+            $query = LedgerDomain::with('names')
+                ->orderBy('code');
+            $query = $message->selectCodes($query);
+        }
+        $query->limit($message->limit);
+        if (isset($message->after)) {
+            $query = $query->where('code', '>', $message->after);
+        }
+
+        return $query->get();
+    }
+
+    /**
      * Perform a domain operation.
      *
      * @param Domain $message
-     * @param int $opFlag
+     * @param int $opFlags
      * @return LedgerDomain|null
      * @throws Breaker
      */
-    public function run(Domain $message, int $opFlag): ?LedgerDomain
+    public function run(Domain $message, int $opFlags): ?LedgerDomain
     {
-        switch ($opFlag & Message::ALL_OPS) {
+        switch ($opFlags & Message::ALL_OPS) {
             case Message::OP_ADD:
                 return $this->add($message);
             case Message::OP_DELETE:
@@ -185,7 +233,7 @@ class LedgerDomainController extends Controller
             case Message::OP_UPDATE:
                 return $this->update($message);
             default:
-                throw Breaker::withCode(Breaker::RULE_VIOLATION);
+                throw Breaker::withCode(Breaker::BAD_REQUEST, 'Unknown or invalid operation.');
         }
     }
 
@@ -244,8 +292,9 @@ class LedgerDomainController extends Controller
      * @param LedgerDomain $ledgerDomain
      * @param Domain $message
      * @return void
+     * @throws Breaker
      */
-    protected function updateNames(LedgerDomain $ledgerDomain, Domain $message)
+    protected function updateNames(LedgerDomain $ledgerDomain, Domain $message): void
     {
         foreach ($message->names as $name) {
             $dupCount = LedgerDomain::where('domainUuid', '!=', $ledgerDomain->domainUuid)
@@ -265,6 +314,15 @@ class LedgerDomainController extends Controller
                 );
             }
             $name->applyTo($ledgerDomain);
+            // Ensure there is at least one name remaining
+            if (
+                LedgerName::where('ownerUuid', $ledgerDomain->domainUuid)
+                    ->count() === 0
+            ) {
+                throw Breaker::withCode(
+                    Breaker::BAD_REQUEST, 'Domain must have at least one name.'
+                );
+            }
         }
     }
 

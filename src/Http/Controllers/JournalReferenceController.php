@@ -4,10 +4,10 @@ declare(strict_types=1);
 namespace Abivia\Ledger\Http\Controllers;
 
 use Abivia\Ledger\Exceptions\Breaker;
+use Abivia\Ledger\Messages\Message;
+use Abivia\Ledger\Messages\Reference;
 use Abivia\Ledger\Models\JournalEntry;
 use Abivia\Ledger\Models\JournalReference;
-use Abivia\Ledger\Messages\Reference;
-use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Models\LedgerDomain;
 use Abivia\Ledger\Traits\Audited;
 use Exception;
@@ -106,7 +106,7 @@ class JournalReferenceController extends Controller
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
         $used = JournalEntry::where(
             'journalReferenceUuid', $journalReference->journalReferenceUuid
-            )
+        )
             ->count();
         if ($used !== 0) {
             throw Breaker::withCode(
@@ -143,7 +143,7 @@ class JournalReferenceController extends Controller
                 Breaker::RULE_VIOLATION,
                 [
                     __('domain :code does not exist in domain :domain',
-                    ['code' => $message->code, 'domain' => $message->domain->code])
+                        ['code' => $message->code, 'domain' => $message->domain->code])
                 ]
             );
         }
@@ -184,7 +184,7 @@ class JournalReferenceController extends Controller
             case Message::OP_UPDATE:
                 return $this->update($message);
             default:
-                throw Breaker::withCode(Breaker::RULE_VIOLATION);
+                throw Breaker::withCode(Breaker::BAD_REQUEST, 'Unknown or invalid operation.');
         }
     }
 

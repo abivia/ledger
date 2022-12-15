@@ -26,8 +26,7 @@ class AccountQuery extends Paginated
      */
     public static function fromArray(array $data, int $opFlags = self::OP_ADD): self
     {
-        $query = new AccountQuery();
-        $query->copy($data, $opFlags);
+        $query = parent::fromArray($data, $opFlags);
         if (isset($data['after'])) {
             $query->after = EntityRef::fromArray($data['after'], $opFlags);
         }

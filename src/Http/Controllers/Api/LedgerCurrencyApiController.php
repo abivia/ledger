@@ -32,7 +32,6 @@ class LedgerCurrencyApiController
             $opFlags = Message::toOpFlags(
                 $operation, ['add' => Message::F_API, 'disallow' => Message::OP_CREATE]
             );
-            $message = Currency::fromRequest($request, $opFlags);
             $controller = new LedgerCurrencyController();
             if ($opFlags & Message::OP_QUERY) {
                 $message = CurrencyQuery::fromRequest($request, $opFlags);
@@ -42,6 +41,7 @@ class LedgerCurrencyApiController
                 }
                 $response['currencies'] = $currencies;
             } else {
+                $message = Currency::fromRequest($request, $opFlags);
                 $ledgerCurrency = $controller->run($message, $opFlags);
                 if ($opFlags & Message::OP_DELETE) {
                     $response['success'] = true;

@@ -5,16 +5,11 @@ namespace Abivia\Ledger\Http\Controllers;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Messages\Balance;
-use Abivia\Ledger\Models\JournalEntry;
+use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Models\LedgerBalance;
-use Abivia\Ledger\Models\LedgerCurrency;
 use Abivia\Ledger\Models\LedgerDomain;
-use Abivia\Ledger\Messages\Currency;
-use Abivia\Ledger\Messages\Message;
-use Abivia\Ledger\Traits\Audited;
-use Exception;
-use Illuminate\Support\Facades\DB;
+
 
 /**
  * Handle Balance requests.
@@ -73,7 +68,7 @@ class LedgerBalanceController extends Controller
             case Message::OP_QUERY:
                 return $this->get($message);
             default:
-                throw Breaker::withCode(Breaker::RULE_VIOLATION);
+                throw Breaker::withCode(Breaker::BAD_REQUEST, 'Unknown or invalid operation.');
         }
     }
 

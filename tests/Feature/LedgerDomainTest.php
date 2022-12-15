@@ -1,11 +1,17 @@
 <?php
+/** @noinspection SpellCheckingInspection */
+/** @noinspection PhpDynamicAsStaticMethodCallInspection */
 /** @noinspection PhpParamsInspection */
 declare(strict_types=1);
 
 namespace Abivia\Ledger\Tests\Feature;
 
+use Abivia\Ledger\Exceptions\Breaker;
+use Abivia\Ledger\Http\Controllers\LedgerDomainController;
 use Abivia\Ledger\Messages\Create;
+use Abivia\Ledger\Messages\Domain;
 use Abivia\Ledger\Models\LedgerAccount;
+use Abivia\Ledger\Models\LedgerDomain;
 use Abivia\Ledger\Models\LedgerName;
 use Abivia\Ledger\Tests\TestCaseWithMigrations;
 use Abivia\Ledger\Tests\ValidatesJson;
@@ -18,6 +24,7 @@ class LedgerDomainTest extends TestCaseWithMigrations
 {
     use CommonChecks;
     use CreateLedgerTrait;
+    use PageLoader;
     use RefreshDatabase;
     use ValidatesJson;
 
@@ -39,6 +46,36 @@ class LedgerDomainTest extends TestCaseWithMigrations
         ],
         'currency' => 'CAD'
     ];
+
+    /**
+     * @throws Breaker
+     */
+    private function createDomains()
+    {
+        $controller = new LedgerDomainController();
+        for ($id = 0; $id < 30; ++$id) {
+            $data = [
+                'code' => 'D' . str_pad((string) $id, 2, '0', STR_PAD_LEFT),
+                'currency' => 'CAD',
+                'name' => "Domain $id",
+            ];
+            $controller->add(Domain::fromArray($data));
+        }
+    }
+
+    private function getPagedDomains(array $requestData): array
+    {
+        return $this->getPages(
+            'api/ledger/domain/query',
+            $requestData,
+            'domainquery-response',
+            'domains',
+            function (&$requestData, $resources) {
+                $requestData['after'] = end($resources)->code;
+            }
+        );
+
+    }
 
     public function setUp(): void
     {
@@ -81,7 +118,7 @@ class LedgerDomainTest extends TestCaseWithMigrations
         $this->createLedger();
 
         // Add a domain
-        $response = $this->json(
+        $this->json(
             'post', 'api/ledger/domain/add', $this->baseRequest
         );
         // Now try to add a different domain with the same name
@@ -108,7 +145,7 @@ class LedgerDomainTest extends TestCaseWithMigrations
         $response = $this->json(
             'post', 'api/ledger/domain/add', $badRequest
         );
-        $actual = $this->isFailure($response);
+        $this->isFailure($response);
     }
 
     public function testAddDuplicate()
@@ -133,7 +170,7 @@ class LedgerDomainTest extends TestCaseWithMigrations
         $response = $this->json(
             'post', 'api/ledger/domain/add', $this->baseRequest
         );
-        $actual = $this->isFailure($response);
+        $this->isFailure($response);
     }
 
     public function testDelete()
@@ -196,7 +233,145 @@ class LedgerDomainTest extends TestCaseWithMigrations
     }
 
     /**
+     * @throws Breaker
+     */
+    public function testQuery()
+    {
+        // First we need a ledger
+        $this->createLedger();
+
+        // Add some test domains
+        $this->createDomains();
+
+        // Query for everything, paginated
+        $requestData = [
+            'limit' => 20,
+        ];
+        [$pages, $totalAccounts] = $this->getPagedDomains($requestData);
+        $actualAccounts = LedgerDomain::count();
+        $expectedPages = (int)ceil(($actualAccounts + 1) / $requestData['limit']);
+        $this->assertEquals($expectedPages, $pages);
+        $this->assertEquals($actualAccounts, $totalAccounts);
+    }
+
+    /**
+     * @throws Breaker
+     */
+    public function testQueryByName()
+    {
+        // First we need a ledger
+        $this->createLedger();
+
+        // Add some test domains
+        $this->createDomains();
+
+        // Query for journals containing 9, paginated
+        $requestData = [
+            'limit' => 10,
+            'names' => [
+                [
+                    'name' => 'Domain 5'
+                ],
+                [
+                    'name' => 'Domain 6',
+                    'language' => 'en'
+                ],
+                [
+                    'name' => '%ain 1%',
+                    'like' => true,
+                ],
+                [
+                    'name' => '%15%',
+                    'exclude' => true,
+                    'like' => true,
+                ],
+            ],
+        ];
+        [$pages, $totalAccounts] = $this->getPagedDomains($requestData);
+
+        // Add 2 for the two single domain codes.
+        $actualAccounts = 12;
+        $expectedPages = (int)ceil(($actualAccounts + 1) / $requestData['limit']);
+        $this->assertEquals($actualAccounts, $totalAccounts);
+        $this->assertEquals($expectedPages, $pages);
+    }
+
+    /**
+     * @throws Breaker
+     */
+    public function testQueryRange()
+    {
+        // First we need a ledger
+        $this->createLedger();
+
+        // Add some test domains
+        $this->createDomains();
+
+        // Query for a closed range, paginated
+        $requestData = [
+            'limit' => 3,
+            'range' => 'D10',
+            'rangeEnding' => 'D19',
+        ];
+        [$pages, $totalAccounts] = $this->getPagedDomains($requestData);
+        $actualAccounts = LedgerDomain::whereBetween('code', ['D10', 'D19'])
+            ->count();
+        $expectedPages = (int)ceil(($actualAccounts + 1) / $requestData['limit']);
+        $this->assertEquals($expectedPages, $pages);
+        $this->assertEquals($actualAccounts, $totalAccounts);
+    }
+
+    /**
+     * @throws Breaker
+     */
+    public function testQueryRangeOpenBegin()
+    {
+        // First we need a ledger
+        $this->createLedger();
+
+        // Add some test domains
+        $this->createDomains();
+
+        // Query for a closed range, paginated
+        $requestData = [
+            'limit' => 5,
+            'rangeEnding' => 'D19',
+        ];
+        [$pages, $totalAccounts] = $this->getPagedDomains($requestData);
+        $actualAccounts = LedgerDomain::where('code', '<=', 'D19')
+            ->count();
+        $expectedPages = (int)ceil(($actualAccounts + 1) / $requestData['limit']);
+        $this->assertEquals($expectedPages, $pages);
+        $this->assertEquals($actualAccounts, $totalAccounts);
+    }
+
+    /**
+     * @throws Breaker
+     */
+    public function testQueryRangeOpenEnd()
+    {
+        // First we need a ledger
+        $this->createLedger();
+
+        // Add some test domains
+        $this->createDomains();
+
+        // Query for a closed range, paginated
+        $requestData = [
+            'limit' => 10,
+            'range' => 'D60',
+        ];
+        [$pages, $totalAccounts] = $this->getPagedDomains($requestData);
+        $actualAccounts = LedgerDomain::where('code', '>=', 'D60')
+            ->count();
+        $expectedPages = (int)ceil(($actualAccounts + 1) / $requestData['limit']);
+        $this->assertEquals($expectedPages, $pages);
+        $this->assertEquals($actualAccounts, $totalAccounts);
+    }
+
+    /**
      * TODO: create a separate suite for updates where transactions present.
+     * @throws Breaker
      */
     public function testUpdate()
     {
@@ -330,7 +505,7 @@ class LedgerDomainTest extends TestCaseWithMigrations
 
     }
 
-    public function testUpdateNameDeleteDefault()
+    public function testUpdateNameDeleteAll()
     {
         // First we need a ledger
         $this->createLedger();
@@ -344,20 +519,27 @@ class LedgerDomainTest extends TestCaseWithMigrations
         );
         $actual = $this->isSuccessful($response);
 
-        // Attempt to remove the default name.
+        // Attempt to remove all the names.
         $requestData = [
             'revision' => $actual->domain->revision,
             'code' => 'Corp',
             'names' => [
                 [
-                    'language' => 'en'
+                    'language' => 'en-CA'
                 ],
             ],
         ];
+        // Deleting one should work
         $response = $this->json(
             'post', 'api/ledger/domain/update', $requestData
         );
-        $result = $this->isFailure($response);
+        $this->isSuccessful($response);
+        $requestData['names'][0]['language'] = 'fr-CA';
+        // But removing the last one should fail
+        $response = $this->json(
+            'post', 'api/ledger/domain/update', $requestData
+        );
+        $this->isFailure($response);
 
     }
 

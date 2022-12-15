@@ -9,8 +9,35 @@ use Illuminate\Database\Eloquent\Model;
 
 class Name extends Message
 {
+    protected static array $copyable = [
+        ['exclude', Message::OP_QUERY],
+        'language',
+        ['like', Message::OP_QUERY],
+    ];
+
+    /**
+     * @var bool The Name/language should be excluded from results. Used for queries.
+     */
+    public bool $exclude = false;
+
+    /**
+     * @var string The language this name is in.
+     */
     public string $language;
+
+    /**
+     * @var bool The Name/language are in SQL "like" form. Used for queries.
+     */
+    public bool $like = false;
+
+    /**
+     * @var string The value of this name.
+     */
     public string $name;
+
+    /**
+     * @var string The entity this name is attached to.
+     */
     public string $ownerUuid;
 
     public function __construct(
@@ -59,10 +86,8 @@ class Name extends Message
     public static function fromArray(array $data, int $opFlags = self::OP_ADD): self
     {
         $name = new static();
+        $name->copy($data, $opFlags);
         $name->name = $data['name'] ?? '';
-        if (isset($data['language'])) {
-            $name->language = $data['language'];
-        }
         if ($opFlags & self::F_VALIDATE) {
             $name->validate($opFlags);
         }
@@ -84,7 +109,11 @@ class Name extends Message
         $names = [];
         foreach ($data as $nameData) {
             $message = self::fromArray($nameData, $opFlags);
-            $names[$message->language ?? ''] = $message;
+            if ($opFlags & Message::OP_QUERY) {
+                $names[] = $message;
+            } else {
+                $names[$message->language ?? ''] = $message;
+            }
         }
         if (count($names) < $minimum) {
             $entry = $minimum === 1 ? 'entry' : 'entries';
@@ -101,7 +130,8 @@ class Name extends Message
      */
     public function validate(int $opFlags = 0): self
     {
-        if ($this->name === '' && !($opFlags & self::OP_UPDATE)) {
+        // The name is not required for update or query operations.
+        if ($this->name === '' && !($opFlags & (self::OP_QUERY | self::OP_UPDATE))) {
             throw Breaker::withCode(
                 Breaker::RULE_VIOLATION, [__("Must include name property.")]
             );
@@ -109,21 +139,16 @@ class Name extends Message
         $rules = LedgerAccount::rules(
             bootable: $opFlags & self::OP_CREATE
         );
-        $this->language ??= $rules->language->default;
-        if ($this->language === '') {
-            throw Breaker::withCode(
-                Breaker::RULE_VIOLATION, [__("Language cannot be empty.")]
-            );
-        }
-        // If the name is empty here, then this is an update.
-        if (
-            $this->name === ''
-            && $this->language === $rules->language->default
-        ) {
-            throw Breaker::withCode(
-                Breaker::RULE_VIOLATION,
-                [__("Cannot delete name in default language.")]
-            );
+        // The language can be empty on a query
+        if ($opFlags & Message::OP_QUERY) {
+            $this->language ??= '';
+        } else {
+            $this->language ??= $rules->language->default;
+            if ($this->language === '') {
+                throw Breaker::withCode(
+                    Breaker::RULE_VIOLATION, [__("Language cannot be empty.")]
+                );
+            }
         }
 
         return $this;

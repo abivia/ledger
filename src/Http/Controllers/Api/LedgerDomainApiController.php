@@ -6,6 +6,7 @@ namespace Abivia\Ledger\Http\Controllers\Api;
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Http\Controllers\LedgerDomainController;
 use Abivia\Ledger\Messages\Domain;
+use Abivia\Ledger\Messages\DomainQuery;
 use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Traits\ControllerResultHandler;
 use Exception;
@@ -29,16 +30,25 @@ class LedgerDomainApiController
         $this->errors = [];
         $response = [];
         try {
-            $opFlag = Message::toOpFlags(
+            $opFlags = Message::toOpFlags(
                 $operation, ['add' => Message::F_API, 'disallow' => Message::OP_CREATE]
             );
-            $message = Domain::fromRequest($request, $opFlag);
             $controller = new LedgerDomainController();
-            $ledgerDomain = $controller->run($message, $opFlag);
-            if ($opFlag & Message::OP_DELETE) {
-                $response['success'] = true;
+            if ($opFlags & Message::OP_QUERY) {
+                $message = DomainQuery::fromRequest($request, $opFlags);
+                $domains = [];
+                foreach ($controller->query($message, $opFlags) as $entry) {
+                    $domains[] = $entry->toResponse([]);
+                }
+                $response['domains'] = $domains;
             } else {
-                $response['domain'] = $ledgerDomain->toResponse();
+                $message = Domain::fromRequest($request, $opFlags);
+                $ledgerDomain = $controller->run($message, $opFlags);
+                if ($opFlags & Message::OP_DELETE) {
+                    $response['success'] = true;
+                } else {
+                    $response['domain'] = $ledgerDomain->toResponse();
+                }
             }
         } catch (Breaker $exception) {
             $this->warning($exception);

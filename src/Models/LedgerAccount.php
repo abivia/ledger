@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Query\Builder as DbBuilder;
 use stdClass;
 
 /**
@@ -44,7 +45,11 @@ use stdClass;
  */
 class LedgerAccount extends Model
 {
-    use CommonResponseProperties, HasFactory, HasNames, HasRevisions, UuidPrimaryKey;
+    use CommonResponseProperties;
+    use HasFactory;
+    use HasNames;
+    use HasRevisions;
+    use UuidPrimaryKey;
 
     const CODE_SIZE = 32;
     /**
@@ -460,12 +465,12 @@ class LedgerAccount extends Model
      * Add or create a where clause for accounts matching an EntityRef.
      * @param string $operator The SQL operator to ise.
      * @param EntityRef $entityRef The entity to apply the operator to.
-     * @param Builder|null $query An existing query.
+     * @param Builder|DbBuilder|null $query An existing query.
      * @return Builder The query builder.
      * @throws Exception
      */
     public static function whereEntity(
-        string $operator, EntityRef $entityRef, ?Builder $query = null
+        string $operator, EntityRef $entityRef, Builder|DbBuilder $query = null
     ): Builder
     {
         if ($query === null) {

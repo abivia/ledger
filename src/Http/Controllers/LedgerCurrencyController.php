@@ -148,7 +148,7 @@ class LedgerCurrencyController extends Controller
     }
 
     /**
-     * Return accounts matching a Query.
+     * Return currencies matching a Query.
      *
      * @param CurrencyQuery $message
      * @param int $opFlags
@@ -160,12 +160,7 @@ class LedgerCurrencyController extends Controller
         $message->validate($opFlags);
         $query = LedgerCurrency::query()
             ->orderBy('code');
-        if (isset($message->range)) {
-            $query = $query->where('code', '>=', $message->range);
-        }
-        if (isset($message->rangeEnding)) {
-            $query = $query->where('code', '<=', $message->rangeEnding);
-        }
+        $query = $message->selectCodes($query);
         $query->limit($message->limit);
         if (isset($message->after)) {
             $query = $query->where('code', '>', $message->after);
@@ -194,7 +189,7 @@ class LedgerCurrencyController extends Controller
             case Message::OP_UPDATE:
                 return $this->update($message);
             default:
-                throw Breaker::withCode(Breaker::RULE_VIOLATION);
+                throw Breaker::withCode(Breaker::BAD_REQUEST, 'Unknown or invalid operation.');
         }
     }
 

@@ -3,16 +3,16 @@
 namespace Abivia\Ledger\Http\Controllers;
 
 use Abivia\Ledger\Exceptions\Breaker;
+use Abivia\Ledger\Messages\EntityRef;
+use Abivia\Ledger\Messages\Entry;
+use Abivia\Ledger\Messages\EntryQuery;
+use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Models\JournalDetail;
 use Abivia\Ledger\Models\JournalEntry;
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Models\LedgerBalance;
 use Abivia\Ledger\Models\LedgerCurrency;
 use Abivia\Ledger\Models\LedgerDomain;
-use Abivia\Ledger\Messages\EntityRef;
-use Abivia\Ledger\Messages\Entry;
-use Abivia\Ledger\Messages\EntryQuery;
-use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Models\SubJournal;
 use Abivia\Ledger\Traits\Audited;
 use Exception;
@@ -91,10 +91,10 @@ class JournalEntryController extends Controller
             // Create/adjust the ledger balances
             /** @noinspection PhpDynamicAsStaticMethodCallInspection */
             $ledgerBalance = LedgerBalance::where([
-                    ['ledgerUuid', '=', $journalDetail->ledgerUuid],
-                    ['domainUuid', '=', $this->ledgerDomain->domainUuid],
-                    ['currency', '=', $this->ledgerCurrency->code],
-                ])
+                ['ledgerUuid', '=', $journalDetail->ledgerUuid],
+                ['domainUuid', '=', $this->ledgerDomain->domainUuid],
+                ['currency', '=', $this->ledgerCurrency->code],
+            ])
                 ->first();
 
             if ($ledgerBalance === null) {
@@ -122,7 +122,8 @@ class JournalEntryController extends Controller
      * @param Entry $message
      * @throws Breaker
      */
-    public function delete(Entry $message) {
+    public function delete(Entry $message)
+    {
         $inTransaction = false;
         // Ensure that the message contents are valid.
         $message->validate(Message::OP_DELETE);
@@ -308,7 +309,7 @@ class JournalEntryController extends Controller
             case Message::OP_UPDATE:
                 return $this->update($message);
             default:
-                throw Breaker::withCode(Breaker::RULE_VIOLATION);
+                throw Breaker::withCode(Breaker::BAD_REQUEST, 'Unknown or invalid operation.');
         }
     }
 
@@ -321,7 +322,7 @@ class JournalEntryController extends Controller
      */
     public function update(Entry $message): JournalEntry
     {
-        $this->validateEntry($message,Message::OP_UPDATE);
+        $this->validateEntry($message, Message::OP_UPDATE);
         $inTransaction = false;
         try {
             DB::beginTransaction();

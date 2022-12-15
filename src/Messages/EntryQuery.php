@@ -33,7 +33,7 @@ class EntryQuery extends Message {
     public string $amountMax;
 
     protected static array $copyable = [
-        'after', 'limit',
+        'after', 'description', 'limit',
     ];
 
     /**
@@ -50,6 +50,11 @@ class EntryQuery extends Message {
      * @var Carbon The maximum transaction date.
      */
     public Carbon $dateEnding;
+
+    /**
+     * @var string Transaction description to match to.
+     */
+    public string $description;
 
     /**
      * @var EntityRef The ledger domain to query.
@@ -141,6 +146,7 @@ class EntryQuery extends Message {
         }
         $this->queryAmount($query);
         $this->queryDate($query);
+        $this->queryDescription($query);
         $this->queryDomain($query);
         $this->queryPagination($query);
         $this->queryReference($query);
@@ -216,6 +222,20 @@ class EntryQuery extends Message {
             $query->where('transDate', '>=', $this->date->format($dateFormat));
         } elseif (isset($this->dateEnding)) {
             $query->where('transDate', '<=', $this->dateEnding->format($dateFormat));
+        }
+    }
+
+    /**
+     * Add the domain criteria to the query.
+     *
+     * @param Builder $query
+     * @return void
+     */
+    private function queryDescription(Builder $query): void
+    {
+        if (isset($this->description)) {
+            // Apply the description
+            $query->where('description', 'like', $this->description);
         }
     }
 
