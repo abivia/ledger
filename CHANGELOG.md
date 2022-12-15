@@ -1,3 +1,17 @@
+## 1.10.0
+
+### Bugs:
+- Fixed table references in TrialBalanceReport (again)
+- Ledger was forcing a name to be present in the default language. Now a named 
+entity must have at least one name in any language.
+
+### Changes:
+- Added a description property to entry queries, allowing wildcard matches on the description.
+- Changed the error code on unknown operations from Rule Violation to Bad Request.
+- Added query operations for currencies, domains, and sub-journals.
+- Expanded query selection capabilities by adding `codes` and `names` properties where relevant.
+- Updated JSON schemas and documentation.
+
 ## 1.9.0
 
 ### Bugs
