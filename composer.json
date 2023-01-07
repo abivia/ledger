@@ -1,7 +1,7 @@
 {
     "name": "abivia/ledger",
     "type": "library",
-    "description": "General Ledger and Journal Package/API for Laravel.",
+    "description": "General Ledger and Journal Accounting Package for Laravel with JSON API",
     "keywords": [
         "abivia",
         "accounting",
