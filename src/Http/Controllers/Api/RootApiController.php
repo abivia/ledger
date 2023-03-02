@@ -10,14 +10,14 @@ use Abivia\Ledger\Traits\ControllerResultHandler;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 
-class RootApiController
+class RootApiController extends ApiController
 {
     use ControllerResultHandler;
 
     public function create(Request $request): array
     {
+        $response = [];
         try {
             // The Ledger must be empty
             RootController::checkNoLedgerExists();
@@ -41,9 +41,8 @@ class RootApiController
         if (count($this->errors)) {
             $response['errors'] = $this->errors;
         }
-        $response['time'] = new Carbon();
 
-        return $response;
+        return $this->commonInfo($response);
     }
 
     public function run(Request $request, string $operation): array
@@ -60,10 +59,9 @@ class RootApiController
             ':operation is not a valid operation',
             ['operation' => $operation]
         )];
-        $response['time'] = new Carbon();
 
 
-        return $response;
+        return $this->commonInfo($response);
     }
 
     public function templates(): array
@@ -84,10 +82,8 @@ class RootApiController
         if (count($this->errors)) {
             $response['errors'] = $this->errors;
         }
-        $response['time'] = new Carbon();
 
-
-        return $response;
+        return $this->commonInfo($response);
     }
 
 }

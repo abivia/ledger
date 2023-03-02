@@ -11,9 +11,8 @@ use Abivia\Ledger\Traits\ControllerResultHandler;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 
-class JournalReferenceApiController
+class JournalReferenceApiController extends ApiController
 {
     use ControllerResultHandler;
 
@@ -50,9 +49,8 @@ class JournalReferenceApiController
             $response['errors'] = $this->errors;
             $response['errors'][] = $this->unexpectedException($exception);
         }
-        $response['time'] = new Carbon();
 
-        return $response;
+        return $this->commonInfo($response);
     }
 
 }

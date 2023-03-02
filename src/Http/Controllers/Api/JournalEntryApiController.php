@@ -12,11 +12,16 @@ use Abivia\Ledger\Traits\ControllerResultHandler;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 
-class JournalEntryApiController
+class JournalEntryApiController extends ApiController
 {
     use ControllerResultHandler;
+
+    public static function getOpFlags(string $operation): int {
+        return Message::toOpFlags(
+            $operation, ['add' => Message::F_API, 'disallow' => Message::OP_CREATE]
+        );
+    }
 
     /**
      * Perform a journal entry operation.
@@ -30,17 +35,11 @@ class JournalEntryApiController
         $this->errors = [];
         $response = [];
         try {
-            $opFlags = Message::toOpFlags(
-                $operation, ['add' => Message::F_API, 'disallow' => Message::OP_CREATE]
-            );
+            $opFlags = self::getOpFlags($operation);
             $controller = new JournalEntryController();
             if ($opFlags & Message::OP_QUERY) {
                 $message = EntryQuery::fromRequest($request, $opFlags);
-                $entries = [];
-                foreach ($controller->query($message, $opFlags) as $entry) {
-                    $entries[] = $entry->toResponse(Message::OP_GET);
-                }
-                $response['entries'] = $entries;
+                $response['entries'] = $message->run($opFlags);
             } else {
                 $message = Entry::fromRequest($request, $opFlags);
                 $journalEntry = $controller->run($message, $opFlags);
@@ -60,9 +59,8 @@ class JournalEntryApiController
             $response['errors'] = $this->errors;
             $response['errors'][] = $this->unexpectedException($exception);
         }
-        $response['time'] = new Carbon();
 
-        return $response;
+        return $this->commonInfo($response);
     }
 
 }

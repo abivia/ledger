@@ -12,9 +12,8 @@ use Abivia\Ledger\Traits\ControllerResultHandler;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 
-class LedgerAccountApiController
+class LedgerAccountApiController extends ApiController
 {
     use ControllerResultHandler;
 
@@ -27,7 +26,6 @@ class LedgerAccountApiController
      */
     public function run(Request $request, string $operation): array
     {
-        $this->errors = [];
         $response = [];
         try {
             $opFlags = Message::toOpFlags(
@@ -60,9 +58,8 @@ class LedgerAccountApiController
             $response['errors'] = $this->errors;
             $response['errors'][] = $this->unexpectedException($exception);
         }
-        $response['time'] = new Carbon();
 
-        return $response;
+        return $this->commonInfo($response);
     }
 
 }

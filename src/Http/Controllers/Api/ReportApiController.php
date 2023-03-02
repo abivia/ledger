@@ -11,9 +11,8 @@ use Abivia\Ledger\Traits\ControllerResultHandler;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 
-class ReportApiController
+class ReportApiController extends ApiController
 {
     use ControllerResultHandler;
 
@@ -21,9 +20,10 @@ class ReportApiController
      * Perform a domain operation.
      *
      * @param Request $request
+     * @param string $operation Unused in reports
      * @return array
      */
-    public function run(Request $request): array
+    public function run(Request $request, string $operation = ''): array
     {
         $this->errors = [];
         $response = [];
@@ -46,9 +46,8 @@ class ReportApiController
             $response['errors'] = $this->errors;
             $response['errors'][] = $this->unexpectedException($exception);
         }
-        $response['time'] = new Carbon();
 
-        return $response;
+        return $this->commonInfo($response);
     }
 
 }
