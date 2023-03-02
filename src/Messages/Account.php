@@ -108,8 +108,9 @@ class Account extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlags = 0): self
+    public function validate(?int $opFlags): self
     {
+        $opFlags ??= $this->getOpFlags();
         $codeFormat = LedgerAccount::rules($opFlags & self::OP_CREATE)
             ->account->codeFormat ?? '';
         $errors = $this->validateCodes($opFlags, ['regEx' => $codeFormat]);

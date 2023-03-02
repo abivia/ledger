@@ -128,8 +128,9 @@ class Name extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlags = 0): self
+    public function validate(?int $opFlags): self
     {
+        $opFlags ??= $this->getOpFlags();
         // The name is not required for update or query operations.
         if ($this->name === '' && !($opFlags & (self::OP_QUERY | self::OP_UPDATE))) {
             throw Breaker::withCode(

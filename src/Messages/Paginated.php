@@ -186,8 +186,9 @@ abstract class Paginated extends Message
     /**
      * @inheritDoc
      */
-    public function validate(int $opFlags = 0): self
+    public function validate(?int $opFlags): self
     {
+        $opFlags ??= $this->getOpFlags();
         // Limit results on API calls
         if ($opFlags & self::F_API) {
             $limit = LedgerAccount::rules()->pageSize;

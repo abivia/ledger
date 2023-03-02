@@ -100,8 +100,9 @@ class Balance extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlags = 0): self
+    public function validate(?int $opFlags): self
     {
+        $opFlags ??= $this->getOpFlags();
         $errors = [];
         if ($opFlags & self::OP_CREATE) {
             if (($this->account ?? null) === null || $this->account->code === null) {

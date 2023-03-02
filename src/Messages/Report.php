@@ -69,8 +69,9 @@ class Report extends Message
     /**
      * @inheritDoc
      */
-    public function validate(int $opFlags = 0): self
+    public function validate(?int $opFlags): self
     {
+        $opFlags ??= $this->getOpFlags();
         if (!isset($this->name)) {
             throw Breaker::withCode(
                 Breaker::BAD_REQUEST,

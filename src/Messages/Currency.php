@@ -52,7 +52,7 @@ class Currency extends Message
                 $result->decimals = (int)$data['decimals'];
             } else {
                 throw Breaker::withCode(
-                    Breaker::BAD_REQUEST
+                    Breaker::BAD_REQUEST,
                     [__('value of decimals must be numeric')]
                 );
             }
@@ -67,8 +67,9 @@ class Currency extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlags = 0): self
+    public function validate(?int $opFlags): self
     {
+        $opFlags ??= $this->getOpFlags();
         $errors = $this->validateCodes($opFlags);
         if (!($opFlags & (self::OP_DELETE | self::OP_GET))) {
             if (!isset($this->decimals)) {

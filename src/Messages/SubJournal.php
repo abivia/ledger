@@ -42,8 +42,9 @@ class SubJournal extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlags = 0): self
+    public function validate(?int $opFlags): self
     {
+        $opFlags ??= $this->getOpFlags();
         $errors = $this->validateCodes($opFlags);
         if ($opFlags & self::OP_ADD && count($this->names) === 0) {
             $errors[] = __('at least one name property is required');

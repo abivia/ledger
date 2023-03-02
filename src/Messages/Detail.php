@@ -200,8 +200,9 @@ class Detail extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlags = 0): self
+    public function validate(?int $opFlags): self
     {
+        $opFlags ??= $this->getOpFlags();
         $errors = [];
         if (isset($this->account)) {
             try {

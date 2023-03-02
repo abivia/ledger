@@ -3,6 +3,7 @@
 namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
+use Abivia\Ledger\Http\Controllers\JournalEntryController;
 use Abivia\Ledger\Models\JournalEntry;
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Models\LedgerCurrency;
@@ -293,10 +294,25 @@ class EntryQuery extends Message {
     }
 
     /**
+     * @throws Breaker
+     */
+    public function run(int $opFlags): array {
+        $controller = new JournalEntryController();
+        $entries = [];
+        /** @var JournalEntry $entry */
+        foreach ($controller->query($this, $opFlags) as $entry) {
+            $entries[] = $entry->toResponse(Message::OP_GET);
+        }
+
+        return $entries;
+    }
+
+    /**
      * @inheritDoc
      */
-    public function validate(int $opFlags = 0): self
+    public function validate(?int $opFlags): self
     {
+        $opFlags ??= $this->getOpFlags();
         // Limit results on API calls
         if ($opFlags & self::F_API) {
             $limit = LedgerAccount::rules()->pageSize;

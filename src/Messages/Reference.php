@@ -82,8 +82,9 @@ class Reference extends Message
     /**
      * @inheritdoc
      */
-    public function validate(int $opFlags = 0): self
+    public function validate(?int $opFlags): self
     {
+        $opFlags ??= $this->getOpFlags();
         $errors = $this->validateCodes($opFlags, ['regEx' => '/.*/', 'uppercase' => false]);
         $rules = LedgerAccount::rules();
         if ($rules === null) {

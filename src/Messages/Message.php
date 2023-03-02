@@ -43,6 +43,11 @@ abstract class Message
      */
     protected static array $copyable = [];
 
+    /**
+     * @var int The operation associated with this message.
+     */
+    protected int $opFlags = 0;
+
     private static array $opMap = [
         'add' => self::OP_ADD,
         'batch' => self::OP_BATCH,
@@ -64,6 +69,7 @@ abstract class Message
      */
     public function copy(array $data, int $opFlags): self
     {
+        $this->opFlags = $opFlags;
         foreach (static::$copyable as $info) {
             if (is_array($info)) {
                 [$property, $mask] = $info;
@@ -110,6 +116,10 @@ abstract class Message
         return static::fromArray($content, $opFlags);
     }
 
+    public function getOpFlags(): int {
+        return $this->opFlags;
+    }
+
     /**
      * Convert a method name to an operation bitmask.
      *
@@ -142,10 +152,10 @@ abstract class Message
     /**
      * Check the message for validity.
      *
-     * @param int $opFlags Operation bitmask.
+     * @param int|null $opFlags Operation bitmask.
      * @return self
      * @throws Breaker When data is not valid.
      */
-    public abstract function validate(int $opFlags = 0): self;
+    public abstract function validate(?int $opFlags): self;
 
 }
