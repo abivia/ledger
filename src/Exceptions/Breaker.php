@@ -18,6 +18,8 @@ class Breaker extends Exception
     public const INVALID_DATA = 6;
     public const INTEGRITY_ERROR = 7;
     public const CONFIG_ERROR = 8;
+    public const SYSTEM_ERROR = 9;
+    public const BATCH_FAILED = 10;
 
     protected array $errors;
 
@@ -26,11 +28,13 @@ class Breaker extends Exception
         self::BAD_ACCOUNT => 'Account invalid or not found.',
         self::BAD_REQUEST => 'Bad request.',
         self::BAD_REVISION => 'Outdated or invalid revision token.',
+        self::BATCH_FAILED => 'Part of a batch failed.',
         self::CONFIG_ERROR => 'Internal configuration error.',
         self::INTEGRITY_ERROR => 'Ledger data is inconsistent.',
         self::INVALID_DATA => 'Error in data source.',
         self::NOT_IMPLEMENTED => 'Feature is not yet implemented.',
         self::RULE_VIOLATION => 'Request violates business rule.',
+        self::SYSTEM_ERROR => 'Unexpected system error.',
     ];
 
     /**
