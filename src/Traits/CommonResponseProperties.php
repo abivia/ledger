@@ -2,7 +2,6 @@
 
 namespace Abivia\Ledger\Traits;
 
-use Abivia\Ledger\Helpers\Revision;
 use Exception;
 
 trait CommonResponseProperties
@@ -25,9 +24,10 @@ trait CommonResponseProperties
         if (!in_array('extra', $exclude) && isset($this->extra)) {
             $response['extra'] = $this->extra;
         }
-        $response['revision'] = Revision::create($this->revision, $this->updated_at);
+        $response['revision'] = $this->revisionHash;
         $response['createdAt'] = $this->created_at;
         $response['updatedAt'] = $this->updated_at;
+        $this->batchLogFetch();
 
         return $response;
     }

@@ -3,6 +3,7 @@
 namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
+use Abivia\Ledger\Helpers\Revision;
 use Illuminate\Http\Request;
 use const JSON_BIGINT_AS_STRING;
 
@@ -43,6 +44,10 @@ abstract class Message
      */
     protected static array $copyable = [];
 
+    /**
+     * @var bool Set when processing the body of a batch message to block nested batches
+     */
+    protected static bool $inBatch = false;
     /**
      * @var int The operation associated with this message.
      */
@@ -121,6 +126,22 @@ abstract class Message
     }
 
     /**
+     * Make sure a revision code is present
+     * @param array $errors
+     * @return void
+     */
+    protected function requireRevision(array &$errors)
+    {
+        if (!isset($this->revision)) {
+            if (Revision::isInBatch()) {
+                $this->revision = '&';
+            } else {
+                $errors[] = __("This request must supply a revision.");
+            }
+        }
+    }
+
+    /**
      * Convert a method name to an operation bitmask.
      *
      * @param string $method The method name.
@@ -140,7 +161,7 @@ abstract class Message
         if (!($options['allowZero'] ?? false) && $opFlags === 0) {
             throw Breaker::withCode(
                 Breaker::RULE_VIOLATION,
-                [':operation is not a valid function.', ['operation' => $method]]
+                [__(':operation is not a valid function.', ['operation' => $method])]
             );
         }
         if (isset($options['add'])) {
