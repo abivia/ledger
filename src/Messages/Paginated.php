@@ -186,7 +186,7 @@ abstract class Paginated extends Message
     /**
      * @inheritDoc
      */
-    public function validate(?int $opFlags): self
+    public function validate(?int $opFlags = null): self
     {
         $opFlags ??= $this->getOpFlags();
         // Limit results on API calls

@@ -128,7 +128,7 @@ class Name extends Message
     /**
      * @inheritdoc
      */
-    public function validate(?int $opFlags): self
+    public function validate(?int $opFlags = null): self
     {
         $opFlags ??= $this->getOpFlags();
         // The name is not required for update or query operations.

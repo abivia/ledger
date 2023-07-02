@@ -97,7 +97,7 @@ class EntityRef extends Message
      * @return self
      * @throws Breaker
      */
-    public function validate(?int $opFlags, string $codeFormat = ''): self
+    public function validate(?int $opFlags = null, string $codeFormat = ''): self
     {
         $errors = [];
         if (!isset($this->code) && !isset($this->uuid)) {

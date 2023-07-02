@@ -265,7 +265,7 @@ class Create extends Message
     /**
      * @inheritdoc
      */
-    public function validate(?int $opFlags): self
+    public function validate(?int $opFlags = null): self
     {
         $opFlags ??= $this->getOpFlags();
         $this->transDate ??= Carbon::now();
