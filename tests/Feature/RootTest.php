@@ -30,6 +30,26 @@ class RootTest extends TestCase
         $this->assertCount(1, $actual->errors);
     }
 
+    public function testDebug()
+    {
+        // Ensure debugging is off
+        session(['ledger.api_debug' => 0]);
+        $response = $this->postJson(
+            'api/ledger/root/bogus', []
+        );
+        $actual = $this->isFailure($response);
+        $this->assertFalse(isset($actual->apiVersion));
+        $this->assertFalse(isset($actual->version));
+        // Turn debugging on
+        session(['ledger.api_debug' => 1]);
+        $response = $this->postJson(
+            'api/ledger/root/bogus', []
+        );
+        $actual = $this->isFailure($response);
+        $this->assertTrue(isset($actual->apiVersion));
+        $this->assertTrue(isset($actual->version));
+    }
+
     public function testListTemplates()
     {
         $response = $this->postJson(
