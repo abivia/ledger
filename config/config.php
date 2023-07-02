@@ -3,6 +3,7 @@
 
 return [
     'api' => true,
+    'api_debug' => env('LEDGER_API_DEBUG_ALLOWED', true),
     // 'chartPath' => 'your/custom/path',
     'log' => env('LEDGER_LOG_CHANNEL', env('LOG_CHANNEL')),
     'middleware' => ['api'],
@@ -23,4 +24,5 @@ return [
     // 'reports' => [
     //     'trialBalance' => Abivia\Ledger\Reports\TrialBalanceReport::class,
     // ],
+    'session_key_prefix' => env('LEDGER_SESSION_PREFIX', 'ledger.'),
 ];
