@@ -46,8 +46,8 @@ class AddController extends LedgerAccountController
             $ledgerAccount = LedgerAccount::createFromMessage($message);
             // Create the name records
             $this->updateNames($ledgerAccount, $message);
-            DB::commit();
             $ledgerAccount->refresh();
+            DB::commit();
             $inTransaction = false;
             $this->auditLog($message);
         } catch (Exception $exception) {
