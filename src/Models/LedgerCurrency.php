@@ -6,11 +6,13 @@ use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Revision;
 use Abivia\Ledger\Messages\Currency;
 use Abivia\Ledger\Traits\CommonResponseProperties;
+use Abivia\Ledger\Traits\HasRevisions;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\HigherOrderCollectionProxy;
 
 /**
  * Currencies available to the ledger.
@@ -25,7 +27,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class LedgerCurrency extends Model
 {
-    use CommonResponseProperties, HasFactory;
+    use CommonResponseProperties, HasFactory, HasRevisions;
 
     const AMOUNT_SIZE = 32;
     const CODE_SIZE = 16;
@@ -46,15 +48,25 @@ class LedgerCurrency extends Model
     public $primaryKey = 'code';
 
     /**
-     * @param ?string $revision
-     * @throws Breaker
+     * The revision Hash is computationally expensive, only calculated when required.
+     *
+     * @param $key
+     * @return HigherOrderCollectionProxy|mixed|string|null
      * @throws Exception
      */
-    public function checkRevision(?string $revision)
+    public function __get($key)
     {
-        if ($revision !== Revision::create($this->revision, $this->updated_at)) {
-            throw Breaker::withCode(Breaker::BAD_REVISION);
+        if ($key === 'revisionHash') {
+            return $this->getRevisionHash();
         }
+        return parent::__get($key);
+    }
+
+    protected static function booted()
+    {
+        static::saved(function ($model) {
+            $model->clearRevisionCache();
+        });
     }
 
     public static function createFromMessage(Currency $message): self

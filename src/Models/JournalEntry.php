@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Collection;
+use Illuminate\Support\HigherOrderCollectionProxy;
 
 /**
  * Records a transaction between accounts.
@@ -81,6 +82,28 @@ class JournalEntry extends Model
     //protected $with = ['journal_detail'];
 
     //$by = Auth::id() ? 'User id ' . Auth::id() : 'unknown';
+
+    /**
+     * The revision Hash is computationally expensive, only calculated when required.
+     *
+     * @param $key
+     * @return HigherOrderCollectionProxy|mixed|string|null
+     * @throws Exception
+     */
+    public function __get($key)
+    {
+        if ($key === 'revisionHash') {
+            return $this->getRevisionHash();
+        }
+        return parent::__get($key);
+    }
+
+    protected static function booted()
+    {
+        static::saved(function ($model) {
+            $model->clearRevisionCache();
+        });
+    }
 
     /**
      * Check that the entry is unlocked and can be modified.

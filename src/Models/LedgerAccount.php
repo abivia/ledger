@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Query\Builder as DbBuilder;
+use Illuminate\Support\HigherOrderCollectionProxy;
 use stdClass;
 
 /**
@@ -38,6 +39,7 @@ use stdClass;
  * @property-read  string $parentCode The parent account code (or null if this is the root).
  * @property string $parentUuid The parent account (or null if this is the root).
  * @property Carbon $revision Revision timestamp to detect race condition on update.
+ * @property string $revisionHash Salted hash of $revision.
  * @property string $taxCode An account code for tax purposes.
  * @property Carbon $updated_at When the record was updated.
  * @mixin Builder
@@ -109,9 +111,22 @@ class LedgerAccount extends Model
 
     private static ?LedgerAccount $root = null;
 
+    /**
+     * Getting the parent code requires fetching the parent; The revision Hash is
+     * computationally expensive, only calculated when required.
+     *
+     * @param $key
+     * @return HigherOrderCollectionProxy|mixed|string|null
+     * @throws Exception
+     */
     public function __get($key)
     {
-        if ($key === 'parentCode') {
+        if ($key === 'revisionHash') {
+            if ($this->code === '') {
+                $this->revisionHashCached = '';
+            }
+            return $this->getRevisionHash();
+        } elseif ($key === 'parentCode') {
             if ($this->parentUuid === null) {
                 return null;
             }
@@ -121,9 +136,25 @@ class LedgerAccount extends Model
         return parent::__get($key);
     }
 
+    public function __set($key, $value)
+    {
+        parent::__set($key, $value);
+        if ($key === 'revisionHashCached') {
+            // Keep this the hell out of the query.
+            unset($this->attributes['revisionHashCached']);
+        }
+    }
+
     public function balances(): HasMany
     {
         return $this->hasMany(LedgerBalance::class, 'ledgerUuid', 'ledgerUuid');
+    }
+
+    protected static function booted()
+    {
+        static::saved(function ($model) {
+            $model->clearRevisionCache();
+        });
     }
 
     public static function createFromMessage(Account $message): self
@@ -159,6 +190,9 @@ class LedgerAccount extends Model
     {
         if (isset($entityRef->uuid)) {
             $finder = self::where('ledgerUuid', $entityRef->uuid);
+            if (isset($entityRef->code) && $finder->code != $entityRef->code) {
+                throw new Exception(__('Account reference: retrieved code does not match uuid'));
+            }
         } elseif (isset($entityRef->code)) {
             $finder = self::where('code', $entityRef->code);
         } else {
@@ -196,6 +230,18 @@ class LedgerAccount extends Model
         return $idList;
     }
 
+    /**
+     * Check if the ledger root singleton exists.
+     */
+    public static function hasRoot(): bool
+    {
+        if (self::$root === null) {
+            self::loadRoot();
+        }
+
+        return self::$root !== null;
+    }
+
     public static function loadRoot(): void
     {
         try {
@@ -225,7 +271,7 @@ class LedgerAccount extends Model
      * @return void
      * @throws Breaker
      */
-    private static function noRootError(): void
+    public static function notInitializedError(): void
     {
         throw Breaker::withCode(
             Breaker::RULE_VIOLATION, __('Ledger has not been initialized.')
@@ -319,7 +365,7 @@ class LedgerAccount extends Model
         if (self::$root === null) {
             self::loadRoot();
             if (self::$root === null) {
-                self::noRootError();
+                self::notInitializedError();
             }
         }
 
@@ -342,7 +388,7 @@ class LedgerAccount extends Model
             if (self::$root === null) {
                 if (!$bootable) {
                     if ($required) {
-                        self::noRootError();
+                        self::notInitializedError();
                     }
                     return null;
                 }
@@ -352,7 +398,7 @@ class LedgerAccount extends Model
         }
         $rules = self::$root->flex->rules;
         if ($rules === null) {
-            self::noRootError();
+            self::notInitializedError();
         }
         return $rules;
     }

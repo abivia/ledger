@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\HigherOrderCollectionProxy;
 
 /**
  * Domains assigned within the ledger.
@@ -41,6 +42,28 @@ class SubJournal extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     public $primaryKey = 'subJournalUuid';
+
+    /**
+     * The revision Hash is computationally expensive, only calculated when required.
+     *
+     * @param $key
+     * @return HigherOrderCollectionProxy|mixed|string|null
+     * @throws Exception
+     */
+    public function __get($key)
+    {
+        if ($key === 'revisionHash') {
+            return $this->getRevisionHash();
+        }
+        return parent::__get($key);
+    }
+
+    protected static function booted()
+    {
+        static::saved(function ($model) {
+            $model->clearRevisionCache();
+        });
+    }
 
     public static function createFromMessage(JournalMessage $message): self
     {

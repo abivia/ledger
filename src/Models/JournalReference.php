@@ -13,6 +13,7 @@ use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\HigherOrderCollectionProxy;
 
 /**
  * Link to an external account entity (customer, vendor, etc.).
@@ -38,6 +39,28 @@ class JournalReference extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $primaryKey = 'journalReferenceUuid';
+
+    /**
+     * The revision Hash is computationally expensive, only calculated when required.
+     *
+     * @param $key
+     * @return HigherOrderCollectionProxy|mixed|string|null
+     * @throws Exception
+     */
+    public function __get($key)
+    {
+        if ($key === 'revisionHash') {
+            return $this->getRevisionHash();
+        }
+        return parent::__get($key);
+    }
+
+    protected static function booted()
+    {
+        static::saved(function ($model) {
+            $model->clearRevisionCache();
+        });
+    }
 
     /**
      * @throws Breaker
@@ -80,6 +103,7 @@ class JournalReference extends Model
     }
 
     /**
+     * @return array
      * @throws Exception
      */
     public function toResponse(): array

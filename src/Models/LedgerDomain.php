@@ -3,6 +3,7 @@
 namespace Abivia\Ledger\Models;
 
 use Abivia\Ledger\Exceptions\Breaker;
+use Abivia\Ledger\Helpers\Revision;
 use Abivia\Ledger\Messages\Domain;
 use Abivia\Ledger\Messages\EntityRef;
 use Abivia\Ledger\Traits\CommonResponseProperties;
@@ -13,6 +14,7 @@ use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\HigherOrderCollectionProxy;
 
 /**
  * Domains assigned within the ledger.
@@ -24,7 +26,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $extra Application defined information.
  * @property string $flex JSON-encoded additional system information (e.g. supported currencies).
  * @property LedgerName[] $names Associated names.
- * @property Carbon $revision Revision timestamp to detect race condition on update.
+ * @property Carbon $revision Revision hash to detect race condition on update.
  * @property bool $subJournals Set if the domain uses sub-journals.
  * @property Carbon $updated_at When the record was updated.
  * @mixin Builder
@@ -43,6 +45,29 @@ class LedgerDomain extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     public $primaryKey = 'domainUuid';
+
+    /**
+     * The revision Hash is computationally expensive, only calculated when required.
+     *
+     * @param $key
+     * @return HigherOrderCollectionProxy|mixed|string|null
+     * @throws Exception
+     */
+    public function __get($key)
+    {
+        if ($key === 'revisionHash') {
+            return $this->getRevisionHash();
+        }
+        return parent::__get($key);
+    }
+
+    protected static function booted()
+    {
+
+        static::saved(function ($model) {
+            $model->clearRevisionCache();
+        });
+    }
 
     public static function createFromMessage(Domain $message): self
     {
