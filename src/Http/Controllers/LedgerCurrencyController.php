@@ -6,6 +6,7 @@ namespace Abivia\Ledger\Http\Controllers;
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Messages\CurrencyQuery;
 use Abivia\Ledger\Models\JournalEntry;
+use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Models\LedgerBalance;
 use Abivia\Ledger\Models\LedgerCurrency;
 use Abivia\Ledger\Models\LedgerDomain;
@@ -29,9 +30,13 @@ class LedgerCurrencyController extends Controller
      * @param Currency $message
      * @return LedgerCurrency
      * @throws Breaker
+     * @throws Exception
      */
     public function add(Currency $message): LedgerCurrency
     {
+        if (LedgerAccount::count() === 0) {
+            LedgerAccount::notInitializedError();
+        }
         $message->validate(Message::OP_ADD);
         // check for duplicates
         /** @noinspection PhpDynamicAsStaticMethodCallInspection */
@@ -50,9 +55,20 @@ class LedgerCurrencyController extends Controller
         $ledgerCurrency = new LedgerCurrency();
         $ledgerCurrency->code = $message->code;
         $ledgerCurrency->decimals = $message->decimals;
-        $ledgerCurrency->save();
-        $this->auditLog($message);
-        $ledgerCurrency->refresh();
+        try {
+            DB::beginTransaction();
+            $inTransaction = true;
+            $ledgerCurrency->save();
+            $ledgerCurrency->refresh();
+            DB::commit();
+            $inTransaction = false;
+            $this->auditLog($message);
+        } catch (Exception $exception) {
+            if ($inTransaction) {
+                DB::rollBack();
+            }
+            throw $exception;
+        }
 
         return $ledgerCurrency;
     }
@@ -173,13 +189,14 @@ class LedgerCurrencyController extends Controller
      * Perform a currency operation.
      *
      * @param Currency $message
-     * @param int $opFlag
+     * @param int|null $opFlags
      * @return LedgerCurrency|null
      * @throws Breaker
      */
-    public function run(Currency $message, int $opFlag): ?LedgerCurrency
+    public function run(Currency $message, ?int $opFlags = null): ?LedgerCurrency
     {
-        switch ($opFlag & Message::ALL_OPS) {
+        $opFlags ??= $message->getOpFlags();
+        switch ($opFlags & Message::ALL_OPS) {
             case Message::OP_ADD:
                 return $this->add($message);
             case Message::OP_DELETE:
@@ -244,9 +261,9 @@ class LedgerCurrencyController extends Controller
                     ->update(['currencyDefault' => $message->toCode]);
             }
             $ledgerCurrency->save();
-            DB::commit();
-            $inTransaction = false;
             $ledgerCurrency->refresh();
+            DB::commit();
+            $this->auditLog($message);
         } catch (Exception $exception) {
             if ($inTransaction) {
                 DB::rollBack();
