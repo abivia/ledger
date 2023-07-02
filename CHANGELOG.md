@@ -1,3 +1,23 @@
+## 1.11.0
+
+Note: there is a new entry in the Ledger config, `session_key_prefix`, which defaults
+to "ledger." and can be overridden by setting `LEDGER_SESSION_PREFIX` in the environment.
+Existing installations should add this to config/ledger.php.
+
+### Bugs:
+- Fixed an error in the JSON balance-response schema.
+- Fixed: missing audit logs
+
+### Changes:
+- `LedgerAccount::findWith()` now throws an exception when a UUID and account code 
+are both provided but the retrieved code does not match the UUID.
+- Added API diagnostics, enabled via the `LEDGER_API_DEBUG_ALLOWED` environment setting.
+When enabled, calls will return version information for the Ledger core and API. 
+- Started API version tracking.
+- Refactored API controllers. Messages now have a `run()` method responsible for
+executing the message.
+- Improved some error messages.
+
 ## 1.10.0
 
 ### Bugs:

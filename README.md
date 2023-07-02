@@ -54,6 +54,14 @@ Create database tables
 The configuration file is installed as `config\ledger.php`. You can enable/disable the 
 JSON API, set middleware, and a path prefix to the API.
 
+### Updating
+
+To ensure schema changes are in place publish the configuration again and migrate:
+
+`php artisan vendor:publish --provider="Abivia\Ledger\LedgerServiceProvider"`
+`php artisan migrate`
+
+
 ## Donations welcome
 
 Abivia is a small business. Even small donations go a long way.
