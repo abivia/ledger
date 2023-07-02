@@ -57,6 +57,10 @@ JSON;
         "postToCategory": true
     },
     "appAttributes": [],
+    "batch":{
+      "allowReports":true,
+      "limit":0
+    },
     "domain": {},
     "entry": {
         "reviewed": true
