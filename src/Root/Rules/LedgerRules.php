@@ -23,6 +23,11 @@ class LedgerRules implements Hydratable
     public array $appAttributes = [];
 
     /**
+     * @var Batch Batch rules.
+     */
+    public Batch $batch;
+
+    /**
      * @var Domain Domain properties.
      */
     public Domain $domain;
@@ -60,6 +65,7 @@ class LedgerRules implements Hydratable
     public function __construct()
     {
         $this->account = new Account();
+        $this->batch = new Batch();
         $this->domain = new Domain();
         $this->entry = new Entry();
         $this->language = new Language();
