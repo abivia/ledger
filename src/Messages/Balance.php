@@ -3,7 +3,9 @@
 namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
+use Abivia\Ledger\Http\Controllers\LedgerBalanceController;
 use Abivia\Ledger\Models\LedgerAccount;
+use Abivia\Ledger\Models\LedgerCurrency;
 
 class Balance extends Message
 {
@@ -97,10 +99,32 @@ class Balance extends Message
         return $balance;
     }
 
+    public function run(): array
+    {
+        $controller = new LedgerBalanceController();
+        $ledgerBalance = $controller->run($this, $this->opFlags);
+        if ($ledgerBalance === null) {
+            // The request is good but the account has no transactions, return zero.
+            $ledgerCurrency = LedgerCurrency::find($this->currency);
+            if ($ledgerCurrency === null) {
+                throw Breaker::withCode(
+                    Breaker::INVALID_DATA,
+                    __('Currency :code not found.', ['code' => $this->currency])
+                );
+            }
+            $this->amount = bcadd('0', '0', $ledgerCurrency->decimals);
+        } else {
+            $this->amount = $ledgerBalance->balance;
+        }
+        $response = ['balance' => $this];
+
+        return $response;
+    }
+
     /**
      * @inheritdoc
      */
-    public function validate(?int $opFlags): self
+    public function validate(?int $opFlags = null): self
     {
         $opFlags ??= $this->getOpFlags();
         $errors = [];

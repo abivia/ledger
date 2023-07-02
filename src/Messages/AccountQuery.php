@@ -2,6 +2,8 @@
 
 namespace Abivia\Ledger\Messages;
 
+use Abivia\Ledger\Http\Controllers\LedgerAccountController;
+
 class AccountQuery extends Paginated
 {
 
@@ -35,6 +37,18 @@ class AccountQuery extends Paginated
         }
 
         return $query;
+    }
+
+    public function run(): array
+    {
+        $controller = new LedgerAccountController();
+        $accounts = [];
+        foreach ($controller->query($this, $this->opFlags) as $entry) {
+            $accounts[] = $entry->toResponse([]);
+        }
+        $response['accounts'] = $accounts;
+
+        return $response;
     }
 
 }

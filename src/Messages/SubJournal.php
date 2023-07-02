@@ -4,6 +4,7 @@ namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Merge;
+use Abivia\Ledger\Http\Controllers\SubJournalController;
 use Abivia\Ledger\Messages\Message;
 
 class SubJournal extends Message
@@ -39,10 +40,23 @@ class SubJournal extends Message
         return $subJournal;
     }
 
+    public function run(): array
+    {
+        $controller = new SubJournalController();
+        $subJournal = $controller->run($this);
+        if ($this->opFlags & Message::OP_DELETE) {
+            $response = ['success' => true];
+        } else {
+            $response = ['journal' => $subJournal->toResponse()];
+        }
+
+        return $response;
+    }
+
     /**
      * @inheritdoc
      */
-    public function validate(?int $opFlags): self
+    public function validate(?int $opFlags = null): self
     {
         $opFlags ??= $this->getOpFlags();
         $errors = $this->validateCodes($opFlags);
@@ -56,8 +70,8 @@ class SubJournal extends Message
         } catch (Breaker $exception) {
             Merge::arrays($errors, $exception->getErrors());
         }
-        if ($opFlags & self::OP_UPDATE && !isset($this->revision)) {
-            $errors[] = 'A revision code is required';
+        if ($opFlags & self::OP_UPDATE) {
+            $this->requireRevision($errors);
         }
         if (count($errors) !== 0) {
             throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);

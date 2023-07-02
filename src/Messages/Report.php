@@ -3,6 +3,7 @@
 namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
+use Abivia\Ledger\Http\Controllers\ReportController;
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Models\LedgerReport;
 use Carbon\Carbon;
@@ -66,10 +67,23 @@ class Report extends Message
         return $reporter;
     }
 
+    public function run(): array
+    {
+        $response = [];
+        $controller = new ReportController();
+        $report = $controller->generate($this);
+
+        // Remove keys from the accounts so that they get sent as an array.
+        $report['accounts'] = $report['accounts']->values();
+        $response['report'] = $report;
+
+        return $response;
+    }
+
     /**
      * @inheritDoc
      */
-    public function validate(?int $opFlags): self
+    public function validate(?int $opFlags = null): self
     {
         $opFlags ??= $this->getOpFlags();
         if (!isset($this->name)) {

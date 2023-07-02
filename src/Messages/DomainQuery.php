@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Abivia\Ledger\Messages;
 
+use Abivia\Ledger\Http\Controllers\LedgerDomainController;
+
 class DomainQuery extends Paginated
 {
     /**
@@ -10,4 +12,14 @@ class DomainQuery extends Paginated
      */
     public string $after;
 
+    public function run(): array
+    {
+        $controller = new LedgerDomainController();
+        $domains = [];
+        foreach ($controller->query($this, $this->opFlags) as $entry) {
+            $domains[] = $entry->toResponse([]);
+        }
+
+        return ['domains' => $domains];
+    }
 }

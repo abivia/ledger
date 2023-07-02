@@ -4,6 +4,8 @@ namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Merge;
+use Abivia\Ledger\Helpers\Revision;
+use Abivia\Ledger\Http\Controllers\LedgerDomainController;
 
 class Domain extends Message
 {
@@ -56,9 +58,25 @@ class Domain extends Message
     }
 
     /**
+     * @throws Breaker
+     */
+    public function run(): array
+    {
+        $controller = new LedgerDomainController();
+        $ledgerDomain = $controller->run($this);
+        if ($this->opFlags & Message::OP_DELETE) {
+            $response = ['success' => true];
+        } else {
+            $response = ['domain' => $ledgerDomain->toResponse()];
+        }
+
+        return $response;
+    }
+
+    /**
      * @inheritdoc
      */
-    public function validate(?int $opFlags): self
+    public function validate(?int $opFlags = null): self
     {
         $opFlags ??= $this->getOpFlags();
         $errors = $this->validateCodes($opFlags);
@@ -73,9 +91,7 @@ class Domain extends Message
             $errors[] = 'A non-empty names property is required';
         }
         if ($opFlags & self::OP_UPDATE) {
-            if (!isset($this->revision)) {
-                $errors[] = 'A revision code is required';
-            }
+            $this->requireRevision($errors);
         }
         try {
             foreach ($this->names as $name) {

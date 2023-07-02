@@ -296,21 +296,21 @@ class EntryQuery extends Message {
     /**
      * @throws Breaker
      */
-    public function run(int $opFlags): array {
+    public function run(): array {
         $controller = new JournalEntryController();
         $entries = [];
         /** @var JournalEntry $entry */
-        foreach ($controller->query($this, $opFlags) as $entry) {
+        foreach ($controller->query($this, $this->opFlags) as $entry) {
             $entries[] = $entry->toResponse(Message::OP_GET);
         }
 
-        return $entries;
+        return ['entries' => $entries];
     }
 
     /**
      * @inheritDoc
      */
-    public function validate(?int $opFlags): self
+    public function validate(?int $opFlags = null): self
     {
         $opFlags ??= $this->getOpFlags();
         // Limit results on API calls

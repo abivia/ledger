@@ -45,10 +45,9 @@ class RootApiController extends ApiController
         return $this->commonInfo($response);
     }
 
-    public function run(Request $request, string $operation): array
+    protected function runCore(Request $request, string $operation): array
     {
         $response = [];
-        $this->errors = [];
         if ($operation === 'create') {
             return $this->create($request);
         } elseif ($operation === 'templates') {
@@ -60,8 +59,7 @@ class RootApiController extends ApiController
             ['operation' => $operation]
         )];
 
-
-        return $this->commonInfo($response);
+        return $response;
     }
 
     public function templates(): array

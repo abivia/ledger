@@ -5,6 +5,7 @@ namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Merge;
+use Abivia\Ledger\Http\Controllers\JournalEntryController;
 use Abivia\Ledger\Models\LedgerAccount;
 use Abivia\Ledger\Messages\Message;
 use Carbon\Carbon;
@@ -143,9 +144,24 @@ class Entry extends Message
     }
 
     /**
+     * @throws Breaker
+     */
+    public function run(): array {
+        $controller = new JournalEntryController();
+        $journalEntry = $controller->run($this);
+        if ($this->opFlags & (Message::OP_DELETE)) {
+            $response = ['success' => true];
+        } else {
+            $response = ['entry' => $journalEntry->toResponse($this->opFlags)];
+        }
+
+        return $response;
+    }
+
+    /**
      * @inheritdoc
      */
-    public function validate(?int $opFlags): self
+    public function validate(?int $opFlags = null): self
     {
         $opFlags ??= $this->getOpFlags();
         $errors = [];
@@ -183,9 +199,7 @@ class Entry extends Message
             }
         }
         if ($opFlags & (self::OP_DELETE | self::OP_UPDATE)) {
-            if (!isset($this->revision)) {
-                $errors[] = __('Entry revision code required for update.');
-            }
+            $this->requireRevision($errors);
         }
         if (isset($this->reference)) {
             $this->reference->validate($opFlags);

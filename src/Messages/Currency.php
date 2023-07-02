@@ -3,6 +3,7 @@
 namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
+use Abivia\Ledger\Http\Controllers\LedgerCurrencyController;
 
 class Currency extends Message
 {
@@ -64,10 +65,23 @@ class Currency extends Message
         return $result;
     }
 
+    public function run(): array
+    {
+        $controller = new LedgerCurrencyController();
+        $ledgerCurrency = $controller->run($this);
+        if ($this->opFlags & Message::OP_DELETE) {
+            $response = ['success' => true];
+        } else {
+            $response = ['currency' => $ledgerCurrency->toResponse()];
+        }
+
+        return $response;
+    }
+
     /**
      * @inheritdoc
      */
-    public function validate(?int $opFlags): self
+    public function validate(?int $opFlags = null): self
     {
         $opFlags ??= $this->getOpFlags();
         $errors = $this->validateCodes($opFlags);
@@ -77,9 +91,7 @@ class Currency extends Message
             }
         }
         if ($opFlags & self::OP_UPDATE) {
-            if (!isset($this->revision)) {
-                $errors[] = __('the revision property is required');
-            }
+            $this->requireRevision($errors);
         }
         if (count($errors) !== 0) {
             throw Breaker::withCode(Breaker::BAD_REQUEST, $errors);

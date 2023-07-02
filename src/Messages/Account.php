@@ -4,6 +4,7 @@ namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
 use Abivia\Ledger\Helpers\Merge;
+use Abivia\Ledger\Http\Controllers\LedgerAccountController;
 use Abivia\Ledger\Models\LedgerAccount;
 
 class Account extends Message
@@ -105,10 +106,23 @@ class Account extends Message
         }
     }
 
+    public function run(): array
+    {
+        $controller = new LedgerAccountController();
+        $ledgerAccount = $controller->run($this);
+        if ($this->opFlags & Message::OP_DELETE) {
+            $response = ['success' => true];
+        } else {
+            $response = ['account' => $ledgerAccount->toResponse()];
+        }
+
+        return $response;
+    }
+
     /**
      * @inheritdoc
      */
-    public function validate(?int $opFlags): self
+    public function validate(?int $opFlags = null): self
     {
         $opFlags ??= $this->getOpFlags();
         $codeFormat = LedgerAccount::rules($opFlags & self::OP_CREATE)
@@ -130,9 +144,7 @@ class Account extends Message
             }
         }
         if ($opFlags & self::OP_UPDATE) {
-            if (!isset($this->revision)) {
-                $errors[] = __("Update request must supply a revision.");
-            }
+            $this->requireRevision($errors);
             if (($this->credit ?? false) && ($this->debit ?? false)) {
                 $errors[] = __(
                     "account :code can't be both debit and credit",

@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace Abivia\Ledger\Messages;
 
 use Abivia\Ledger\Exceptions\Breaker;
+use Abivia\Ledger\Http\Controllers\JournalReferenceController;
 use Abivia\Ledger\Models\JournalReference;
-use Abivia\Ledger\Messages\Message;
 use Abivia\Ledger\Models\LedgerAccount;
 use Exception;
 
@@ -80,9 +80,32 @@ class Reference extends Message
     }
 
     /**
+     * @throws Breaker
+     */
+    public function run(): array
+    {
+        $controller = new JournalReferenceController();
+        $journalReference = $controller->run($this);
+        if ($this->opFlags & Message::OP_DELETE) {
+            $response['success'] = true;
+        } else {
+            try {
+                $response['reference'] = $journalReference->toResponse();
+            } catch (Exception $exception) {
+                throw Breaker::withCode(
+                    Breaker::SYSTEM_ERROR,
+                    [__($exception->getMessage())]
+                );
+            }
+        }
+
+        return $response;
+    }
+
+    /**
      * @inheritdoc
      */
-    public function validate(?int $opFlags): self
+    public function validate(?int $opFlags = null): self
     {
         $opFlags ??= $this->getOpFlags();
         $errors = $this->validateCodes($opFlags, ['regEx' => '/.*/', 'uppercase' => false]);
