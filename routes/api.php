@@ -1,5 +1,6 @@
 <?php
 
+use Abivia\Ledger\Http\Controllers\Api\BatchApiController;
 use Abivia\Ledger\Http\Controllers\Api\JournalEntryApiController;
 use Abivia\Ledger\Http\Controllers\Api\JournalReferenceApiController;
 use Abivia\Ledger\Http\Controllers\Api\LedgerAccountApiController;
@@ -19,6 +20,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('account/{operation}', [LedgerAccountApiController::class, 'run']);
 Route::post('balance/{operation}', [LedgerBalanceApiController::class, 'run']);
+Route::post('batch', [BatchApiController::class, 'run']);
 Route::post('currency/{operation}', [LedgerCurrencyApiController::class, 'run']);
 Route::post('domain/{operation}', [LedgerDomainApiController::class, 'run']);
 Route::post('entry/{operation}', [JournalEntryApiController::class, 'run']);
