@@ -179,7 +179,7 @@ trait CommonChecks {
     private function hasAttributes(array $attributes, object $object)
     {
         foreach ($attributes as $attribute) {
-            $this->assertObjectHasAttribute($attribute, $object);
+            $this->assertTrue(isset($object->$attribute));
         }
     }
 
@@ -193,11 +193,16 @@ trait CommonChecks {
     private function isFailure(TestResponse $response)
     {
         $response->assertStatus(200);
-        $this->assertTrue(isset($response['time']));
-        $this->assertTrue(isset($response['errors']));
         $actual = json_decode($response->content());
         $this->assertTrue($actual !== false);
-        $this->assertCount(2, (array)$actual);
+        $asArray = (array)$actual;
+        $this->assertArrayHasKey('time', $asArray);
+        $this->assertArrayHasKey('errors', $asArray);
+        if (count($asArray) !== 2) {
+            $this->assertArrayHasKey('version', $asArray);
+            $this->assertArrayHasKey('apiVersion', $asArray);
+            $this->assertCount(4, $asArray);
+        }
 
         return $actual;
     }
