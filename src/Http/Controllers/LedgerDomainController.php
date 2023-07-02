@@ -217,12 +217,13 @@ class LedgerDomainController extends Controller
      * Perform a domain operation.
      *
      * @param Domain $message
-     * @param int $opFlags
+     * @param int|null $opFlags
      * @return LedgerDomain|null
      * @throws Breaker
      */
-    public function run(Domain $message, int $opFlags): ?LedgerDomain
+    public function run(Domain $message, ?int $opFlags = null): ?LedgerDomain
     {
+        $opFlags ??= $message->getOpFlags();
         switch ($opFlags & Message::ALL_OPS) {
             case Message::OP_ADD:
                 return $this->add($message);
@@ -250,7 +251,7 @@ class LedgerDomainController extends Controller
         $inTransaction = false;
         try {
             $ledgerDomain = $this->fetch($message->code);
-            $ledgerDomain->checkRevision($message->revision ?? null);
+            $ledgerDomain->checkRevision($message->revision);
 
             $codeChange = isset($message->toCode)
                 && $ledgerDomain->code !== $message->toCode;
@@ -273,9 +274,9 @@ class LedgerDomainController extends Controller
                 LedgerAccount::root()->flex = $flex;
                 LedgerAccount::saveRoot();
             }
-            DB::commit();
-            $inTransaction = false;
             $ledgerDomain->refresh();
+            DB::commit();
+            $this->auditLog($message);
         } catch (Exception $exception) {
             if ($inTransaction) {
                 DB::rollBack();

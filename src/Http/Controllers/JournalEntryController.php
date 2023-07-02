@@ -195,7 +195,7 @@ class JournalEntryController extends Controller
         if ($journalEntry === null) {
             throw Breaker::withCode(
                 Breaker::RULE_VIOLATION,
-                [__('Journal entry :id does not exist', compact($id))]
+                [__('Journal entry :id does not exist', ['id' => $id])]
             );
         }
 
@@ -251,9 +251,10 @@ class JournalEntryController extends Controller
             $journalEntry->checkRevision($message->revision ?? null);
             $journalEntry->locked = $message->lock;
             $journalEntry->save();
-            DB::commit();
-            $inTransaction = false;
             $journalEntry->refresh();
+            DB::commit();
+            $this->auditLog($message);
+            $inTransaction = false;
         } catch (Exception $exception) {
             if ($inTransaction) {
                 DB::rollBack();
@@ -288,15 +289,15 @@ class JournalEntryController extends Controller
      * Perform a Journal Entry operation.
      *
      * @param Entry $message
-     * @param int $opFlag
+     * @param int|null $opFlags
      * @return JournalEntry|null
      * @throws Breaker
-     * @throws Exception
      */
-    public function run(Entry $message, int $opFlag): ?JournalEntry
+    public function run(Entry $message, ?int $opFlags = null): ?JournalEntry
     {
-        // TODO: add POST operation!
-        switch ($opFlag & Message::ALL_OPS) {
+        // TODO: add POST operation.
+        $opFlags ??= $message->getOpFlags();
+        switch ($opFlags & Message::ALL_OPS) {
             case Message::OP_ADD:
                 return $this->add($message);
             case Message::OP_DELETE:
@@ -335,9 +336,10 @@ class JournalEntryController extends Controller
             $journalEntry->fillFromMessage($message);
             $this->updateDetails($journalEntry, $message);
             $journalEntry->save();
+            $journalEntry->refresh();
             DB::commit();
             $inTransaction = false;
-            $journalEntry->refresh();
+            $this->auditLog($message);
         } catch (Exception $exception) {
             if ($inTransaction) {
                 DB::rollBack();

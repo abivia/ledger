@@ -168,13 +168,14 @@ class JournalReferenceController extends Controller
      * Perform a reference operation.
      *
      * @param Reference $message
-     * @param int $opFlag
+     * @param int|null $opFlags
      * @return JournalReference|null
      * @throws Breaker
      */
-    public function run(Reference $message, int $opFlag): ?JournalReference
+    public function run(Reference $message, ?int $opFlags = null): ?JournalReference
     {
-        switch ($opFlag & Message::ALL_OPS) {
+        $opFlags ??= $message->getOpFlags();
+        switch ($opFlags & Message::ALL_OPS) {
             case Message::OP_ADD:
                 return $this->add($message);
             case Message::OP_DELETE:
@@ -216,9 +217,10 @@ class JournalReferenceController extends Controller
             DB::beginTransaction();
             $inTransaction = true;
             $journalReference->save();
+            $journalReference->refresh();
             DB::commit();
             $inTransaction = false;
-            $journalReference->refresh();
+            $this->auditLog($message);
         } catch (Exception $exception) {
             if ($inTransaction) {
                 DB::rollBack();

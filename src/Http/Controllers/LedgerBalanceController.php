@@ -57,13 +57,14 @@ class LedgerBalanceController extends Controller
      * Perform a currency operation.
      *
      * @param Balance $message
-     * @param int $opFlag
+     * @param int|null $opFlags
      * @return LedgerBalance|null
      * @throws Breaker
      */
-    public function run(Balance $message, int $opFlag): ?LedgerBalance
+    public function run(Balance $message, ?int $opFlags = null): ?LedgerBalance
     {
-        switch ($opFlag & Message::ALL_OPS) {
+        $opFlags ??= $message->getOpFlags();
+        switch ($opFlags & Message::ALL_OPS) {
             case Message::OP_GET:
             case Message::OP_QUERY:
                 return $this->get($message);

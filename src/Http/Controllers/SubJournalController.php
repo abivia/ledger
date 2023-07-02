@@ -198,13 +198,14 @@ class SubJournalController extends Controller
      * Perform a domain operation.
      *
      * @param SubJournal $message
-     * @param int $opFlag
+     * @param int|null $opFlags
      * @return SubJournalModel|null
      * @throws Breaker
      */
-    public function run(SubJournal $message, int $opFlag): ?SubJournalModel
+    public function run(SubJournal $message, ?int $opFlags = null): ?SubJournalModel
     {
-        switch ($opFlag & Message::ALL_OPS) {
+        $opFlags ??= $message->getOpFlags();
+        switch ($opFlags & Message::ALL_OPS) {
             case Message::OP_ADD:
                 return $this->add($message);
             case Message::OP_DELETE:
@@ -214,7 +215,9 @@ class SubJournalController extends Controller
             case Message::OP_UPDATE:
                 return $this->update($message);
             default:
-                throw Breaker::withCode(Breaker::BAD_REQUEST, 'Unknown or invalid operation.');
+                throw Breaker::withCode(
+                    Breaker::BAD_REQUEST, 'Unknown or invalid operation.'
+                );
         }
     }
 
@@ -247,9 +250,9 @@ class SubJournalController extends Controller
             $inTransaction = true;
             $this->updateNames($SubJournalModel, $message);
             $SubJournalModel->save();
-            DB::commit();
-            $inTransaction = false;
             $SubJournalModel->refresh();
+            DB::commit();
+            $this->auditLog($message);
         } catch (Exception $exception) {
             if ($inTransaction) {
                 DB::rollBack();

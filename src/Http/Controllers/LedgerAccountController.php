@@ -217,12 +217,13 @@ class LedgerAccountController extends Controller
      * Perform an account operation.
      *
      * @param Account $message Account details.
-     * @param int $opFlags The requested operation. See the {@see Message} constants.
+     * @param int|null $opFlags The requested operation. See the {@see Message} constants.
      * @return LedgerAccount|null The related account, if any.
      * @throws Breaker
      */
-    public function run(Account $message, int $opFlags): ?LedgerAccount
+    public function run(Account $message, ?int $opFlags = null): ?LedgerAccount
     {
+        $opFlags ??= $message->getOpFlags();
         switch ($opFlags & Message::ALL_OPS) {
             case Message::OP_ADD:
                 return $this->add($message);
@@ -314,9 +315,9 @@ class LedgerAccountController extends Controller
                 $ledgerAccount->extra = $message->extra;
             }
             $ledgerAccount->save();
+            $ledgerAccount->refresh();
             DB::commit();
             $inTransaction = false;
-            $ledgerAccount->refresh();
             $this->auditLog($message);
         } catch (Exception $exception) {
             if ($inTransaction) {
