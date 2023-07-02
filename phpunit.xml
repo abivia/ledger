@@ -21,6 +21,7 @@
         <env name="APP_KEY" value="AK5r28GVIWUAxmbBSjTckfSECXIvnsmF"/>
         <env name="CACHE_DRIVER" value="array"/>
         <env name="DB_CONNECTION" value="sqlite"/>
+        <env name="LEDGER_API_DEBUG_ALLOWED" value="true" />
         <server name="APP_ENV" value="testing"/>
         <server name="BCRYPT_ROUNDS" value="4"/>
         <server name="DB_DATABASE" value=":memory:"/>
