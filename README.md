@@ -58,8 +58,10 @@ JSON API, set middleware, and a path prefix to the API.
 
 To ensure schema changes are in place publish the configuration again and migrate:
 
-`php artisan vendor:publish --provider="Abivia\Ledger\LedgerServiceProvider"`
-`php artisan migrate`
+```
+php artisan vendor:publish --provider="Abivia\Ledger\LedgerServiceProvider"
+php artisan migrate
+```
 
 
 ## Donations welcome
