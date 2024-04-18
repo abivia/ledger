@@ -1,3 +1,8 @@
+## 1.11.2
+
+### Bugs:
+- The version helper didn't report the correct result for 1.11.1 (duh)
+
 ## 1.11.1
 
 ### Bugs:
