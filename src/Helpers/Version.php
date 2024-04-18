@@ -11,7 +11,7 @@ class Version
 
     public static function core(): string
     {
-        return '1.11.0';
+        return '1.11.1';
     }
 
 }
