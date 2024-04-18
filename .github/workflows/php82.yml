@@ -13,7 +13,7 @@ jobs:
         with:
           php_version: "8.2"
           extensions: bcmath, json, pdo
-          tools: composer
+      - uses: "ramsey/composer-install@v3"
       - name: Directory Permissions
         run: |
           chmod -R 777 storage
