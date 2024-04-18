@@ -115,9 +115,22 @@ abstract class Message
      */
     public static function fromRequest(Request $request, int $opFlags = 0): self
     {
-        $content = json_decode(
-            $request->getContent(), true, 512, JSON_BIGINT_AS_STRING
-        );
+        try {
+            $content = json_decode(
+                $request->getContent(),
+                true,
+                512,
+                JSON_BIGINT_AS_STRING | JSON_THROW_ON_ERROR
+            );
+        } catch (\JsonException $exception) {
+            throw Breaker::withCode(
+                Breaker::BAD_REQUEST,
+                [__(
+                    'Request is not valid JSON: :message',
+                    ['message' => $exception->getMessage()]
+                )]
+            );
+        }
         return static::fromArray($content, $opFlags);
     }
 

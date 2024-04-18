@@ -30,6 +30,27 @@ class RootTest extends TestCase
         $this->assertCount(1, $actual->errors);
     }
 
+    public function testBadRequest()
+    {
+        $badJson = 'this is not valid JSON.';
+        $headers = [
+            'CONTENT_LENGTH' => mb_strlen($badJson, '8bit'),
+            'CONTENT_TYPE' => 'application/json',
+            'Accept' => 'application/json',
+        ];
+        $response = $this->call(
+            'POST',
+            'api/ledger/currency/query',
+            [],
+            $this->prepareCookiesForJsonRequest(),
+            [],
+            $this->transformHeadersToServerVars($headers),
+            $badJson
+        );
+        $actual = $this->isFailure($response);
+        $this->assertCount(2, $actual->errors);
+    }
+
     public function testDebug()
     {
         // Ensure debugging is off

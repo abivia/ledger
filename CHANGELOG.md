@@ -1,3 +1,9 @@
+## 1.11.1
+
+### Bugs:
+- Requests with a JSON payload that was not valid JSON caused a PHP error.
+  Now an error response is returned. Thanks to @marvoh for reporting the problem.
+
 ## 1.11.0
 
 Note: there is a new entry in the Ledger config, `session_key_prefix`, which defaults
@@ -37,8 +43,8 @@ entity must have at least one name in any language.
 ### Bugs
 - [Issue 10](https://github.com/abivia/ledger/issues/10) exposed several cases where performing operations
 before the ledger was created resulted in confusing responses instead of an error.
-- [Issue 12](https://github.com/abivia/ledger/issues/12) The sub-journal was bing validated byt not stored
-in the journal entry.
+- [Issue 12](https://github.com/abivia/ledger/issues/12) The sub-journal was being validated but
+not stored in the journal entry.
 
 ### Changes
 - ControllerResultHandler::unexpectedException() returns a generic error string suitable for
