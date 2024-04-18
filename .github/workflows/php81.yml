@@ -9,10 +9,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install dependencies
-        uses: php-actions/composer@v6
+        uses: "shivammathur/setup-php@v2"
         with:
           php_version: "8.1"
           php_extensions: bcmath json pdo
+      - uses: "ramsey/composer-install@v3"
       - name: Directory Permissions
         run: |
           chmod -R 777 storage
