@@ -11,7 +11,7 @@ jobs:
       - name: Install dependencies
         uses: "shivammathur/setup-php@v2"
         with:
-          php_version: "8.2"
+          php-version: "8.2"
           extensions: bcmath, json, pdo
       - uses: "ramsey/composer-install@v3"
       - name: Directory Permissions
